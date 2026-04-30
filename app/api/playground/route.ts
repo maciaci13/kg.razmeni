@@ -11,6 +11,7 @@ type PlaygroundAction =
   | { action: "seed"; cycleSize: PlaygroundCycleSize }
   | { action: "confirm"; matchId: string; userId: string }
   | { action: "decline"; matchId: string; userId: string }
+  | { action: "leave"; matchId: string; userId: string; keepChat: boolean }
   | { action: "status"; matchId: string; userId: string; status: string }
   | { action: "message"; chatId: string; userId: string; body: string }
   | { action: "createRequest"; userId: string; fromKindergartenId: string; wantedKindergartenId: string; ageGroup?: string }
@@ -26,24 +27,14 @@ function assertPlaygroundEnabled() {
 async function getSnapshot(): Promise<PlaygroundSnapshot> {
   const supabase = createSupabaseAdminClient();
 
-  const users = await supabase
-    .from("app_users")
-    .select("id, display_name, email")
-    .eq("is_playground", true)
-    .order("display_name");
-
+  const users = await supabase.from("app_users").select("id, display_name, email").eq("is_playground", true).order("display_name");
   if (users.error) throw new Error(users.error.message);
 
   const userIds = (users.data ?? []).map((user) => user.id);
-
   const [kindergartens, requests, matches, participants, chats, messages] = await Promise.all([
     supabase.from("kindergartens").select("id, name, district").eq("source_name", "playground").order("official_number"),
     userIds.length > 0
-      ? supabase
-          .from("swap_requests")
-          .select("id, user_id, from_kindergarten_id, request_type, status, is_active, is_locked, child_group_year_or_age_group")
-          .in("user_id", userIds)
-          .order("created_at", { ascending: false })
+      ? supabase.from("swap_requests").select("id, user_id, from_kindergarten_id, request_type, status, is_active, is_locked, child_group_year_or_age_group").in("user_id", userIds).order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
     supabase.from("matches").select("id, match_type, status, confidence_score, created_at").order("created_at", { ascending: false }).limit(40),
     supabase.from("match_participants").select("id, match_id, user_id, participant_label, participant_order, confirmation_status, coordination_status, from_kindergarten_id, wants_kindergarten_id").order("participant_order"),
@@ -51,21 +42,12 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
     supabase.from("messages").select("id, chat_id, sender_user_id, body, moderation_flag, created_at").order("created_at", { ascending: true }).limit(100)
   ]);
 
-  const errors = [kindergartens, requests, matches, participants, chats, messages]
-    .map((result) => result.error)
-    .filter(Boolean);
-
-  if (errors.length > 0) {
-    throw new Error(errors.map((error) => error?.message).join(" | "));
-  }
+  const errors = [kindergartens, requests, matches, participants, chats, messages].map((result) => result.error).filter(Boolean);
+  if (errors.length > 0) throw new Error(errors.map((error) => error?.message).join(" | "));
 
   const requestIds = (requests.data ?? []).map((request) => request.id);
   const wantedKindergartens = requestIds.length > 0
-    ? await supabase
-        .from("swap_request_wanted_kindergartens")
-        .select("id, request_id, wanted_kindergarten_id, priority_order")
-        .in("request_id", requestIds)
-        .order("priority_order")
+    ? await supabase.from("swap_request_wanted_kindergartens").select("id, request_id, wanted_kindergarten_id, priority_order").in("request_id", requestIds).order("priority_order")
     : { data: [], error: null };
 
   if (wantedKindergartens.error) throw new Error(wantedKindergartens.error.message);
@@ -98,95 +80,68 @@ export async function POST(request: Request) {
     const supabase = createSupabaseAdminClient();
 
     if (body.action === "snapshot") return NextResponse.json(await getSnapshot());
-
     if (body.action === "reset") {
       const { error } = await supabase.rpc("reset_playground_data");
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
-
     if (body.action === "setupBase") {
       const { error } = await supabase.rpc("seed_playground_base");
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
-
     if (body.action === "seed") {
       const { error } = await supabase.rpc("seed_playground_cycle", { p_cycle_size: body.cycleSize });
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
-
     if (body.action === "createRequest") {
-      const { data: request, error: requestError } = await supabase
+      const { data: requestRow, error: requestError } = await supabase
         .from("swap_requests")
-        .insert({
-          user_id: body.userId,
-          from_kindergarten_id: body.fromKindergartenId,
-          request_type: "kindergarten",
-          child_group_year_or_age_group: body.ageGroup ?? "2019",
-          status: "enrolled"
-        })
+        .insert({ user_id: body.userId, from_kindergarten_id: body.fromKindergartenId, request_type: "kindergarten", child_group_year_or_age_group: body.ageGroup ?? "2019", status: "enrolled" })
         .select("id")
         .single();
-
       if (requestError) throw new Error(requestError.message);
 
-      const { error: wantedError } = await supabase
-        .from("swap_request_wanted_kindergartens")
-        .insert({ request_id: request.id, wanted_kindergarten_id: body.wantedKindergartenId, priority_order: 1 });
-
+      const { error: wantedError } = await supabase.from("swap_request_wanted_kindergartens").insert({ request_id: requestRow.id, wanted_kindergarten_id: body.wantedKindergartenId, priority_order: 1 });
       if (wantedError) throw new Error(wantedError.message);
 
-      const { error: matchError } = await supabase.rpc("find_potential_matches_for_request", { p_request_id: request.id });
+      const { error: matchError } = await supabase.rpc("find_potential_matches_for_request", { p_request_id: requestRow.id });
       if (matchError) throw new Error(matchError.message);
-
       return NextResponse.json(await getSnapshot());
     }
-
     if (body.action === "deactivateRequest") {
-      const { error } = await supabase
-        .from("swap_requests")
-        .update({ is_active: false, is_locked: false, lock_reason: null })
-        .eq("id", body.requestId);
+      const { error } = await supabase.from("swap_requests").update({ is_active: false, is_locked: false, lock_reason: null }).eq("id", body.requestId);
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
-
     if (body.action === "deleteRequest") {
       const { error } = await supabase.from("swap_requests").delete().eq("id", body.requestId);
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
-
     if (body.action === "confirm") {
       const { error } = await supabase.rpc("confirm_match_participant", { p_match_id: body.matchId, p_user_id: body.userId });
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
-
     if (body.action === "decline") {
       const { error } = await supabase.rpc("decline_match_participant", { p_match_id: body.matchId, p_user_id: body.userId });
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
-
-    if (body.action === "status") {
-      const { error } = await supabase.rpc("update_my_coordination_status", {
-        p_match_id: body.matchId,
-        p_user_id: body.userId,
-        p_status: body.status
-      });
+    if (body.action === "leave") {
+      const { error } = await supabase.rpc("leave_match", { p_match_id: body.matchId, p_user_id: body.userId, p_keep_chat: body.keepChat });
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
-
+    if (body.action === "status") {
+      const { error } = await supabase.rpc("update_my_coordination_status", { p_match_id: body.matchId, p_user_id: body.userId, p_status: body.status });
+      if (error) throw new Error(error.message);
+      return NextResponse.json(await getSnapshot());
+    }
     if (body.action === "message") {
-      const { error } = await supabase.rpc("send_chat_message", {
-        p_chat_id: body.chatId,
-        p_sender_user_id: body.userId,
-        p_body: body.body
-      });
+      const { error } = await supabase.rpc("send_chat_message", { p_chat_id: body.chatId, p_sender_user_id: body.userId, p_body: body.body });
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
