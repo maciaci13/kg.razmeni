@@ -31,19 +31,49 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
   if (users.error) throw new Error(users.error.message);
 
   const userIds = (users.data ?? []).map((user) => user.id);
-  const [kindergartens, requests, matches, participants, chats, messages] = await Promise.all([
+
+  const [kindergartens, requests, matches, participants] = await Promise.all([
     supabase.from("kindergartens").select("id, name, district").eq("source_name", "playground").order("official_number"),
     userIds.length > 0
       ? supabase.from("swap_requests").select("id, user_id, from_kindergarten_id, request_type, status, is_active, is_locked, child_group_year_or_age_group").in("user_id", userIds).order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
     supabase.from("matches").select("id, match_type, status, confidence_score, created_at").order("created_at", { ascending: false }).limit(40),
-    supabase.from("match_participants").select("id, match_id, user_id, participant_label, participant_order, confirmation_status, coordination_status, from_kindergarten_id, wants_kindergarten_id").order("participant_order"),
+    supabase.from("match_participants").select("id, match_id, user_id, participant_label, participant_order, confirmation_status, coordination_status, from_kindergarten_id, wants_kindergarten_id").order("participant_order")
+  ]);
+
+  const firstErrors = [kindergartens, requests, matches, participants].map((result) => result.error).filter(Boolean);
+  if (firstErrors.length > 0) throw new Error(firstErrors.map((error) => error?.message).join(" | "));
+
+  const confirmedMatchIds = (matches.data ?? [])
+    .filter((match) => ["confirmed", "at_risk"].includes(match.status))
+    .filter((match) => (participants.data ?? []).filter((participant) => participant.match_id === match.id).length > 1)
+    .map((match) => match.id);
+
+  if (confirmedMatchIds.length > 0) {
+    await Promise.all(
+      confirmedMatchIds.map(async (matchId) => {
+        const { error } = await supabase.rpc("ensure_match_direct_chats", { p_match_id: matchId });
+        if (error) throw new Error(error.message);
+      })
+    );
+
+    const { error: activateDirectChatsError } = await supabase
+      .from("chats")
+      .update({ status: "active" })
+      .in("match_id", confirmedMatchIds)
+      .eq("chat_type", "direct")
+      .neq("status", "archived");
+
+    if (activateDirectChatsError) throw new Error(activateDirectChatsError.message);
+  }
+
+  const [chats, messages] = await Promise.all([
     supabase.from("chats").select("id, match_id, chat_type, status, direct_user_1_id, direct_user_2_id").order("created_at", { ascending: false }).limit(80),
     supabase.from("messages").select("id, chat_id, sender_user_id, body, moderation_flag, created_at").order("created_at", { ascending: true }).limit(200)
   ]);
 
-  const errors = [kindergartens, requests, matches, participants, chats, messages].map((result) => result.error).filter(Boolean);
-  if (errors.length > 0) throw new Error(errors.map((error) => error?.message).join(" | "));
+  const secondErrors = [chats, messages].map((result) => result.error).filter(Boolean);
+  if (secondErrors.length > 0) throw new Error(secondErrors.map((error) => error?.message).join(" | "));
 
   const requestIds = (requests.data ?? []).map((request) => request.id);
   const wantedKindergartens = requestIds.length > 0
