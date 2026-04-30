@@ -129,11 +129,9 @@ main.min-h-screen.bg-paper > div::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.3;
-  background-image:
-    linear-gradient(135deg, transparent 0 44%, rgba(255, 255, 255, 0.7) 44% 47%, transparent 47% 100%),
-    radial-gradient(rgba(23, 23, 18, 0.05) 1px, transparent 1px);
-  background-size: 18rem 18rem, 22px 22px;
+  opacity: 0.22;
+  background-image: radial-gradient(rgba(23, 23, 18, 0.04) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
 main header.rounded-\[2rem\].bg-ink {
