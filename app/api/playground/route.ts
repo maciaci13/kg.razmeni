@@ -24,6 +24,10 @@ function assertPlaygroundEnabled() {
   }
 }
 
+function isMissingDirectChatMigration(message: string) {
+  return message.includes("ensure_match_direct_chats") || message.includes("direct_user_1_id") || message.includes("direct_user_2_id");
+}
+
 async function getSnapshot(): Promise<PlaygroundSnapshot> {
   const supabase = createSupabaseAdminClient();
 
@@ -49,26 +53,38 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
     .filter((match) => (participants.data ?? []).filter((participant) => participant.match_id === match.id).length > 1)
     .map((match) => match.id);
 
+  let directChatsMigrationAvailable = true;
+
   if (confirmedMatchIds.length > 0) {
-    await Promise.all(
-      confirmedMatchIds.map(async (matchId) => {
-        const { error } = await supabase.rpc("ensure_match_direct_chats", { p_match_id: matchId });
-        if (error) throw new Error(error.message);
-      })
-    );
+    for (const matchId of confirmedMatchIds) {
+      const { error } = await supabase.rpc("ensure_match_direct_chats", { p_match_id: matchId });
+      if (error) {
+        if (isMissingDirectChatMigration(error.message)) {
+          directChatsMigrationAvailable = false;
+          break;
+        }
+        throw new Error(error.message);
+      }
+    }
 
-    const { error: activateDirectChatsError } = await supabase
-      .from("chats")
-      .update({ status: "active" })
-      .in("match_id", confirmedMatchIds)
-      .eq("chat_type", "direct")
-      .neq("status", "archived");
+    if (directChatsMigrationAvailable) {
+      const { error: activateDirectChatsError } = await supabase
+        .from("chats")
+        .update({ status: "active" })
+        .in("match_id", confirmedMatchIds)
+        .eq("chat_type", "direct")
+        .neq("status", "archived");
 
-    if (activateDirectChatsError) throw new Error(activateDirectChatsError.message);
+      if (activateDirectChatsError) throw new Error(activateDirectChatsError.message);
+    }
   }
 
+  const chatsQuery = directChatsMigrationAvailable
+    ? supabase.from("chats").select("id, match_id, chat_type, status, direct_user_1_id, direct_user_2_id").order("created_at", { ascending: false }).limit(80)
+    : supabase.from("chats").select("id, match_id, chat_type, status").order("created_at", { ascending: false }).limit(80);
+
   const [chats, messages] = await Promise.all([
-    supabase.from("chats").select("id, match_id, chat_type, status, direct_user_1_id, direct_user_2_id").order("created_at", { ascending: false }).limit(80),
+    chatsQuery,
     supabase.from("messages").select("id, chat_id, sender_user_id, body, moderation_flag, created_at").order("created_at", { ascending: true }).limit(200)
   ]);
 
@@ -82,6 +98,12 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
 
   if (wantedKindergartens.error) throw new Error(wantedKindergartens.error.message);
 
+  const normalizedChats = (chats.data ?? []).map((chat) => ({
+    direct_user_1_id: null,
+    direct_user_2_id: null,
+    ...chat
+  }));
+
   return {
     users: users.data ?? [],
     kindergartens: kindergartens.data ?? [],
@@ -89,7 +111,7 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
     wantedKindergartens: wantedKindergartens.data ?? [],
     matches: matches.data ?? [],
     participants: participants.data ?? [],
-    chats: chats.data ?? [],
+    chats: normalizedChats,
     messages: messages.data ?? []
   } as PlaygroundSnapshot;
 }
