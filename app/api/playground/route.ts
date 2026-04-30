@@ -11,7 +11,8 @@ type PlaygroundAction =
   | { action: "confirm"; matchId: string; userId: string }
   | { action: "decline"; matchId: string; userId: string }
   | { action: "status"; matchId: string; userId: string; status: string }
-  | { action: "message"; chatId: string; userId: string; body: string };
+  | { action: "message"; chatId: string; userId: string; body: string }
+  | { action: "createRequest"; userId: string; fromKindergartenId: string; wantedKindergartenId: string; ageGroup?: string };
 
 function assertPlaygroundEnabled() {
   if (process.env.NEXT_PUBLIC_ENABLE_PLAYGROUND !== "true") {
@@ -37,7 +38,7 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
     userIds.length > 0
       ? supabase
           .from("swap_requests")
-          .select("id, user_id, from_kindergarten_id, is_active, is_locked, child_group_year_or_age_group")
+          .select("id, user_id, from_kindergarten_id, request_type, status, is_active, is_locked, child_group_year_or_age_group")
           .in("user_id", userIds)
       : Promise.resolve({ data: [], error: null }),
     supabase.from("matches").select("id, match_type, status, confidence_score, created_at").order("created_at", { ascending: false }).limit(20),
@@ -54,10 +55,22 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
     throw new Error(errors.map((error) => error?.message).join(" | "));
   }
 
+  const requestIds = (requests.data ?? []).map((request) => request.id);
+  const wantedKindergartens = requestIds.length > 0
+    ? await supabase
+        .from("swap_request_wanted_kindergartens")
+        .select("id, request_id, wanted_kindergarten_id, priority_order")
+        .in("request_id", requestIds)
+        .order("priority_order")
+    : { data: [], error: null };
+
+  if (wantedKindergartens.error) throw new Error(wantedKindergartens.error.message);
+
   return {
     users: users.data ?? [],
     kindergartens: kindergartens.data ?? [],
     requests: requests.data ?? [],
+    wantedKindergartens: wantedKindergartens.data ?? [],
     matches: matches.data ?? [],
     participants: participants.data ?? [],
     chats: chats.data ?? [],
@@ -93,6 +106,33 @@ export async function POST(request: Request) {
     if (body.action === "seed") {
       const { error } = await supabase.rpc("seed_playground_cycle", { p_cycle_size: body.cycleSize });
       if (error) throw new Error(error.message);
+      return NextResponse.json(await getSnapshot());
+    }
+
+    if (body.action === "createRequest") {
+      const { data: request, error: requestError } = await supabase
+        .from("swap_requests")
+        .insert({
+          user_id: body.userId,
+          from_kindergarten_id: body.fromKindergartenId,
+          request_type: "kindergarten",
+          child_group_year_or_age_group: body.ageGroup ?? "2019",
+          status: "enrolled"
+        })
+        .select("id")
+        .single();
+
+      if (requestError) throw new Error(requestError.message);
+
+      const { error: wantedError } = await supabase
+        .from("swap_request_wanted_kindergartens")
+        .insert({ request_id: request.id, wanted_kindergarten_id: body.wantedKindergartenId, priority_order: 1 });
+
+      if (wantedError) throw new Error(wantedError.message);
+
+      const { error: matchError } = await supabase.rpc("find_potential_matches_for_request", { p_request_id: request.id });
+      if (matchError) throw new Error(matchError.message);
+
       return NextResponse.json(await getSnapshot());
     }
 
