@@ -170,6 +170,25 @@ main .rounded-\[1\.75rem\],
 main .rounded-\[1\.8rem\],
 main .rounded-\[2\.2rem\] { box-shadow: 0 10px 24px rgba(33, 28, 17, 0.04); }
 
+main nav.fixed.bottom-4 {
+  box-shadow:
+    0 -10px 34px rgba(28, 27, 25, 0.08),
+    0 18px 56px rgba(28, 27, 25, 0.10),
+    inset 0 0 0 1px rgba(28, 27, 25, 0.035) !important;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+}
+
+main nav.fixed.bottom-4::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 100%;
+  height: 34px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,252,250,0), rgba(255,252,250,0.82));
+}
+
 main .text-orange { color: var(--study-orange) !important; }
 main .shadow-soft { box-shadow: 0 16px 40px rgba(40, 34, 20, 0.055) !important; }
 
