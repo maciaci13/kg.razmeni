@@ -28,6 +28,73 @@ function isMissingDirectChatMigration(message: string) {
   return message.includes("ensure_match_direct_chats") || message.includes("direct_user_1_id") || message.includes("direct_user_2_id");
 }
 
+async function leaveMatchDirectly(supabase: ReturnType<typeof createSupabaseAdminClient>, matchId: string, userId: string, keepChat: boolean) {
+  const { data: participant, error: participantError } = await supabase
+    .from("match_participants")
+    .select("id, confirmation_status")
+    .eq("match_id", matchId)
+    .eq("user_id", userId)
+    .single();
+
+  if (participantError) throw new Error(participantError.message);
+  if (!participant) throw new Error("Participant not found for this match/user");
+
+  const { error: participantUpdateError } = await supabase
+    .from("match_participants")
+    .update({
+      coordination_status: "dropped_out",
+      confirmation_status: participant.confirmation_status === "pending" ? "declined" : participant.confirmation_status,
+      coordination_updated_at: new Date().toISOString(),
+      declined_at: participant.confirmation_status === "pending" ? new Date().toISOString() : null
+    })
+    .eq("id", participant.id);
+  if (participantUpdateError) throw new Error(participantUpdateError.message);
+
+  const { data: participantRows, error: participantRowsError } = await supabase
+    .from("match_participants")
+    .select("request_id, user_id")
+    .eq("match_id", matchId);
+  if (participantRowsError) throw new Error(participantRowsError.message);
+
+  const requestIds = (participantRows ?? []).map((row) => row.request_id).filter(Boolean);
+  if (requestIds.length > 0) {
+    const { error: unlockRequestsError } = await supabase
+      .from("swap_requests")
+      .update({ is_locked: false, lock_reason: null })
+      .in("id", requestIds);
+    if (unlockRequestsError) throw new Error(unlockRequestsError.message);
+  }
+
+  const { error: matchUpdateError } = await supabase
+    .from("matches")
+    .update({
+      status: keepChat ? "at_risk" : "cancelled",
+      failure_reason: "participant_left_match",
+      cancelled_at: keepChat ? null : new Date().toISOString()
+    })
+    .eq("id", matchId);
+  if (matchUpdateError) throw new Error(matchUpdateError.message);
+
+  const { error: chatUpdateError } = await supabase
+    .from("chats")
+    .update(keepChat
+      ? { status: "active", unlocked_at: new Date().toISOString(), archived_at: null }
+      : { status: "archived", archived_at: new Date().toISOString() })
+    .eq("match_id", matchId);
+  if (chatUpdateError) throw new Error(chatUpdateError.message);
+
+  await supabase.from("match_progress_events").insert({ match_id: matchId, user_id: userId, participant_id: participant.id, event_type: "participant_left", event_label: "Участник се отказа от координацията" });
+
+  const notifyUsers = (participantRows ?? []).filter((row) => row.user_id !== userId).map((row) => ({
+    user_id: row.user_id,
+    type: "participant_left",
+    title: "Участник се отказа",
+    body: "Една от страните се отказа от потенциалното съвпадение.",
+    match_id: matchId
+  }));
+  if (notifyUsers.length > 0) await supabase.from("notifications").insert(notifyUsers);
+}
+
 async function getSnapshot(): Promise<PlaygroundSnapshot> {
   const supabase = createSupabaseAdminClient();
 
@@ -183,8 +250,7 @@ export async function POST(request: Request) {
       return NextResponse.json(await getSnapshot());
     }
     if (body.action === "leave") {
-      const { error } = await supabase.rpc("leave_match", { p_match_id: body.matchId, p_user_id: body.userId, p_keep_chat: body.keepChat });
-      if (error) throw new Error(error.message);
+      await leaveMatchDirectly(supabase, body.matchId, body.userId, body.keepChat);
       return NextResponse.json(await getSnapshot());
     }
     if (body.action === "status") {
