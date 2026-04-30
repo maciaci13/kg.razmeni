@@ -22,17 +22,31 @@ function assertPlaygroundEnabled() {
 async function getSnapshot(): Promise<PlaygroundSnapshot> {
   const supabase = createSupabaseAdminClient();
 
-  const [users, kindergartens, requests, matches, participants, chats, messages] = await Promise.all([
-    supabase.from("app_users").select("id, display_name, email").eq("is_playground", true).order("display_name"),
+  const users = await supabase
+    .from("app_users")
+    .select("id, display_name, email")
+    .eq("is_playground", true)
+    .order("display_name");
+
+  if (users.error) throw new Error(users.error.message);
+
+  const userIds = (users.data ?? []).map((user) => user.id);
+
+  const [kindergartens, requests, matches, participants, chats, messages] = await Promise.all([
     supabase.from("kindergartens").select("id, name, district").eq("source_name", "playground").order("official_number"),
-    supabase.from("swap_requests").select("id, user_id, from_kindergarten_id, is_active, is_locked, child_group_year_or_age_group").in("user_id", supabase.from("app_users").select("id").eq("is_playground", true) as never),
+    userIds.length > 0
+      ? supabase
+          .from("swap_requests")
+          .select("id, user_id, from_kindergarten_id, is_active, is_locked, child_group_year_or_age_group")
+          .in("user_id", userIds)
+      : Promise.resolve({ data: [], error: null }),
     supabase.from("matches").select("id, match_type, status, confidence_score, created_at").order("created_at", { ascending: false }).limit(20),
     supabase.from("match_participants").select("id, match_id, user_id, participant_label, participant_order, confirmation_status, coordination_status, from_kindergarten_id, wants_kindergarten_id").order("participant_order"),
     supabase.from("chats").select("id, match_id, chat_type, status").order("created_at", { ascending: false }).limit(20),
     supabase.from("messages").select("id, chat_id, sender_user_id, body, moderation_flag, created_at").order("created_at", { ascending: true }).limit(100)
   ]);
 
-  const errors = [users, kindergartens, requests, matches, participants, chats, messages]
+  const errors = [kindergartens, requests, matches, participants, chats, messages]
     .map((result) => result.error)
     .filter(Boolean);
 
