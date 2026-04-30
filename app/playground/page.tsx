@@ -12,6 +12,7 @@ const statusOptions = [
   ["contacted_kindergarten", "Свързал/а съм се със заведение"],
   ["can_continue", "Мога да продължа"],
   ["cannot_continue", "Не мога да продължа"],
+  ["completed", "Завърших стъпките"],
   ["dropped_out", "Отказвам се"]
 ] as const;
 
@@ -55,6 +56,8 @@ export default function PlaygroundPage() {
   const [snapshot, setSnapshot] = useState<PlaygroundSnapshot | null>(null);
   const [scenario, setScenario] = useState<Scenario>(3);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedChatId, setSelectedChatId] = useState<string>("");
+  const [showAllSteps, setShowAllSteps] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [messageBody, setMessageBody] = useState("Здравейте, виждам, че имаме потенциално съвпадение.");
@@ -91,14 +94,38 @@ export default function PlaygroundPage() {
     if (!snapshot || !activeMatch) return [];
     return snapshot.participants.filter((p) => p.match_id === activeMatch.id).sort((a, b) => a.participant_order - b.participant_order);
   }, [snapshot, activeMatch]);
-  const groupChat = useMemo(() => {
-    if (!snapshot || !activeMatch) return undefined;
-    return snapshot.chats.find((chat) => chat.match_id === activeMatch.id && chat.chat_type === "group");
-  }, [snapshot, activeMatch]);
 
+  const availableChats = useMemo(() => {
+    if (!snapshot || !activeMatch || !selectedProfileId) return [];
+    return snapshot.chats
+      .filter((chat) => chat.match_id === activeMatch.id)
+      .filter((chat) => chat.chat_type === "group" || chat.direct_user_1_id === selectedProfileId || chat.direct_user_2_id === selectedProfileId)
+      .sort((a, b) => (a.chat_type === "group" ? -1 : 1) - (b.chat_type === "group" ? -1 : 1));
+  }, [snapshot, activeMatch, selectedProfileId]);
+
+  const selectedChat = availableChats.find((chat) => chat.id === selectedChatId) ?? availableChats[0];
   const allConfirmed = participants.length > 0 && participants.every((participant) => participant.confirmation_status === "interested");
   const anyDeclined = participants.some((participant) => participant.confirmation_status === "declined");
-  const currentStep = !activeMatch ? 0 : anyDeclined ? 1 : !allConfirmed ? 1 : participants.every((p) => p.coordination_status === "can_continue") ? 4 : 3;
+  const anyDropped = participants.some((participant) => participant.coordination_status === "dropped_out");
+  const anyCannotContinue = participants.some((participant) => participant.coordination_status === "cannot_continue");
+  const allCanContinue = participants.length > 0 && participants.every((participant) => ["can_continue", "completed"].includes(participant.coordination_status));
+  const allCompleted = participants.length > 0 && participants.every((participant) => participant.coordination_status === "completed");
+  const anyProcedureStarted = participants.some((participant) => ["checking_procedure", "contacted_kindergarten"].includes(participant.coordination_status));
+  const currentStep = !activeMatch
+    ? 0
+    : anyDeclined || anyDropped
+      ? 2
+      : !allConfirmed
+        ? 1
+        : allCompleted
+          ? 6
+          : allCanContinue
+            ? 5
+            : anyCannotContinue
+              ? 4
+              : anyProcedureStarted
+                ? 3
+                : 2;
 
   async function run(action: object) {
     setLoading(true);
@@ -118,6 +145,12 @@ export default function PlaygroundPage() {
   function updateParticipantStatus(participantUserId: string, status: string) {
     if (!activeMatch) return;
     run({ action: "status", matchId: activeMatch.id, userId: participantUserId, status });
+  }
+
+  function chatTitle(chat: PlaygroundSnapshot["chats"][number]) {
+    if (chat.chat_type === "group") return "Групов чат";
+    const otherUserId = chat.direct_user_1_id === selectedProfileId ? chat.direct_user_2_id : chat.direct_user_1_id;
+    return `Лично: ${userById.get(otherUserId ?? "")?.display_name ?? "родител"}`;
   }
 
   function createRequest() {
@@ -145,6 +178,7 @@ export default function PlaygroundPage() {
   async function setupScenario(nextScenario: Scenario) {
     setScenario(nextScenario);
     setSelectedUserId("");
+    setSelectedChatId("");
     setFromKgId("");
     setWantedKgId("");
     await run({ action: "setupBase" });
@@ -164,6 +198,12 @@ export default function PlaygroundPage() {
       setSelectedUserId(scenarioUsers[0].id);
     }
   }, [scenarioUsers, selectedUserId]);
+
+  useEffect(() => {
+    if (availableChats.length > 0 && !availableChats.some((chat) => chat.id === selectedChatId)) {
+      setSelectedChatId(availableChats[0].id);
+    }
+  }, [availableChats, selectedChatId]);
 
   return (
     <main className="min-h-screen bg-paper px-4 py-5 text-ink">
@@ -279,14 +319,25 @@ export default function PlaygroundPage() {
         </section>
 
         <section className="rounded-[2rem] bg-milk p-5 shadow-soft">
-          <h2 className="text-xl font-black tracking-[-0.04em]">Схема и етапи на цикъла</h2>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-black tracking-[-0.04em]">Схема и етапи на цикъла</h2>
+              <p className="mt-1 text-xs text-ink/50">Показва се текущата стъпка. Останалите са прибрани, за да не става чаршаф.</p>
+            </div>
+            <button onClick={() => setShowAllSteps((value) => !value)} className="rounded-full bg-beige px-3 py-2 text-[10px] font-black">
+              {showAllSteps ? "Скрий" : "Всички"}
+            </button>
+          </div>
           <div className="mt-4 space-y-3">
-            {coordinationSteps.map((step, index) => (
-              <div key={step} className={`rounded-2xl px-4 py-3 ${index + 1 <= currentStep ? "bg-lime" : "bg-paper"}`}>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-ink/45">Стъпка {index + 1}</p>
-                <p className="mt-1 text-sm font-bold">{step}</p>
-              </div>
-            ))}
+            {(showAllSteps ? coordinationSteps : [coordinationSteps[Math.max(currentStep - 1, 0)]]).map((step, index) => {
+              const realIndex = showAllSteps ? index : Math.max(currentStep - 1, 0);
+              return (
+                <div key={`${step}-${realIndex}`} className={`rounded-2xl px-4 py-3 ${realIndex + 1 <= currentStep ? "bg-lime" : "bg-paper"}`}>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-ink/45">Стъпка {realIndex + 1} от {coordinationSteps.length}</p>
+                  <p className="mt-1 text-sm font-bold">{step}</p>
+                </div>
+              );
+            })}
           </div>
           <div className="mt-5 space-y-3">
             {participants.length === 0 ? <p className="text-sm text-ink/55">Няма схема за този профил.</p> : null}
@@ -318,24 +369,28 @@ export default function PlaygroundPage() {
         </section>
 
         <section className="rounded-[2rem] bg-milk p-5 shadow-soft">
-          <h2 className="text-xl font-black tracking-[-0.04em]">Моят статус в процеса</h2>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {statusOptions.map(([value, label]) => (
-              <button key={value} disabled={loading || !activeMatch || !selectedProfileId || !allConfirmed} onClick={() => activeMatch && run({ action: "status", matchId: activeMatch.id, userId: selectedProfileId, status: value })} className="rounded-2xl bg-paper px-3 py-3 text-left text-[11px] font-semibold disabled:opacity-35">{label}</button>
-            ))}
-          </div>
-          {!allConfirmed && activeMatch ? <p className="mt-3 text-xs text-ink/50">Статусите се отключват след приемане от всички страни.</p> : null}
-        </section>
-
-        <section className="rounded-[2rem] bg-milk p-5 shadow-soft">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink/40">Групов чат</p>
-              <h2 className="mt-2 text-xl font-black tracking-[-0.04em]">{groupChat ? groupChat.status : "Няма чат"}</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink/40">Чатове</p>
+              <h2 className="mt-2 text-xl font-black tracking-[-0.04em]">{selectedChat ? chatTitle(selectedChat) : "Няма чат"}</h2>
             </div>
+            {selectedChat ? <span className="rounded-full bg-beige px-3 py-2 text-[10px] font-black">{selectedChat.status}</span> : null}
           </div>
+          {availableChats.length > 0 ? (
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+              {availableChats.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => setSelectedChatId(chat.id)}
+                  className={`shrink-0 rounded-full px-4 py-3 text-xs font-black ${selectedChat?.id === chat.id ? "bg-ink text-white" : "bg-paper"}`}
+                >
+                  {chatTitle(chat)}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="mt-4 space-y-2">
-            {snapshot?.messages.filter((m) => !groupChat || m.chat_id === groupChat.id).map((message) => {
+            {snapshot?.messages.filter((m) => !selectedChat || m.chat_id === selectedChat.id).map((message) => {
               const user = userById.get(message.sender_user_id);
               const isMine = message.sender_user_id === selectedProfileId;
               return (
@@ -349,7 +404,7 @@ export default function PlaygroundPage() {
           </div>
           <div className="mt-4 space-y-2">
             <textarea value={messageBody} onChange={(event) => setMessageBody(event.target.value)} className="min-h-24 w-full rounded-3xl border-0 bg-paper p-4 text-sm outline-none" />
-            <button disabled={loading || !groupChat || groupChat.status !== "active" || !selectedProfileId} onClick={() => groupChat && run({ action: "message", chatId: groupChat.id, userId: selectedProfileId, body: messageBody })} className="w-full rounded-full bg-ink px-4 py-4 text-sm font-bold text-white disabled:opacity-30">Изпрати като {selectedUser?.display_name}</button>
+            <button disabled={loading || !selectedChat || selectedChat.status !== "active" || !selectedProfileId} onClick={() => selectedChat && run({ action: "message", chatId: selectedChat.id, userId: selectedProfileId, body: messageBody })} className="w-full rounded-full bg-ink px-4 py-4 text-sm font-bold text-white disabled:opacity-30">Изпрати като {selectedUser?.display_name}</button>
           </div>
         </section>
       </div>
