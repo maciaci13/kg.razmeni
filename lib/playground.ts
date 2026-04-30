@@ -48,8 +48,10 @@ export type PlaygroundSnapshot = {
   chats: Array<{
     id: string;
     match_id: string;
-    chat_type: string;
+    chat_type: "group" | "direct";
     status: string;
+    direct_user_1_id: string | null;
+    direct_user_2_id: string | null;
   }>;
   messages: Array<{
     id: string;
