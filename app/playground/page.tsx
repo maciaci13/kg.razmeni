@@ -17,12 +17,30 @@ const statusOptions = [
 ] as const;
 
 const coordinationSteps = [
-  "Всички потвърждават интерес",
-  "Уточняване на потенциалната верига",
-  "Проверка на процедурата",
-  "Всички потвърждават дали могат да продължат",
-  "Действия само по официалния ред",
-  "Отбелязване на резултат"
+  {
+    title: "Всички потвърждават интерес",
+    helper: "Чакаме всички страни да приемат потенциалното съвпадение."
+  },
+  {
+    title: "Уточняване на потенциалната верига",
+    helper: "Цикълът е отключен. Проверете посоките и кой с кого трябва да координира."
+  },
+  {
+    title: "Проверка на процедурата",
+    helper: "Всеки родител проверява официалния ред и контакт със съответното заведение."
+  },
+  {
+    title: "Потвърждение за продължаване",
+    helper: "Всички маркират дали могат да продължат или има проблем."
+  },
+  {
+    title: "Действия по официалния ред",
+    helper: "Следват се само официалните административни стъпки. Платени уговорки не са позволени."
+  },
+  {
+    title: "Отбелязване на резултат",
+    helper: "Участниците отбелязват дали координацията е завършила успешно."
+  }
 ];
 
 async function postAction(body: object): Promise<PlaygroundSnapshot> {
@@ -127,6 +145,9 @@ export default function PlaygroundPage() {
                 ? 3
                 : 2;
 
+  const currentStepIndex = Math.max(currentStep - 1, 0);
+  const currentStepInfo = coordinationSteps[currentStepIndex] ?? coordinationSteps[0];
+
   async function run(action: object) {
     setLoading(true);
     setError(null);
@@ -143,7 +164,7 @@ export default function PlaygroundPage() {
   }
 
   function updateParticipantStatus(participantUserId: string, status: string) {
-    if (!activeMatch) return;
+    if (!activeMatch || participantUserId !== selectedProfileId) return;
     run({ action: "status", matchId: activeMatch.id, userId: participantUserId, status });
   }
 
@@ -319,26 +340,49 @@ export default function PlaygroundPage() {
         </section>
 
         <section className="rounded-[2rem] bg-milk p-5 shadow-soft">
-          <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black tracking-[-0.04em]">Схема и етапи на цикъла</h2>
+            <p className="mt-1 text-xs text-ink/50">Натисни зелената стъпка, за да разгънеш пътечката на процеса.</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowAllSteps((value) => !value)}
+            className="mt-4 flex w-full items-center justify-between rounded-[1.6rem] bg-lime px-5 py-4 text-left shadow-sm"
+          >
             <div>
-              <h2 className="text-xl font-black tracking-[-0.04em]">Схема и етапи на цикъла</h2>
-              <p className="mt-1 text-xs text-ink/50">Показва се текущата стъпка. Останалите са прибрани, за да не става чаршаф.</p>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-ink/45">Стъпка {currentStep || 1} от {coordinationSteps.length}</p>
+              <p className="mt-2 text-lg font-black leading-tight">{currentStepInfo.title}</p>
+              <p className="mt-1 text-xs font-semibold leading-5 text-ink/60">{currentStepInfo.helper}</p>
             </div>
-            <button onClick={() => setShowAllSteps((value) => !value)} className="rounded-full bg-beige px-3 py-2 text-[10px] font-black">
-              {showAllSteps ? "Скрий" : "Всички"}
-            </button>
-          </div>
-          <div className="mt-4 space-y-3">
-            {(showAllSteps ? coordinationSteps : [coordinationSteps[Math.max(currentStep - 1, 0)]]).map((step, index) => {
-              const realIndex = showAllSteps ? index : Math.max(currentStep - 1, 0);
-              return (
-                <div key={`${step}-${realIndex}`} className={`rounded-2xl px-4 py-3 ${realIndex + 1 <= currentStep ? "bg-lime" : "bg-paper"}`}>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-ink/45">Стъпка {realIndex + 1} от {coordinationSteps.length}</p>
-                  <p className="mt-1 text-sm font-bold">{step}</p>
-                </div>
-              );
-            })}
-          </div>
+            <span className={`ml-3 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-xl font-black transition-transform ${showAllSteps ? "rotate-180" : ""}`}>⌄</span>
+          </button>
+
+          {showAllSteps ? (
+            <div className="mt-5 rounded-[1.75rem] bg-paper px-4 py-5">
+              {coordinationSteps.map((step, index) => {
+                const stepNumber = index + 1;
+                const isDone = stepNumber < currentStep;
+                const isCurrent = stepNumber === currentStep;
+                return (
+                  <div key={step.title} className="relative grid grid-cols-[2.2rem_1fr] gap-3 pb-7 last:pb-0">
+                    {index < coordinationSteps.length - 1 ? (
+                      <div className={`absolute left-[1.06rem] top-8 h-[calc(100%-2rem)] w-0.5 ${isDone ? "bg-lime" : "bg-ink/15"}`} />
+                    ) : null}
+                    <div className={`relative z-10 grid h-9 w-9 place-items-center rounded-full text-sm font-black ${isDone ? "bg-lime text-ink" : isCurrent ? "bg-ink text-white" : "bg-ink/10 text-ink/40"}`}>
+                      {isDone ? "✓" : stepNumber}
+                    </div>
+                    <div className="pt-1">
+                      <p className={`text-[11px] font-black uppercase tracking-[0.18em] ${isCurrent ? "text-ink" : "text-ink/45"}`}>Стъпка {stepNumber}</p>
+                      <p className={`mt-1 text-sm font-black ${isCurrent ? "text-ink" : "text-ink/70"}`}>{step.title}</p>
+                      <p className="mt-1 text-xs font-medium leading-5 text-ink/50">{step.helper}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
           <div className="mt-5 space-y-3">
             {participants.length === 0 ? <p className="text-sm text-ink/55">Няма схема за този профил.</p> : null}
             {participants.map((participant, index) => {
@@ -353,14 +397,20 @@ export default function PlaygroundPage() {
                   <p className="mt-2 text-sm font-semibold">{fromKg?.name} → {wantsKg?.name}</p>
                   <p className={`mt-2 text-xs ${isSelectedParticipant ? "text-white/60" : "text-ink/55"}`}>Потвърждение: {participant.confirmation_status}</p>
                   <label className={`mt-4 block text-[10px] font-black uppercase tracking-[0.18em] ${isSelectedParticipant ? "text-white/45" : "text-ink/40"}`}>Статус в процеса</label>
-                  <select
-                    value={participant.coordination_status}
-                    disabled={loading || !activeMatch || !allConfirmed}
-                    onChange={(event) => updateParticipantStatus(participant.user_id, event.target.value)}
-                    className={`mt-2 w-full rounded-2xl px-4 py-3 text-xs font-black outline-none disabled:opacity-50 ${isSelectedParticipant ? "bg-white text-ink" : "bg-milk text-ink"}`}
-                  >
-                    {statusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                  </select>
+                  {isSelectedParticipant ? (
+                    <select
+                      value={participant.coordination_status}
+                      disabled={loading || !activeMatch || !allConfirmed}
+                      onChange={(event) => updateParticipantStatus(participant.user_id, event.target.value)}
+                      className="mt-2 w-full rounded-2xl bg-white px-4 py-3 text-xs font-black text-ink outline-none disabled:opacity-50"
+                    >
+                      {statusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </select>
+                  ) : (
+                    <div className="mt-2 rounded-2xl bg-milk px-4 py-3 text-xs font-black text-ink/70">
+                      {statusLabel(participant.coordination_status)}
+                    </div>
+                  )}
                   {!allConfirmed ? <p className={`mt-2 text-[11px] ${isSelectedParticipant ? "text-white/50" : "text-ink/45"}`}>Отключва се след приемане от всички страни.</p> : null}
                 </div>
               );
