@@ -28,6 +28,24 @@ function isMissingDirectChatMigration(message: string) {
   return message.includes("ensure_match_direct_chats") || message.includes("direct_user_1_id") || message.includes("direct_user_2_id");
 }
 
+async function ensurePlaygroundBase(supabase: ReturnType<typeof createSupabaseAdminClient>) {
+  const [users, kindergartens] = await Promise.all([
+    supabase.from("app_users").select("id", { count: "exact", head: true }).eq("is_playground", true),
+    supabase.from("kindergartens").select("id", { count: "exact", head: true }).eq("source_name", "playground")
+  ]);
+
+  if (users.error) throw new Error(users.error.message);
+  if (kindergartens.error) throw new Error(kindergartens.error.message);
+
+  const hasEnoughUsers = (users.count ?? 0) >= 4;
+  const hasEnoughKindergartens = (kindergartens.count ?? 0) >= 4;
+
+  if (hasEnoughUsers && hasEnoughKindergartens) return;
+
+  const { error } = await supabase.rpc("seed_playground_base");
+  if (error) throw new Error(error.message);
+}
+
 async function leaveMatchDirectly(supabase: ReturnType<typeof createSupabaseAdminClient>, matchId: string, userId: string, keepChat: boolean) {
   const { data: participant, error: participantError } = await supabase
     .from("match_participants")
@@ -205,8 +223,7 @@ export async function POST(request: Request) {
       return NextResponse.json(await getSnapshot());
     }
     if (body.action === "setupBase") {
-      const { error } = await supabase.rpc("seed_playground_base");
-      if (error) throw new Error(error.message);
+      await ensurePlaygroundBase(supabase);
       return NextResponse.json(await getSnapshot());
     }
     if (body.action === "seed") {
