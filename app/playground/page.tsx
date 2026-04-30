@@ -114,6 +114,10 @@ export default function PlaygroundPage() {
     } catch (err) { setError(err instanceof Error ? err.message : "Unknown error"); }
     finally { setLoading(false); }
   }
+  function updateMyStatus(status: string) {
+    if (!activeMatch || !selectedProfileId) return;
+    run({ action: "status", matchId: activeMatch.id, userId: selectedProfileId, status });
+  }
   function fromToText(p: Participant) { return `${kgById.get(p.from_kindergarten_id)?.name ?? "—"} → ${kgById.get(p.wants_kindergarten_id)?.name ?? "—"}`; }
   function chatTitle(c: Chat) {
     if (c.chat_type === "group") return "Групов чат";
