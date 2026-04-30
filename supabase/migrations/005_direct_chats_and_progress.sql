@@ -93,7 +93,7 @@ begin
 
   if remaining_count = 0 then
     update public.matches
-    set status = case when status in ('pending_confirmation', 'confirmed') then 'confirmed' else status end,
+    set status = case when status in ('pending_confirmation', 'confirmed') then 'confirmed'::match_status else status end,
         confirmed_at = coalesce(confirmed_at, now())
     where id = p_match_id;
 
@@ -225,7 +225,7 @@ begin
 
   update public.match_participants
   set coordination_status = 'dropped_out',
-      confirmation_status = case when confirmation_status = 'pending' then 'declined' else confirmation_status end,
+      confirmation_status = case when confirmation_status = 'pending' then 'declined'::confirmation_status else confirmation_status end,
       coordination_updated_at = now(),
       declined_at = case when confirmation_status = 'pending' then now() else declined_at end
   where id = participant_id;
@@ -235,14 +235,14 @@ begin
   where id in (select request_id from public.match_participants where match_id = p_match_id);
 
   update public.matches
-  set status = case when p_keep_chat then 'at_risk' else 'cancelled' end,
+  set status = case when p_keep_chat then 'at_risk'::match_status else 'cancelled'::match_status end,
       failure_reason = 'participant_left_match',
       cancelled_at = case when p_keep_chat then cancelled_at else now() end
   where id = p_match_id;
 
   if p_keep_chat then
     update public.chats
-    set status = case when status = 'locked' then 'active' else status end,
+    set status = case when status = 'locked' then 'active'::chat_status else status end,
         unlocked_at = coalesce(unlocked_at, now())
     where match_id = p_match_id;
   else
