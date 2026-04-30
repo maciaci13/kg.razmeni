@@ -38,8 +38,8 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
       : Promise.resolve({ data: [], error: null }),
     supabase.from("matches").select("id, match_type, status, confidence_score, created_at").order("created_at", { ascending: false }).limit(40),
     supabase.from("match_participants").select("id, match_id, user_id, participant_label, participant_order, confirmation_status, coordination_status, from_kindergarten_id, wants_kindergarten_id").order("participant_order"),
-    supabase.from("chats").select("id, match_id, chat_type, status").order("created_at", { ascending: false }).limit(40),
-    supabase.from("messages").select("id, chat_id, sender_user_id, body, moderation_flag, created_at").order("created_at", { ascending: true }).limit(100)
+    supabase.from("chats").select("id, match_id, chat_type, status, direct_user_1_id, direct_user_2_id").order("created_at", { ascending: false }).limit(80),
+    supabase.from("messages").select("id, chat_id, sender_user_id, body, moderation_flag, created_at").order("created_at", { ascending: true }).limit(200)
   ]);
 
   const errors = [kindergartens, requests, matches, participants, chats, messages].map((result) => result.error).filter(Boolean);
