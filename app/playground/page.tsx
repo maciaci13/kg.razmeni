@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { PlaygroundCycleSize, PlaygroundSnapshot } from "@/lib/playground";
 
@@ -167,6 +168,7 @@ export default function PlaygroundPage() {
 
   return (
     <main className="min-h-screen bg-paper px-4 py-5 text-ink"><div className="mx-auto max-w-md space-y-4">
+      <Link href="/" className="inline-flex items-center gap-2 rounded-full bg-white/85 px-4 py-3 text-sm font-black shadow-soft backdrop-blur">← Към приложението</Link>
       <header className="rounded-[2rem] bg-ink p-5 text-white shadow-soft"><p className="text-xs font-bold uppercase tracking-[0.22em] text-white/55">Playground</p><h1 className="mt-3 text-3xl font-black tracking-[-0.05em]">Прогресивен flow тест</h1><p className="mt-2 text-sm leading-6 text-white/70">Заявка → match покана → процес → чатове и статуси.</p></header>
       {error ? <div className="rounded-3xl bg-red-100 p-4 text-sm font-semibold text-red-900">{error}</div> : null}
 
