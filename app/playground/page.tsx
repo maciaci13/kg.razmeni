@@ -115,6 +115,11 @@ export default function PlaygroundPage() {
     }
   }
 
+  function updateParticipantStatus(participantUserId: string, status: string) {
+    if (!activeMatch) return;
+    run({ action: "status", matchId: activeMatch.id, userId: participantUserId, status });
+  }
+
   function createRequest() {
     if (!selectedProfileId || !fromKgId || !wantedKgId) {
       setError("Избери профил, текуща градина и желана градина.");
@@ -289,12 +294,23 @@ export default function PlaygroundPage() {
               const user = userById.get(participant.user_id);
               const fromKg = kindergartenById.get(participant.from_kindergarten_id);
               const wantsKg = kindergartenById.get(participant.wants_kindergarten_id);
+              const isSelectedParticipant = participant.user_id === selectedProfileId;
               return (
-                <div key={participant.id} className={`rounded-3xl p-4 ${participant.user_id === selectedProfileId ? "bg-ink text-white" : "bg-paper"}`}>
-                  <p className={`text-xs font-bold uppercase tracking-[0.18em] ${participant.user_id === selectedProfileId ? "text-white/45" : "text-ink/45"}`}>Ред {index + 1}</p>
-                  <p className="mt-1 font-black">{participant.user_id === selectedProfileId ? "Ти" : user?.display_name}</p>
+                <div key={participant.id} className={`rounded-3xl p-4 ${isSelectedParticipant ? "bg-ink text-white" : "bg-paper"}`}>
+                  <p className={`text-xs font-bold uppercase tracking-[0.18em] ${isSelectedParticipant ? "text-white/45" : "text-ink/45"}`}>Ред {index + 1}</p>
+                  <p className="mt-1 font-black">{isSelectedParticipant ? "Ти" : user?.display_name}</p>
                   <p className="mt-2 text-sm font-semibold">{fromKg?.name} → {wantsKg?.name}</p>
-                  <p className={`mt-2 text-xs ${participant.user_id === selectedProfileId ? "text-white/60" : "text-ink/55"}`}>Потвърждение: {participant.confirmation_status} · Статус: {statusLabel(participant.coordination_status)}</p>
+                  <p className={`mt-2 text-xs ${isSelectedParticipant ? "text-white/60" : "text-ink/55"}`}>Потвърждение: {participant.confirmation_status}</p>
+                  <label className={`mt-4 block text-[10px] font-black uppercase tracking-[0.18em] ${isSelectedParticipant ? "text-white/45" : "text-ink/40"}`}>Статус в процеса</label>
+                  <select
+                    value={participant.coordination_status}
+                    disabled={loading || !activeMatch || !allConfirmed}
+                    onChange={(event) => updateParticipantStatus(participant.user_id, event.target.value)}
+                    className={`mt-2 w-full rounded-2xl px-4 py-3 text-xs font-black outline-none disabled:opacity-50 ${isSelectedParticipant ? "bg-white text-ink" : "bg-milk text-ink"}`}
+                  >
+                    {statusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                  {!allConfirmed ? <p className={`mt-2 text-[11px] ${isSelectedParticipant ? "text-white/50" : "text-ink/45"}`}>Отключва се след приемане от всички страни.</p> : null}
                 </div>
               );
             })}
