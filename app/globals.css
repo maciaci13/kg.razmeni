@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  --background: #fbfaf8;
+  --background: #fffcfa;
   --foreground: #1c1b19;
   --study-orange: #f95e08;
   --study-orange-2: #fe8118;
-  --study-cream: #fbfaf8;
+  --study-cream: #fffcfa;
   --study-soft: #f7f5ef;
   --study-yellow: #ecedc7;
   --study-green: #d9e7cb;
@@ -15,15 +15,13 @@
   --study-blue: #d2e4e2;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html,
 body {
   min-height: 100%;
   margin: 0;
-  background: var(--background);
+  background: #fffcfa;
   color: var(--foreground);
 }
 
@@ -31,22 +29,24 @@ body {
   font-family: var(--font-sofia-sans), Sofia Sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
 
 .paper-texture {
-  background-image: radial-gradient(rgba(28, 27, 25, 0.045) 1px, transparent 1px);
-  background-size: 18px 18px;
+  background-image: radial-gradient(rgba(28, 27, 25, 0.03) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
-/* Playground dropdown chevrons — uses uploaded SVG assets. */
-.pointer-events-none.absolute.right-5.top-1\/2.-translate-y-1\/2 {
-  width: 16px;
-  height: 16px;
-  color: transparent;
-  background-color: #1c1b198c;
+/* Dropdown chevrons — uses uploaded SVG assets. */
+.pointer-events-none.absolute.right-5.top-1\/2.-translate-y-1\/2,
+.app-select-chevron {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  background-color: rgba(28, 27, 25, 0.58);
   mask: url('/icons/angle-down.svg') center / contain no-repeat;
   -webkit-mask: url('/icons/angle-down.svg') center / contain no-repeat;
 }
@@ -58,15 +58,13 @@ a {
   flex: 0 0 auto;
   margin-right: 2px;
   background: #1c1b19;
-  opacity: 0.82;
+  opacity: 0.78;
   mask: url('/icons/angle-down.svg') center / contain no-repeat;
   -webkit-mask: url('/icons/angle-down.svg') center / contain no-repeat;
   transition: transform 180ms ease;
 }
 
-.playground-toggle-icon.is-open {
-  transform: rotate(180deg);
-}
+.playground-toggle-icon.is-open { transform: rotate(180deg); }
 
 /* Keep the leave confirmation as a true top modal on mobile browsers. */
 main > div.fixed.inset-0.z-50,
@@ -112,103 +110,55 @@ button .grid.h-8.w-8.shrink-0.place-items-center.rounded-full.bg-white\/85.text-
   -webkit-mask-image: url('/icons/angle-up.svg');
 }
 
-/* Premium brandbook background. */
+/* Clean premium app background. */
 main.min-h-screen.bg-paper {
-  background:
-    radial-gradient(circle at 8% 4%, rgba(236, 237, 199, 0.9), transparent 20rem),
-    radial-gradient(circle at 92% 8%, rgba(210, 228, 226, 0.78), transparent 19rem),
-    radial-gradient(circle at 12% 86%, rgba(222, 209, 232, 0.52), transparent 22rem),
-    radial-gradient(circle at 80% 70%, rgba(217, 231, 203, 0.58), transparent 20rem),
-    linear-gradient(180deg, #fbfaf8 0%, #fbfaf8 45%, #f7f5ef 100%) !important;
+  background: #fffcfa !important;
 }
 
-main.min-h-screen.bg-paper > div {
-  position: relative;
-}
-
-main.min-h-screen.bg-paper > div::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.16;
-  background-image:
-    radial-gradient(rgba(28, 27, 25, 0.05) 1px, transparent 1px),
-    linear-gradient(120deg, transparent 0 44%, rgba(255,255,255,0.7) 44% 47%, transparent 47% 100%);
-  background-size: 22px 22px, 26rem 26rem;
-}
+main.min-h-screen.bg-paper > div { position: relative; }
+main.min-h-screen.bg-paper > div::before { display: none !important; }
 
 main header.rounded-\[2rem\].bg-ink {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(251, 250, 248, 0.84)),
-    radial-gradient(circle at 80% 10%, rgba(249, 94, 8, 0.16), transparent 8rem) !important;
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 252, 250, 0.9)),
+    radial-gradient(circle at 80% 10%, rgba(249, 94, 8, 0.08), transparent 8rem) !important;
   color: #1c1b19 !important;
   border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 24px 70px rgba(40, 34, 20, 0.09), inset 0 0 0 1px rgba(28, 27, 25, 0.035) !important;
+  box-shadow: 0 18px 44px rgba(40, 34, 20, 0.055), inset 0 0 0 1px rgba(28, 27, 25, 0.025) !important;
   backdrop-filter: blur(14px);
 }
 
 main header .text-white\/55,
-main header .text-white\/70 {
-  color: rgba(28, 27, 25, 0.58) !important;
-}
-
-main header p:first-child {
-  color: var(--study-orange) !important;
-}
+main header .text-white\/70 { color: rgba(28, 27, 25, 0.58) !important; }
+main header p:first-child { color: var(--study-orange) !important; }
 
 main section.rounded-\[2rem\].bg-milk {
-  background: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
   border: 1px solid rgba(255, 255, 255, 0.96);
-  box-shadow: 0 18px 48px rgba(40, 34, 20, 0.075), inset 0 0 0 1px rgba(28, 27, 25, 0.035) !important;
+  box-shadow: 0 14px 36px rgba(40, 34, 20, 0.048), inset 0 0 0 1px rgba(28, 27, 25, 0.028) !important;
   backdrop-filter: blur(16px);
 }
 
-main .bg-paper {
-  background-color: rgba(247, 245, 239, 0.92) !important;
-}
-
-main .bg-beige {
-  background-color: #f7f5ef !important;
-}
+main .bg-paper { background-color: rgba(247, 245, 239, 0.9) !important; }
+main .bg-beige { background-color: #f7f5ef !important; }
 
 main .bg-orange,
 main button.bg-ink,
 main .bg-ink.text-white:not(header),
 main .bg-ink.px-4,
 main .bg-ink.px-3,
-main .bg-ink.rounded-\[1\.4rem\] {
-  background-color: var(--study-orange) !important;
-}
+main .bg-ink.rounded-\[1\.4rem\] { background-color: var(--study-orange) !important; }
 
-main .bg-lime {
-  background-color: var(--study-green) !important;
-}
-
-main .bg-\[\#D8D5FF\],
-main .bg-\[\#DED1E8\] {
-  background-color: var(--study-lavender) !important;
-}
-
-main .bg-\[\#FFE2A8\],
-main .bg-\[\#ECECC7\] {
-  background-color: var(--study-yellow) !important;
-}
-
-main .bg-\[\#D2E4E2\] {
-  background-color: var(--study-blue) !important;
-}
-
-main .bg-\[\#FFD2C5\] {
-  background-color: #ffe1d5 !important;
-}
+main .bg-lime { background-color: var(--study-green) !important; }
+main .bg-\[\#D8D5FF\], main .bg-\[\#DED1E8\] { background-color: var(--study-lavender) !important; }
+main .bg-\[\#FFE2A8\], main .bg-\[\#ECECC7\] { background-color: var(--study-yellow) !important; }
+main .bg-\[\#D2E4E2\] { background-color: var(--study-blue) !important; }
+main .bg-\[\#FFD2C5\] { background-color: #ffe1d5 !important; }
 
 main button,
 main select,
 main textarea,
-main input {
-  box-shadow: inset 0 0 0 1px rgba(28, 27, 25, 0.025);
-}
+main input { box-shadow: inset 0 0 0 1px rgba(28, 27, 25, 0.02); }
 
 main button.rounded-2xl,
 main button.rounded-full,
@@ -218,14 +168,13 @@ main .rounded-\[1\.5rem\],
 main .rounded-\[1\.6rem\],
 main .rounded-\[1\.75rem\],
 main .rounded-\[1\.8rem\],
-main .rounded-\[2\.2rem\] {
-  box-shadow: 0 12px 32px rgba(33, 28, 17, 0.055);
-}
+main .rounded-\[2\.2rem\] { box-shadow: 0 10px 24px rgba(33, 28, 17, 0.04); }
 
-main .text-orange {
-  color: var(--study-orange) !important;
-}
+main .text-orange { color: var(--study-orange) !important; }
+main .shadow-soft { box-shadow: 0 16px 40px rgba(40, 34, 20, 0.055) !important; }
 
-main .shadow-soft {
-  box-shadow: 0 22px 62px rgba(40, 34, 20, 0.085) !important;
-}
+main h1,
+main h2,
+main h3,
+main .font-black,
+main .font-extrabold { font-weight: 800 !important; }
