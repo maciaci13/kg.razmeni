@@ -32,3 +32,40 @@ a {
   background-image: radial-gradient(rgba(23, 23, 18, 0.045) 1px, transparent 1px);
   background-size: 18px 18px;
 }
+
+/* Playground dropdown chevrons — uses uploaded SVG assets. */
+.pointer-events-none.absolute.right-5.top-1\/2.-translate-y-1\/2 {
+  width: 16px;
+  height: 16px;
+  color: transparent;
+  background-color: currentColor;
+  background-color: #1717128c;
+  mask: url('/icons/angle-down.svg') center / contain no-repeat;
+  -webkit-mask: url('/icons/angle-down.svg') center / contain no-repeat;
+}
+
+button[aria-expanded="true"] .playground-chevron,
+.playground-chevron-up {
+  mask-image: url('/icons/angle-up.svg');
+  -webkit-mask-image: url('/icons/angle-up.svg');
+}
+
+button .grid.h-8.w-8.shrink-0.place-items-center.rounded-full.bg-white\/85.text-xl.font-black.leading-none.text-ink.transition-transform {
+  color: transparent;
+  background-color: rgba(255, 255, 255, 0.85);
+  position: relative;
+}
+
+button .grid.h-8.w-8.shrink-0.place-items-center.rounded-full.bg-white\/85.text-xl.font-black.leading-none.text-ink.transition-transform::after {
+  content: "";
+  width: 13px;
+  height: 13px;
+  background: #171712;
+  mask: url('/icons/angle-down.svg') center / contain no-repeat;
+  -webkit-mask: url('/icons/angle-down.svg') center / contain no-repeat;
+}
+
+button .grid.h-8.w-8.shrink-0.place-items-center.rounded-full.bg-white\/85.text-xl.font-black.leading-none.text-ink.transition-transform.rotate-180::after {
+  mask-image: url('/icons/angle-up.svg');
+  -webkit-mask-image: url('/icons/angle-up.svg');
+}
