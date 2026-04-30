@@ -15,9 +15,17 @@ export type PlaygroundSnapshot = {
     id: string;
     user_id: string;
     from_kindergarten_id: string;
+    request_type: string;
+    status: string;
     is_active: boolean;
     is_locked: boolean;
     child_group_year_or_age_group: string;
+  }>;
+  wantedKindergartens: Array<{
+    id: string;
+    request_id: string;
+    wanted_kindergarten_id: string;
+    priority_order: number;
   }>;
   matches: Array<{
     id: string;
