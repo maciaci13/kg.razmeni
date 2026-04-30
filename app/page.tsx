@@ -14,6 +14,7 @@ const tabs: { id: AppTab; label: string; icon: string }[] = [
 ];
 
 const matchSteps = ["Потвърждение", "Чатове", "Проверка", "Готовност", "Действия", "Резултат"];
+const placeTypes = ["Общ ред", "СОП", "Хронични заболявания", "Социални критерии"];
 
 function AppShell({ children }: { children: React.ReactNode }) {
   return <div className="mx-auto max-w-md space-y-5 pb-6">{children}</div>;
@@ -30,10 +31,7 @@ function TopBar() {
           <i className="h-2 w-2 rounded-sm border-2 border-ink/70" />
         </span>
       </button>
-      <div className="flex items-center gap-2 rounded-[1.35rem] bg-white/70 p-2 shadow-soft backdrop-blur">
-        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#F7C948] text-lg">♛</div>
-        <span className="pr-2 text-sm font-bold text-ink/70">Подкрепи</span>
-      </div>
+      <div className="rounded-[1.35rem] bg-white/70 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-ink/45 shadow-soft backdrop-blur">София</div>
     </div>
   );
 }
@@ -80,7 +78,7 @@ function HomeTab({ setTab }: { setTab: (tab: AppTab) => void }) {
           <button className="rounded-full bg-white/80 px-4 py-2 text-xs font-bold shadow-soft">Виж всички</button>
         </div>
         <InsightCard category="Безопасност" title="Преди да пишеш на други родители" body="Не споделяй ЕГН, документи или данни на детето в чата. Координацията е само информативна." tone="bg-[#ECECC7]" />
-        <InsightCard category="Следваща стъпка" title="Провери дали заявката е точна" body="Наборът, районът и желаното заведение са критични за качествен match." tone="bg-[#DED1E8]" />
+        <InsightCard category="Важно за match" title="Типът място трябва да съвпада" body="Общ ред, СОП, хронични заболявания и социални критерии не се смесват в един цикъл." tone="bg-[#DED1E8]" />
       </section>
     </AppShell>
   );
@@ -95,10 +93,12 @@ function RequestsTab() {
         <div className="rounded-[1.8rem] bg-paper p-4">
           <FormField icon="⌂" label="Сегашно заведение" value="ДГ „Слънце“" />
           <FormField icon="⌁" label="Желано заведение" value="ДГ „Дъга“" />
-          <FormField icon="◷" label="Набор / група" value="2019 · IV група" last />
+          <FormField icon="◷" label="Набор / група" value="2019 · IV група" />
+          <FormField icon="◌" label="Тип място" value="Общ ред" last />
         </div>
+        <PlaceTypeSelector />
         <button className="mt-4 w-full rounded-full bg-orange px-5 py-4 text-sm font-black text-white shadow-soft">Активирай заявка</button>
-        <p className="mt-3 text-center text-xs font-medium leading-5 text-ink/45">Заявката ще се скрие автоматично при потенциален цикъл.</p>
+        <p className="mt-3 text-center text-xs font-medium leading-5 text-ink/45">Системата ще търси съвпадения само между заявки от същия тип място.</p>
       </section>
 
       <section className="space-y-3">
@@ -117,7 +117,7 @@ function MatchesTab() {
       <section className="rounded-[2.2rem] bg-white/90 p-4 shadow-soft backdrop-blur">
         <div className="flex items-center justify-between rounded-[1.7rem] bg-lime p-4">
           <div><p className="text-xs font-black uppercase tracking-[0.22em] text-ink/45">Confidence</p><p className="mt-1 text-3xl font-black tracking-[-0.06em]">88%</p></div>
-          <span className="rounded-full bg-white/80 px-4 py-2 text-xs font-black">3 страни</span>
+          <span className="rounded-full bg-white/80 px-4 py-2 text-xs font-black">Общ ред · 3 страни</span>
         </div>
         <div className="mt-4 space-y-3 rounded-[1.8rem] bg-paper p-4">
           <CycleRow index="Ти" title="ДГ „Слънце“ → ДГ „Дъга“" tone="bg-orange text-white" />
@@ -179,15 +179,21 @@ function ProfileTab() {
       <section className="rounded-[2.2rem] bg-white/90 p-5 shadow-soft backdrop-blur">
         <p className="text-xs font-black uppercase tracking-[0.2em] text-ink/40">Настройки</p>
         <div className="mt-4 space-y-3">
-          <SettingsRow title="Данни за детето" body="Набор, район и тип заведение" />
+          <SettingsRow title="Данни за детето" body="Набор, район и тип място" />
           <SettingsRow title="Поверителност" body="Показваме само нужното за координация" />
           <SettingsRow title="Правила и безопасност" body="Без продажба, гаранции и неофициални обещания" />
         </div>
       </section>
-      <Link href="/playground" className="block rounded-[1.8rem] bg-ink p-5 text-white shadow-soft">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-white/50">Само за тестове</p>
-        <p className="mt-2 text-xl font-black">Отвори симулатора</p>
-      </Link>
+      <section className="grid grid-cols-2 gap-3">
+        <button className="rounded-[1.8rem] bg-[#ECECC7] p-5 text-left shadow-soft">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-ink/40">Каузата</p>
+          <p className="mt-2 text-lg font-black leading-tight">Подкрепи проекта</p>
+        </button>
+        <Link href="/playground" className="rounded-[1.8rem] bg-ink p-5 text-white shadow-soft">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-white/50">Тестове</p>
+          <p className="mt-2 text-lg font-black leading-tight">Симулатор</p>
+        </Link>
+      </section>
     </AppShell>
   );
 }
@@ -208,8 +214,12 @@ function FormField({ icon, label, value, last = false }: { icon: string; label: 
   return <div className={`flex items-center gap-3 py-3 ${last ? "" : "border-b border-ink/5"}`}><span className="grid h-11 w-11 place-items-center rounded-full bg-[#FFF0E3] text-lg">{icon}</span><div className="flex-1"><p className="text-xs font-black uppercase tracking-[0.18em] text-ink/35">{label}</p><p className="mt-1 text-base font-black">{value}</p></div><span className="text-2xl text-ink/35">⌄</span></div>;
 }
 
+function PlaceTypeSelector() {
+  return <div className="mt-4 rounded-[1.8rem] bg-[#F7F5EF] p-3"><p className="px-2 text-[10px] font-black uppercase tracking-[0.2em] text-ink/35">Тип място</p><div className="mt-3 grid grid-cols-2 gap-2">{placeTypes.map((type, index) => <button key={type} className={`rounded-2xl px-3 py-3 text-left text-xs font-black ${index === 0 ? "bg-orange text-white" : "bg-white/75"}`}>{type}</button>)}</div></div>;
+}
+
 function RequestCard() {
-  return <div className="rounded-[2rem] bg-[#ECECC7] p-5 shadow-soft"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-ink/40">Активна</p><h3 className="mt-2 text-xl font-black leading-tight">ДГ „Слънце“ → ДГ „Дъга“</h3><p className="mt-2 text-sm font-semibold text-ink/55">2019 · IV група</p></div><span className="rounded-full bg-white/65 px-3 py-2 text-xs font-black">ON</span></div><div className="mt-5 grid grid-cols-2 gap-2"><button className="rounded-full bg-white/65 px-4 py-3 text-xs font-black">Деактивирай</button><button className="rounded-full bg-ink px-4 py-3 text-xs font-black text-white">Изтрий</button></div></div>;
+  return <div className="rounded-[2rem] bg-[#ECECC7] p-5 shadow-soft"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-ink/40">Активна · Общ ред</p><h3 className="mt-2 text-xl font-black leading-tight">ДГ „Слънце“ → ДГ „Дъга“</h3><p className="mt-2 text-sm font-semibold text-ink/55">2019 · IV група</p></div><span className="rounded-full bg-white/65 px-3 py-2 text-xs font-black">ON</span></div><div className="mt-5 grid grid-cols-2 gap-2"><button className="rounded-full bg-white/65 px-4 py-3 text-xs font-black">Деактивирай</button><button className="rounded-full bg-ink px-4 py-3 text-xs font-black text-white">Изтрий</button></div></div>;
 }
 
 function CycleRow({ index, title, tone }: { index: string; title: string; tone: string }) {
@@ -245,17 +255,13 @@ export default function HomePage() {
     <main className="min-h-screen bg-paper px-4 pb-28 pt-5 text-ink">
       {Active}
       <nav className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-[2.4rem] bg-white/88 p-2 shadow-soft backdrop-blur">
-        <div className="grid grid-cols-6 items-end gap-1">
+        <div className="grid grid-cols-5 items-end gap-1">
           {tabs.map((item) => (
             <button key={item.id} onClick={() => setTab(item.id)} className={`rounded-[1.55rem] px-2 py-3 text-[10px] font-black transition ${tab === item.id ? "bg-orange text-white shadow-soft" : "text-ink/55"}`}>
               <span className="block text-lg leading-none">{item.icon}</span>
               <span className="mt-1 block">{item.label}</span>
             </button>
           ))}
-          <Link href="/playground" className="rounded-[1.55rem] px-2 py-3 text-center text-[10px] font-black text-ink/55">
-            <span className="block text-lg leading-none">⌘</span>
-            <span className="mt-1 block">Сим.</span>
-          </Link>
         </div>
       </nav>
     </main>
