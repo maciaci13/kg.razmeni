@@ -45,10 +45,44 @@ a {
   width: 16px;
   height: 16px;
   color: transparent;
-  background-color: currentColor;
   background-color: #1717128c;
   mask: url('/icons/angle-down.svg') center / contain no-repeat;
   -webkit-mask: url('/icons/angle-down.svg') center / contain no-repeat;
+}
+
+.playground-toggle-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-right: 2px;
+  background: #171712;
+  opacity: 0.82;
+  mask: url('/icons/angle-down.svg') center / contain no-repeat;
+  -webkit-mask: url('/icons/angle-down.svg') center / contain no-repeat;
+  transition: transform 180ms ease;
+}
+
+.playground-toggle-icon.is-open {
+  transform: rotate(180deg);
+}
+
+/* Keep the leave confirmation as a true top modal on mobile browsers. */
+main > div.fixed.inset-0.z-50,
+main .fixed.inset-0.z-50[role="dialog"] {
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding: 28px 16px 0 !important;
+  overflow-y: auto !important;
+}
+
+main > div.fixed.inset-0.z-50 > div,
+main .fixed.inset-0.z-50[role="dialog"] > div {
+  margin-top: 0 !important;
+  margin-bottom: auto !important;
 }
 
 button[aria-expanded="true"] .playground-chevron,
