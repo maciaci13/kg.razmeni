@@ -7,12 +7,15 @@ export const dynamic = "force-dynamic";
 type PlaygroundAction =
   | { action: "snapshot" }
   | { action: "reset" }
+  | { action: "setupBase" }
   | { action: "seed"; cycleSize: PlaygroundCycleSize }
   | { action: "confirm"; matchId: string; userId: string }
   | { action: "decline"; matchId: string; userId: string }
   | { action: "status"; matchId: string; userId: string; status: string }
   | { action: "message"; chatId: string; userId: string; body: string }
-  | { action: "createRequest"; userId: string; fromKindergartenId: string; wantedKindergartenId: string; ageGroup?: string };
+  | { action: "createRequest"; userId: string; fromKindergartenId: string; wantedKindergartenId: string; ageGroup?: string }
+  | { action: "deactivateRequest"; requestId: string }
+  | { action: "deleteRequest"; requestId: string };
 
 function assertPlaygroundEnabled() {
   if (process.env.NEXT_PUBLIC_ENABLE_PLAYGROUND !== "true") {
@@ -40,10 +43,11 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
           .from("swap_requests")
           .select("id, user_id, from_kindergarten_id, request_type, status, is_active, is_locked, child_group_year_or_age_group")
           .in("user_id", userIds)
+          .order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
-    supabase.from("matches").select("id, match_type, status, confidence_score, created_at").order("created_at", { ascending: false }).limit(20),
+    supabase.from("matches").select("id, match_type, status, confidence_score, created_at").order("created_at", { ascending: false }).limit(40),
     supabase.from("match_participants").select("id, match_id, user_id, participant_label, participant_order, confirmation_status, coordination_status, from_kindergarten_id, wants_kindergarten_id").order("participant_order"),
-    supabase.from("chats").select("id, match_id, chat_type, status").order("created_at", { ascending: false }).limit(20),
+    supabase.from("chats").select("id, match_id, chat_type, status").order("created_at", { ascending: false }).limit(40),
     supabase.from("messages").select("id, chat_id, sender_user_id, body, moderation_flag, created_at").order("created_at", { ascending: true }).limit(100)
   ]);
 
@@ -93,12 +97,16 @@ export async function POST(request: Request) {
     const body = (await request.json()) as PlaygroundAction;
     const supabase = createSupabaseAdminClient();
 
-    if (body.action === "snapshot") {
-      return NextResponse.json(await getSnapshot());
-    }
+    if (body.action === "snapshot") return NextResponse.json(await getSnapshot());
 
     if (body.action === "reset") {
       const { error } = await supabase.rpc("reset_playground_data");
+      if (error) throw new Error(error.message);
+      return NextResponse.json(await getSnapshot());
+    }
+
+    if (body.action === "setupBase") {
+      const { error } = await supabase.rpc("seed_playground_base");
       if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
@@ -133,6 +141,21 @@ export async function POST(request: Request) {
       const { error: matchError } = await supabase.rpc("find_potential_matches_for_request", { p_request_id: request.id });
       if (matchError) throw new Error(matchError.message);
 
+      return NextResponse.json(await getSnapshot());
+    }
+
+    if (body.action === "deactivateRequest") {
+      const { error } = await supabase
+        .from("swap_requests")
+        .update({ is_active: false, is_locked: false, lock_reason: null })
+        .eq("id", body.requestId);
+      if (error) throw new Error(error.message);
+      return NextResponse.json(await getSnapshot());
+    }
+
+    if (body.action === "deleteRequest") {
+      const { error } = await supabase.from("swap_requests").delete().eq("id", body.requestId);
+      if (error) throw new Error(error.message);
       return NextResponse.json(await getSnapshot());
     }
 
