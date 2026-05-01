@@ -5,7 +5,7 @@ import { useEffect } from "react";
 const PREF_KEY = "mzm.profile.defaults.v2";
 const COLLAPSE_KEY = "mzm.request.form.collapsed.v1";
 
-const SOFIA_DISTRICTS = [
+const FALLBACK_DISTRICTS = [
   "Банкя",
   "Витоша",
   "Връбница",
@@ -34,14 +34,38 @@ const SOFIA_DISTRICTS = [
 
 const PLACE_TYPES = ["Общ ред", "СОП", "Хронични заболявания", "Социални критерии"];
 
-function getYears() {
+type Catalog = {
+  generatedAt: string;
+  districts: string[];
+  years: string[];
+  sources: Array<{ id: string; label: string; status: "ok" | "error" | "fallback"; checkedAt: string; detail?: string }>;
+};
+
+let catalogCache: Catalog | null = null;
+let catalogPromise: Promise<Catalog | null> | null = null;
+
+function getFallbackYears() {
   const currentYear = new Date().getFullYear();
   const preparatoryYear = currentYear - 6;
   const years: string[] = [];
-  for (let year = currentYear; year >= preparatoryYear; year -= 1) {
-    years.push(String(year));
-  }
+  for (let year = currentYear; year >= preparatoryYear; year -= 1) years.push(String(year));
   return years;
+}
+
+async function loadCatalog() {
+  if (catalogCache) return catalogCache;
+  if (catalogPromise) return catalogPromise;
+
+  catalogPromise = fetch("/api/catalog", { cache: "no-store" })
+    .then((response) => response.ok ? response.json() : null)
+    .then((data) => {
+      if (!data || !Array.isArray(data.districts) || !Array.isArray(data.years)) return null;
+      catalogCache = data as Catalog;
+      return catalogCache;
+    })
+    .catch(() => null);
+
+  return catalogPromise;
 }
 
 function getPrefs() {
@@ -122,9 +146,7 @@ function hideOriginalFields(section: Element, fields: ReturnType<typeof findOrig
 
   Array.from(section.querySelectorAll<HTMLElement>("div"))
     .filter((node) => (node.textContent || "").includes("Тип място") && node.querySelector("button"))
-    .forEach((node) => {
-      node.style.display = "none";
-    });
+    .forEach((node) => { node.style.display = "none"; });
 }
 
 function collapseIfNeeded(section: HTMLElement) {
@@ -148,7 +170,25 @@ function collapseIfNeeded(section: HTMLElement) {
   });
 }
 
-function enhanceSection(section: HTMLElement) {
+function buildCatalogStatus(catalog: Catalog | null) {
+  const status = document.createElement("div");
+  status.className = "mzm-catalog-status";
+
+  if (!catalog) {
+    status.textContent = "Данните се зареждат от локален резервен списък. Официалните източници ще се проверят отново автоматично.";
+    return status;
+  }
+
+  const okCount = catalog.sources.filter((source) => source.status === "ok").length;
+  const fallback = catalog.sources.some((source) => source.status === "fallback");
+  const date = new Date(catalog.generatedAt).toLocaleString("bg-BG", { dateStyle: "short", timeStyle: "short" });
+  status.textContent = fallback
+    ? `Източници проверени: ${date}. Някои данни са fallback, докато официалният формат се нормализира.`
+    : `Източници проверени: ${date}. Активни източници: ${okCount}.`;
+  return status;
+}
+
+async function enhanceSection(section: HTMLElement) {
   if (section.dataset.mzmEnhancedRequest === "true") return;
   const text = section.textContent || "";
   if (!text.includes("Имаме място") || !text.includes("Желана градина")) return;
@@ -158,22 +198,20 @@ function enhanceSection(section: HTMLElement) {
 
   section.dataset.mzmEnhancedRequest = "true";
 
+  const catalog = await loadCatalog();
   const prefs = getPrefs();
-  const years = getYears();
+  const years = catalog?.years?.length ? catalog.years : getFallbackYears();
+  const districts = catalog?.districts?.length ? catalog.districts : FALLBACK_DISTRICTS;
   const kgOptions = Array.from(fields.fromSelect.options)
     .filter((option) => option.value)
-    .map((option) => ({
-      value: option.value,
-      label: option.textContent || "",
-      district: getDistrict(option)
-    }));
+    .map((option) => ({ value: option.value, label: option.textContent || "", district: getDistrict(option) }));
 
   const panel = document.createElement("div");
   panel.className = "mzm-enhanced-request-panel";
 
   const [districtWrap, districtSelect] = makeSelect();
   districtSelect.appendChild(makeOption("", "Избери район"));
-  SOFIA_DISTRICTS.forEach((district) => districtSelect.appendChild(makeOption(district, district)));
+  districts.forEach((district) => districtSelect.appendChild(makeOption(district, district)));
   panel.appendChild(makeLabel("Район"));
   panel.appendChild(districtWrap);
 
@@ -201,11 +239,7 @@ function enhanceSection(section: HTMLElement) {
     button.type = "button";
     button.dataset.value = type;
     button.textContent = type;
-    button.addEventListener("click", () => {
-      selectedType = type;
-      syncTypeButtons();
-      maybeSavePrefs();
-    });
+    button.addEventListener("click", () => { selectedType = type; syncTypeButtons(); maybeSavePrefs(); });
     typeGrid.appendChild(button);
   });
 
@@ -230,43 +264,27 @@ function enhanceSection(section: HTMLElement) {
   panel.appendChild(fromWrap);
   panel.appendChild(makeLabel("Желана детска градина"));
   panel.appendChild(wantedWrap);
+  panel.appendChild(buildCatalogStatus(catalog));
 
   section.insertBefore(panel, section.firstChild);
   hideOriginalFields(section, fields);
 
-  function currentData() {
-    return {
-      district: districtSelect.value,
-      ageGroup: yearSelect.value,
-      placeType: selectedType
-    };
-  }
-
+  function currentData() { return { district: districtSelect.value, ageGroup: yearSelect.value, placeType: selectedType }; }
   function maybeSavePrefs() {
     if (!saveCheckbox.checked) return;
     const data = currentData();
     if (data.district || data.ageGroup || data.placeType) savePrefs(data);
   }
-
-  function syncYear() {
-    if (yearSelect.value) setNativeValue(fields.ageInput, yearSelect.value);
-    maybeSavePrefs();
-  }
-
+  function syncYear() { if (yearSelect.value) setNativeValue(fields.ageInput, yearSelect.value); maybeSavePrefs(); }
   function rebuildKgSelect(visibleSelect: HTMLSelectElement, originalSelect: HTMLSelectElement, placeholder: string) {
     const previous = visibleSelect.value || originalSelect.value;
     visibleSelect.innerHTML = "";
     visibleSelect.appendChild(makeOption("", placeholder));
-
     const district = districtSelect.value;
-    kgOptions
-      .filter((option) => !district || option.district === district)
-      .forEach((option) => visibleSelect.appendChild(makeOption(option.value, option.label)));
-
+    kgOptions.filter((option) => !district || option.district === district).forEach((option) => visibleSelect.appendChild(makeOption(option.value, option.label)));
     visibleSelect.value = previous && Array.from(visibleSelect.options).some((option) => option.value === previous) ? previous : "";
     setNativeValue(originalSelect, visibleSelect.value);
   }
-
   function rebuildAllKg() {
     rebuildKgSelect(fromVisible, fields.fromSelect!, "Избери сегашна градина");
     rebuildKgSelect(wantedVisible, fields.wantedSelect!, "Избери желана градина");
@@ -279,7 +297,7 @@ function enhanceSection(section: HTMLElement) {
   wantedVisible.addEventListener("change", () => setNativeValue(fields.wantedSelect, wantedVisible.value));
   saveCheckbox.addEventListener("change", maybeSavePrefs);
 
-  if (prefs?.district && SOFIA_DISTRICTS.includes(prefs.district)) districtSelect.value = prefs.district;
+  if (prefs?.district && districts.includes(prefs.district)) districtSelect.value = prefs.district;
   if (prefs?.ageGroup && years.includes(prefs.ageGroup)) yearSelect.value = prefs.ageGroup;
 
   syncTypeButtons();
@@ -300,124 +318,28 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = "mzm-request-enhancer-styles";
   style.textContent = `
-    .mzm-enhanced-request-panel {
-      display: grid !important;
-      gap: .72rem;
-      margin-bottom: 1rem;
-      border-radius: 1.75rem;
-      padding: 1rem;
-      background: rgba(247,245,239,.92);
-      box-shadow: inset 0 0 0 1px rgba(28,27,25,.025);
-    }
-    .mzm-enhanced-label {
-      margin-top: .35rem;
-      font-size: .64rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: .18em;
-      color: rgba(28,27,25,.42);
-    }
+    .mzm-enhanced-request-panel { display: grid !important; gap: .72rem; margin-bottom: 1rem; border-radius: 1.75rem; padding: 1rem; background: rgba(247,245,239,.92); box-shadow: inset 0 0 0 1px rgba(28,27,25,.025); }
+    .mzm-enhanced-label { margin-top: .35rem; font-size: .64rem; font-weight: 900; text-transform: uppercase; letter-spacing: .18em; color: rgba(28,27,25,.42); }
     .mzm-enhanced-select-wrap { position: relative; }
-    .mzm-enhanced-select {
-      width: 100%;
-      appearance: none;
-      border: 0;
-      outline: 0;
-      border-radius: 1.35rem;
-      background: rgba(255,255,255,.82);
-      padding: 1rem 3rem 1rem 1rem;
-      font-size: .88rem;
-      font-weight: 800;
-      color: #1c1b19;
-    }
-    .mzm-enhanced-select-wrap::after {
-      content: '';
-      position: absolute;
-      right: 1.15rem;
-      top: 50%;
-      width: 18px;
-      height: 18px;
-      transform: translateY(-50%);
-      background: rgba(28,27,25,.58);
-      mask: url('/icons/angle-down.svg') center/contain no-repeat;
-      -webkit-mask: url('/icons/angle-down.svg') center/contain no-repeat;
-      pointer-events: none;
-    }
-    .mzm-enhanced-type-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: .5rem;
-    }
-    .mzm-enhanced-type-grid button {
-      border: 0;
-      border-radius: 1.05rem;
-      padding: .85rem .75rem;
-      background: rgba(255,255,255,.75);
-      color: #1c1b19;
-      text-align: left;
-      font-weight: 900;
-      font-size: .75rem;
-    }
-    .mzm-enhanced-type-grid button.is-active {
-      background: var(--study-orange);
-      color: white;
-    }
-    .mzm-enhanced-save-row {
-      display: flex;
-      gap: .6rem;
-      align-items: center;
-      border-radius: 1.25rem;
-      background: rgba(255,255,255,.62);
-      padding: .85rem .9rem;
-      color: rgba(28,27,25,.65);
-      font-size: .76rem;
-      font-weight: 800;
-    }
-    .mzm-enhanced-save-row input {
-      width: 1rem;
-      height: 1rem;
-      accent-color: var(--study-orange);
-    }
-    .mzm-collapsed-request-button {
-      width: 100%;
-      border: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      border-radius: 1.6rem;
-      padding: 1rem 1.1rem;
-      background: rgba(255,255,255,.9);
-      color: #1c1b19;
-      text-align: left;
-      box-shadow: 0 14px 36px rgba(40,34,20,.05);
-    }
+    .mzm-enhanced-select { width: 100%; appearance: none; border: 0; outline: 0; border-radius: 1.35rem; background: rgba(255,255,255,.82); padding: 1rem 3rem 1rem 1rem; font-size: .88rem; font-weight: 800; color: #1c1b19; }
+    .mzm-enhanced-select-wrap::after { content: ''; position: absolute; right: 1.15rem; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); background: rgba(28,27,25,.58); mask: url('/icons/angle-down.svg') center/contain no-repeat; -webkit-mask: url('/icons/angle-down.svg') center/contain no-repeat; pointer-events: none; }
+    .mzm-enhanced-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .mzm-enhanced-type-grid button { border: 0; border-radius: 1.05rem; padding: .85rem .75rem; background: rgba(255,255,255,.75); color: #1c1b19; text-align: left; font-weight: 900; font-size: .75rem; }
+    .mzm-enhanced-type-grid button.is-active { background: var(--study-orange); color: white; }
+    .mzm-enhanced-save-row { display: flex; gap: .6rem; align-items: center; border-radius: 1.25rem; background: rgba(255,255,255,.62); padding: .85rem .9rem; color: rgba(28,27,25,.65); font-size: .76rem; font-weight: 800; }
+    .mzm-enhanced-save-row input { width: 1rem; height: 1rem; accent-color: var(--study-orange); }
+    .mzm-catalog-status { border-radius: 1.1rem; padding: .78rem .9rem; background: rgba(255,255,255,.62); color: rgba(28,27,25,.5); font-size: .72rem; line-height: 1.35; font-weight: 800; }
+    .mzm-collapsed-request-button { width: 100%; border: 0; display: flex; justify-content: space-between; align-items: center; gap: 1rem; border-radius: 1.6rem; padding: 1rem 1.1rem; background: rgba(255,255,255,.9); color: #1c1b19; text-align: left; box-shadow: 0 14px 36px rgba(40,34,20,.05); }
     .mzm-collapsed-request-button b { display: block; font-size: 1rem; }
-    .mzm-collapsed-request-button small {
-      display: block;
-      margin-top: .22rem;
-      color: rgba(28,27,25,.48);
-      font-weight: 700;
-      line-height: 1.3;
-    }
-    .mzm-collapsed-request-button i {
-      display: grid;
-      place-items: center;
-      width: 2.2rem;
-      height: 2.2rem;
-      border-radius: 999px;
-      background: var(--study-orange);
-      color: white;
-      font-style: normal;
-      font-weight: 900;
-    }
+    .mzm-collapsed-request-button small { display: block; margin-top: .22rem; color: rgba(28,27,25,.48); font-weight: 700; line-height: 1.3; }
+    .mzm-collapsed-request-button i { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 999px; background: var(--study-orange); color: white; font-style: normal; font-weight: 900; }
   `;
   document.head.appendChild(style);
 }
 
 function runEnhancer() {
   injectStyles();
-  Array.from(document.querySelectorAll<HTMLElement>("section")).forEach(enhanceSection);
+  Array.from(document.querySelectorAll<HTMLElement>("section")).forEach((section) => { void enhanceSection(section); });
 }
 
 export default function RequestFormEnhancer() {
@@ -426,17 +348,12 @@ export default function RequestFormEnhancer() {
     const schedule = () => {
       if (scheduled) return;
       scheduled = true;
-      window.requestAnimationFrame(() => {
-        scheduled = false;
-        runEnhancer();
-      });
+      window.requestAnimationFrame(() => { scheduled = false; runEnhancer(); });
     };
-
     schedule();
     const observer = new MutationObserver(schedule);
     observer.observe(document.documentElement, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, []);
-
   return null;
 }
