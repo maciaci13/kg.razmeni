@@ -2,6 +2,12 @@
 
 import { useEffect } from "react";
 
+function removeInternalCatalogSeparators(select: HTMLSelectElement) {
+  Array.from(select.options)
+    .filter((option) => (option.textContent || "").includes("Само в официалния каталог"))
+    .forEach((option) => option.remove());
+}
+
 function makeCatalogOptionSelectable(option: HTMLOptionElement) {
   if (!option.value.startsWith("unavailable:")) return;
   const catalogId = option.value.replace("unavailable:", "");
@@ -34,6 +40,7 @@ function bridgeCatalogSelections(section: HTMLElement) {
   const nativeSelects = getKgNativeSelects(section);
 
   institutionSelects.forEach((select, index) => {
+    removeInternalCatalogSeparators(select);
     Array.from(select.options).forEach(makeCatalogOptionSelectable);
     if (select.dataset.mzmCatalogBridge === "true") return;
     select.dataset.mzmCatalogBridge = "true";
