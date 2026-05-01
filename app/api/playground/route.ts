@@ -78,7 +78,7 @@ async function leaveMatchDirectly(supabase: ReturnType<typeof createSupabaseAdmi
   if (requestIds.length > 0) {
     const { error: unlockRequestsError } = await supabase
       .from("swap_requests")
-      .update({ is_locked: false, lock_reason: null })
+      .update({ is_active: true, is_locked: false, lock_reason: null })
       .in("id", requestIds);
     if (unlockRequestsError) throw new Error(unlockRequestsError.message);
   }
@@ -122,7 +122,7 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
   const userIds = (users.data ?? []).map((user) => user.id);
 
   const [kindergartens, requests, matches, participants] = await Promise.all([
-    supabase.from("kindergartens").select("id, name, district").eq("source_name", "playground").order("official_number"),
+    supabase.from("kindergartens").select("id, name, district").eq("is_active", true).order("district").order("name"),
     userIds.length > 0
       ? supabase.from("swap_requests").select("id, user_id, from_kindergarten_id, request_type, status, is_active, is_locked, child_group_year_or_age_group").in("user_id", userIds).order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
