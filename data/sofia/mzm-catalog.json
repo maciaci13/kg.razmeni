@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-05-01T16:00:00+03:00",
+  "source": "kg.sofia.bg manual UI extraction from user screenshots",
+  "schemaVersion": "mzm.catalog.v1",
+  "notes": [
+    "Дубликати не се чистят. Всеки ред от ИСОДЗ се пази като отделна локация/организация.",
+    "Този файл е structured source за МястоЗаМясто. Съдържа rawEntries и institutions с locations.",
+    "Данните са от подадените скрийншотове и предходния архив; при следващ sync се допълват 1:1."
+  ],
+  "rawEntries": [],
+  "institutions": [],
+  "districts": []
+}
