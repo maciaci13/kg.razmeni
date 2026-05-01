@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
+import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
 import RequestFormEnhancer from "./RequestFormEnhancer";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
 import "./globals.css";
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="bg">
       <body className={sofiaSans.className}>
         {children}
+        <HomeGuidanceEnhancer />
         <RequestFormEnhancer />
         <ShareRequestEnhancer />
       </body>
