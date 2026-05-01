@@ -218,3 +218,7 @@ main:has(nav.fixed.bottom-4) section:has(.mzm-enhanced-request-panel) > button.m
 main:has(nav.fixed.bottom-4) section:has(.mzm-enhanced-request-panel) > p.mt-3.text-center {
   display: block !important;
 }
+
+main:has(nav.fixed.bottom-4) .mzm-catalog-status {
+  display: none !important;
+}
