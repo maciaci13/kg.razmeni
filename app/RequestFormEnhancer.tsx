@@ -32,23 +32,40 @@ const FALLBACK_DISTRICTS = [
   "Триадица"
 ];
 
+const INSTITUTION_CATEGORIES = ["ДГ", "Детска градина с яслени групи", "Ясла", "Училище с подготвителни групи"];
 const PLACE_TYPES = ["Общ ред", "СОП", "Хронични заболявания", "Социални критерии"];
+
+type CatalogInstitution = {
+  id: string;
+  name: string;
+  type: "nursery" | "kindergarten" | "school" | "unknown";
+  category?: string;
+  subtype?: string;
+  district?: string;
+  districtCode?: string;
+  address?: string | null;
+};
 
 type Catalog = {
   generatedAt: string;
   districts: string[];
   years: string[];
+  categories?: string[];
+  institutions?: CatalogInstitution[];
+  groupedByDistrict?: Record<string, Record<string, CatalogInstitution[]>>;
   sources: Array<{ id: string; label: string; status: "ok" | "error" | "fallback"; checkedAt: string; detail?: string }>;
 };
+
+type NativeOption = { value: string; label: string; name: string; district: string };
+type UiInstitutionOption = CatalogInstitution & { submitValue: string; submitLabel: string; isSubmitReady: boolean };
 
 let catalogCache: Catalog | null = null;
 let catalogPromise: Promise<Catalog | null> | null = null;
 
 function getFallbackYears() {
   const currentYear = new Date().getFullYear();
-  const preparatoryYear = currentYear - 6;
   const years: string[] = [];
-  for (let year = currentYear; year >= preparatoryYear; year -= 1) years.push(String(year));
+  for (let year = currentYear; year >= currentYear - 6; year -= 1) years.push(String(year));
   return years;
 }
 
@@ -57,7 +74,7 @@ async function loadCatalog() {
   if (catalogPromise) return catalogPromise;
 
   catalogPromise = fetch("/api/catalog", { cache: "no-store" })
-    .then((response) => response.ok ? response.json() : null)
+    .then((response) => (response.ok ? response.json() : null))
     .then((data) => {
       if (!data || !Array.isArray(data.districts) || !Array.isArray(data.years)) return null;
       catalogCache = data as Catalog;
@@ -68,15 +85,27 @@ async function loadCatalog() {
   return catalogPromise;
 }
 
+function normalizeText(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[„“”]/g, '"')
+    .replace(/\s+/g, " ");
+}
+
+function optionKey(name?: string, district?: string) {
+  return `${normalizeText(name || "")}|${normalizeText(district || "")}`;
+}
+
 function getPrefs() {
   try {
-    return JSON.parse(localStorage.getItem(PREF_KEY) || "null") as { district?: string; ageGroup?: string; placeType?: string } | null;
+    return JSON.parse(localStorage.getItem(PREF_KEY) || "null") as { district?: string; ageGroup?: string; placeType?: string; institutionCategory?: string } | null;
   } catch {
     return null;
   }
 }
 
-function savePrefs(data: { district?: string; ageGroup?: string; placeType?: string }) {
+function savePrefs(data: { district?: string; ageGroup?: string; placeType?: string; institutionCategory?: string }) {
   localStorage.setItem(PREF_KEY, JSON.stringify(data));
 }
 
@@ -95,10 +124,16 @@ function getDistrict(option: HTMLOptionElement) {
   return (parts[1] || "").trim();
 }
 
-function makeOption(value: string, label: string) {
+function getName(option: HTMLOptionElement) {
+  const text = (option.textContent || "").trim();
+  return text.split("·")[0]?.trim() || text;
+}
+
+function makeOption(value: string, label: string, disabled = false) {
   const option = document.createElement("option");
   option.value = value;
   option.textContent = label;
+  option.disabled = disabled;
   return option;
 }
 
@@ -146,7 +181,9 @@ function hideOriginalFields(section: Element, fields: ReturnType<typeof findOrig
 
   Array.from(section.querySelectorAll<HTMLElement>("div"))
     .filter((node) => (node.textContent || "").includes("Тип място") && node.querySelector("button"))
-    .forEach((node) => { node.style.display = "none"; });
+    .forEach((node) => {
+      node.style.display = "none";
+    });
 }
 
 function collapseIfNeeded(section: HTMLElement) {
@@ -170,7 +207,7 @@ function collapseIfNeeded(section: HTMLElement) {
   });
 }
 
-function buildCatalogStatus(catalog: Catalog | null) {
+function buildCatalogStatus(catalog: Catalog | null, readyCount = 0, totalCount = 0) {
   const status = document.createElement("div");
   status.className = "mzm-catalog-status";
 
@@ -180,12 +217,44 @@ function buildCatalogStatus(catalog: Catalog | null) {
   }
 
   const okCount = catalog.sources.filter((source) => source.status === "ok").length;
-  const fallback = catalog.sources.some((source) => source.status === "fallback");
   const date = new Date(catalog.generatedAt).toLocaleString("bg-BG", { dateStyle: "short", timeStyle: "short" });
-  status.textContent = fallback
-    ? `Източници проверени: ${date}. Някои данни са fallback, докато официалният формат се нормализира.`
-    : `Източници проверени: ${date}. Активни източници: ${okCount}.`;
+  status.textContent = `Каталог: ${date}. Източници: ${okCount}. Готови за заявка: ${readyCount}/${totalCount}.`;
   return status;
+}
+
+function buildNativeOptions(select: HTMLSelectElement): NativeOption[] {
+  return Array.from(select.options)
+    .filter((option) => option.value)
+    .map((option) => ({ value: option.value, label: option.textContent || "", name: getName(option), district: getDistrict(option) }));
+}
+
+function buildUiOptions(catalog: Catalog | null, nativeOptions: NativeOption[]) {
+  const nativeByKey = new Map(nativeOptions.map((option) => [optionKey(option.name, option.district), option]));
+  const catalogItems = catalog?.institutions?.length ? catalog.institutions : [];
+
+  if (!catalogItems.length) {
+    return nativeOptions.map<UiInstitutionOption>((option) => ({
+      id: option.value,
+      name: option.name,
+      type: "kindergarten",
+      category: "ДГ",
+      district: option.district,
+      submitValue: option.value,
+      submitLabel: option.label,
+      isSubmitReady: true
+    }));
+  }
+
+  return catalogItems.map<UiInstitutionOption>((item) => {
+    const native = nativeByKey.get(optionKey(item.name, item.district));
+    return {
+      ...item,
+      category: item.category || (item.type === "nursery" ? "Ясла" : item.type === "school" ? "Училище с подготвителни групи" : "ДГ"),
+      submitValue: native?.value || "",
+      submitLabel: native?.label || `${item.name}${item.district ? ` · ${item.district}` : ""}`,
+      isSubmitReady: Boolean(native?.value)
+    };
+  });
 }
 
 async function enhanceSection(section: HTMLElement) {
@@ -202,9 +271,10 @@ async function enhanceSection(section: HTMLElement) {
   const prefs = getPrefs();
   const years = catalog?.years?.length ? catalog.years : getFallbackYears();
   const districts = catalog?.districts?.length ? catalog.districts : FALLBACK_DISTRICTS;
-  const kgOptions = Array.from(fields.fromSelect.options)
-    .filter((option) => option.value)
-    .map((option) => ({ value: option.value, label: option.textContent || "", district: getDistrict(option) }));
+  const nativeOptions = buildNativeOptions(fields.fromSelect);
+  const uiOptions = buildUiOptions(catalog, nativeOptions);
+  const categoryOptions = catalog?.categories?.length ? catalog.categories : INSTITUTION_CATEGORIES;
+  const readyCount = uiOptions.filter((option) => option.isSubmitReady).length;
 
   const panel = document.createElement("div");
   panel.className = "mzm-enhanced-request-panel";
@@ -215,10 +285,16 @@ async function enhanceSection(section: HTMLElement) {
   panel.appendChild(makeLabel("Район"));
   panel.appendChild(districtWrap);
 
+  const [categoryWrap, categorySelect] = makeSelect();
+  categorySelect.appendChild(makeOption("", "Всички типове заведения"));
+  categoryOptions.forEach((category) => categorySelect.appendChild(makeOption(category, category)));
+  panel.appendChild(makeLabel("Тип заведение"));
+  panel.appendChild(categoryWrap);
+
   const [yearWrap, yearSelect] = makeSelect();
   yearSelect.appendChild(makeOption("", "Избери година"));
   years.forEach((year) => yearSelect.appendChild(makeOption(year, year)));
-  panel.appendChild(makeLabel("Година"));
+  panel.appendChild(makeLabel("Набор / група"));
   panel.appendChild(yearWrap);
 
   const typeGrid = document.createElement("div");
@@ -239,7 +315,11 @@ async function enhanceSection(section: HTMLElement) {
     button.type = "button";
     button.dataset.value = type;
     button.textContent = type;
-    button.addEventListener("click", () => { selectedType = type; syncTypeButtons(); maybeSavePrefs(); });
+    button.addEventListener("click", () => {
+      selectedType = type;
+      syncTypeButtons();
+      maybeSavePrefs();
+    });
     typeGrid.appendChild(button);
   });
 
@@ -260,49 +340,72 @@ async function enhanceSection(section: HTMLElement) {
 
   const [fromWrap, fromVisible] = makeSelect();
   const [wantedWrap, wantedVisible] = makeSelect();
-  panel.appendChild(makeLabel("Сегашна детска градина"));
+  panel.appendChild(makeLabel("Сегашно заведение"));
   panel.appendChild(fromWrap);
-  panel.appendChild(makeLabel("Желана детска градина"));
+  panel.appendChild(makeLabel("Желано заведение"));
   panel.appendChild(wantedWrap);
-  panel.appendChild(buildCatalogStatus(catalog));
+  panel.appendChild(buildCatalogStatus(catalog, readyCount, uiOptions.length));
 
   section.insertBefore(panel, section.firstChild);
   hideOriginalFields(section, fields);
 
-  function currentData() { return { district: districtSelect.value, ageGroup: yearSelect.value, placeType: selectedType }; }
+  function currentData() {
+    return { district: districtSelect.value, ageGroup: yearSelect.value, placeType: selectedType, institutionCategory: categorySelect.value };
+  }
+
   function maybeSavePrefs() {
     if (!saveCheckbox.checked) return;
     const data = currentData();
-    if (data.district || data.ageGroup || data.placeType) savePrefs(data);
+    if (data.district || data.ageGroup || data.placeType || data.institutionCategory) savePrefs(data);
   }
-  function syncYear() { if (yearSelect.value) setNativeValue(fields.ageInput, yearSelect.value); maybeSavePrefs(); }
-  function rebuildKgSelect(visibleSelect: HTMLSelectElement, originalSelect: HTMLSelectElement, placeholder: string) {
-    const previous = visibleSelect.value || originalSelect.value;
-    visibleSelect.innerHTML = "";
-    visibleSelect.appendChild(makeOption("", placeholder));
-    const district = districtSelect.value;
-    kgOptions.filter((option) => !district || option.district === district).forEach((option) => visibleSelect.appendChild(makeOption(option.value, option.label)));
-    visibleSelect.value = previous && Array.from(visibleSelect.options).some((option) => option.value === previous) ? previous : "";
-    setNativeValue(originalSelect, visibleSelect.value);
-  }
-  function rebuildAllKg() {
-    rebuildKgSelect(fromVisible, fields.fromSelect!, "Избери сегашна градина");
-    rebuildKgSelect(wantedVisible, fields.wantedSelect!, "Избери желана градина");
+
+  function syncYear() {
+    if (yearSelect.value) setNativeValue(fields.ageInput, yearSelect.value);
     maybeSavePrefs();
   }
 
-  districtSelect.addEventListener("change", rebuildAllKg);
+  function filteredOptions() {
+    return uiOptions.filter((option) => {
+      const matchesDistrict = !districtSelect.value || option.district === districtSelect.value;
+      const matchesCategory = !categorySelect.value || option.category === categorySelect.value;
+      return matchesDistrict && matchesCategory;
+    });
+  }
+
+  function rebuildInstitutionSelect(visibleSelect: HTMLSelectElement, originalSelect: HTMLSelectElement, placeholder: string) {
+    const previous = visibleSelect.value || originalSelect.value;
+    visibleSelect.innerHTML = "";
+    visibleSelect.appendChild(makeOption("", placeholder));
+
+    filteredOptions().forEach((option) => {
+      const label = `${option.name}${option.district ? ` · ${option.district}` : ""}${option.isSubmitReady ? "" : " · синхронизирай каталога"}`;
+      visibleSelect.appendChild(makeOption(option.submitValue || `unavailable:${option.id}`, label, !option.isSubmitReady));
+    });
+
+    visibleSelect.value = previous && Array.from(visibleSelect.options).some((option) => option.value === previous && !option.disabled) ? previous : "";
+    setNativeValue(originalSelect, visibleSelect.value);
+  }
+
+  function rebuildAllInstitutions() {
+    rebuildInstitutionSelect(fromVisible, fields.fromSelect!, "Избери сегашно заведение");
+    rebuildInstitutionSelect(wantedVisible, fields.wantedSelect!, "Избери желано заведение");
+    maybeSavePrefs();
+  }
+
+  districtSelect.addEventListener("change", rebuildAllInstitutions);
+  categorySelect.addEventListener("change", rebuildAllInstitutions);
   yearSelect.addEventListener("change", syncYear);
   fromVisible.addEventListener("change", () => setNativeValue(fields.fromSelect, fromVisible.value));
   wantedVisible.addEventListener("change", () => setNativeValue(fields.wantedSelect, wantedVisible.value));
   saveCheckbox.addEventListener("change", maybeSavePrefs);
 
   if (prefs?.district && districts.includes(prefs.district)) districtSelect.value = prefs.district;
+  if (prefs?.institutionCategory && categoryOptions.includes(prefs.institutionCategory)) categorySelect.value = prefs.institutionCategory;
   if (prefs?.ageGroup && years.includes(prefs.ageGroup)) yearSelect.value = prefs.ageGroup;
 
   syncTypeButtons();
   syncYear();
-  rebuildAllKg();
+  rebuildAllInstitutions();
 
   fields.submitButton?.addEventListener("click", () => {
     maybeSavePrefs();
@@ -322,7 +425,8 @@ function injectStyles() {
     .mzm-enhanced-label { margin-top: .35rem; font-size: .64rem; font-weight: 900; text-transform: uppercase; letter-spacing: .18em; color: rgba(28,27,25,.42); }
     .mzm-enhanced-select-wrap { position: relative; }
     .mzm-enhanced-select { width: 100%; appearance: none; border: 0; outline: 0; border-radius: 1.35rem; background: rgba(255,255,255,.82); padding: 1rem 3rem 1rem 1rem; font-size: .88rem; font-weight: 800; color: #1c1b19; }
-    .mzm-enhanced-select-wrap::after { content: ''; position: absolute; right: 1.15rem; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); background: rgba(28,27,25,.58); mask: url('/icons/angle-down.svg') center/contain no-repeat; -webkit-mask: url('/icons/angle-down.svg') center/contain no-repeat; pointer-events: none; }
+    .mzm-enhanced-select option:disabled { color: rgba(28,27,25,.38); }
+    .mzm-enhanced-select-wrap::after { content: '⌄'; position: absolute; right: 1.15rem; top: 50%; transform: translateY(-54%); color: rgba(28,27,25,.58); pointer-events: none; font-weight: 900; }
     .mzm-enhanced-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
     .mzm-enhanced-type-grid button { border: 0; border-radius: 1.05rem; padding: .85rem .75rem; background: rgba(255,255,255,.75); color: #1c1b19; text-align: left; font-weight: 900; font-size: .75rem; }
     .mzm-enhanced-type-grid button.is-active { background: var(--study-orange); color: white; }
@@ -339,7 +443,9 @@ function injectStyles() {
 
 function runEnhancer() {
   injectStyles();
-  Array.from(document.querySelectorAll<HTMLElement>("section")).forEach((section) => { void enhanceSection(section); });
+  Array.from(document.querySelectorAll<HTMLElement>("section")).forEach((section) => {
+    void enhanceSection(section);
+  });
 }
 
 export default function RequestFormEnhancer() {
@@ -348,7 +454,10 @@ export default function RequestFormEnhancer() {
     const schedule = () => {
       if (scheduled) return;
       scheduled = true;
-      window.requestAnimationFrame(() => { scheduled = false; runEnhancer(); });
+      window.requestAnimationFrame(() => {
+        scheduled = false;
+        runEnhancer();
+      });
     };
     schedule();
     const observer = new MutationObserver(schedule);
