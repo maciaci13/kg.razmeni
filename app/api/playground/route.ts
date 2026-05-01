@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PlaygroundCycleSize, PlaygroundSnapshot } from "@/lib/playground";
+import { getSofiaCatalog } from "@/lib/sofia/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,56 @@ function assertPlaygroundEnabled() {
 
 function isMissingDirectChatMigration(message: string) {
   return message.includes("ensure_match_direct_chats") || message.includes("direct_user_1_id") || message.includes("direct_user_2_id");
+}
+
+function normalizeName(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ").replace(/[„“”]/g, '"');
+}
+
+function extractOfficialNumber(value: string) {
+  return value.match(/(?:№|No|N|ДГ)\s*[- ]?\s*(\d{1,3})/i)?.[1] ?? null;
+}
+
+async function resolveKindergartenId(supabase: ReturnType<typeof createSupabaseAdminClient>, submittedId: string) {
+  if (!submittedId.startsWith("catalog:")) return submittedId;
+
+  const catalogId = submittedId.slice("catalog:".length);
+  const catalog = await getSofiaCatalog();
+  const institution = catalog.institutions.find((item) => item.id === catalogId);
+  if (!institution) throw new Error("Избраното заведение не беше намерено в официалния каталог.");
+
+  const normalizedName = normalizeName(institution.name);
+  const district = institution.district || null;
+
+  const existing = await supabase
+    .from("kindergartens")
+    .select("id")
+    .eq("normalized_name", normalizedName)
+    .eq("district", district)
+    .maybeSingle();
+
+  if (existing.error) throw new Error(existing.error.message);
+  if (existing.data?.id) return existing.data.id as string;
+
+  const payload = {
+    official_number: extractOfficialNumber(institution.name),
+    name: institution.name,
+    normalized_name: normalizedName,
+    district,
+    address: institution.address || null,
+    phone: institution.phone || null,
+    email: institution.email || null,
+    website: institution.website || null,
+    is_active: true,
+    source_name: institution.source,
+    source_url: institution.sourceUrl,
+    source_updated_at: new Date().toISOString(),
+    last_verified_at: new Date().toISOString()
+  };
+
+  const inserted = await supabase.from("kindergartens").insert(payload).select("id").single();
+  if (inserted.error) throw new Error(inserted.error.message);
+  return inserted.data.id as string;
 }
 
 async function ensurePlaygroundBase(supabase: ReturnType<typeof createSupabaseAdminClient>) {
@@ -232,14 +283,17 @@ export async function POST(request: Request) {
       return NextResponse.json(await getSnapshot());
     }
     if (body.action === "createRequest") {
+      const fromKindergartenId = await resolveKindergartenId(supabase, body.fromKindergartenId);
+      const wantedKindergartenId = await resolveKindergartenId(supabase, body.wantedKindergartenId);
+
       const { data: requestRow, error: requestError } = await supabase
         .from("swap_requests")
-        .insert({ user_id: body.userId, from_kindergarten_id: body.fromKindergartenId, request_type: "kindergarten", child_group_year_or_age_group: body.ageGroup ?? "2019", status: "enrolled" })
+        .insert({ user_id: body.userId, from_kindergarten_id: fromKindergartenId, request_type: "kindergarten", child_group_year_or_age_group: body.ageGroup ?? "2019", status: "enrolled" })
         .select("id")
         .single();
       if (requestError) throw new Error(requestError.message);
 
-      const { error: wantedError } = await supabase.from("swap_request_wanted_kindergartens").insert({ request_id: requestRow.id, wanted_kindergarten_id: body.wantedKindergartenId, priority_order: 1 });
+      const { error: wantedError } = await supabase.from("swap_request_wanted_kindergartens").insert({ request_id: requestRow.id, wanted_kindergarten_id: wantedKindergartenId, priority_order: 1 });
       if (wantedError) throw new Error(wantedError.message);
 
       const { error: matchError } = await supabase.rpc("find_potential_matches_for_request", { p_request_id: requestRow.id });
