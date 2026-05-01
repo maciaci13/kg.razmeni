@@ -197,3 +197,13 @@ main h2,
 main h3,
 main .font-black,
 main .font-extrabold { font-weight: 800 !important; }
+
+/* Main app should not expose playground profile switching. */
+main:has(nav.fixed.bottom-4) > div > .mb-5.flex.items-center.justify-between button:last-child {
+  display: none !important;
+}
+
+main:has(nav.fixed.bottom-4) section.rounded-\[2\.2rem\].bg-white\/90.p-5.shadow-soft.backdrop-blur > label.mt-5,
+main:has(nav.fixed.bottom-4) section.rounded-\[2\.2rem\].bg-white\/90.p-5.shadow-soft.backdrop-blur > label.mt-5 + .relative {
+  display: none !important;
+}
