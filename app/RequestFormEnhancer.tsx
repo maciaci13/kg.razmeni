@@ -56,7 +56,7 @@ type Catalog = {
   sources: Array<{ id: string; label: string; status: "ok" | "error" | "fallback"; checkedAt: string; detail?: string }>;
 };
 
-type NativeOption = { value: string; label: string; name: string; district: string };
+type NativeOption = { value: string; label: string; name: string; district: string; number?: string };
 type UiInstitutionOption = CatalogInstitution & { submitValue: string; submitLabel: string; isSubmitReady: boolean };
 
 let catalogCache: Catalog | null = null;
@@ -86,15 +86,20 @@ async function loadCatalog() {
 }
 
 function normalizeText(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[„“”]/g, '"')
-    .replace(/\s+/g, " ");
+  return value.trim().toLowerCase().replace(/[„“”]/g, '"').replace(/\s+/g, " ");
 }
 
 function optionKey(name?: string, district?: string) {
   return `${normalizeText(name || "")}|${normalizeText(district || "")}`;
+}
+
+function extractNumber(value?: string | null) {
+  if (!value) return undefined;
+  return value.match(/(?:№|No|N|ДГ)\s*[- ]?\s*(\d{1,3})/i)?.[1];
+}
+
+function numberDistrictKey(number?: string, district?: string) {
+  return number && district ? `${number}|${normalizeText(district)}` : undefined;
 }
 
 function getPrefs() {
@@ -218,35 +223,41 @@ function buildCatalogStatus(catalog: Catalog | null, readyCount = 0, totalCount 
 
   const okCount = catalog.sources.filter((source) => source.status === "ok").length;
   const date = new Date(catalog.generatedAt).toLocaleString("bg-BG", { dateStyle: "short", timeStyle: "short" });
-  status.textContent = `Каталог: ${date}. Източници: ${okCount}. Готови за заявка: ${readyCount}/${totalCount}.`;
+  status.textContent = `Каталог: ${date}. Източници: ${okCount}. Избираеми записи: ${readyCount}/${totalCount}.`;
   return status;
 }
 
 function buildNativeOptions(select: HTMLSelectElement): NativeOption[] {
   return Array.from(select.options)
     .filter((option) => option.value)
-    .map((option) => ({ value: option.value, label: option.textContent || "", name: getName(option), district: getDistrict(option) }));
+    .map((option) => {
+      const name = getName(option);
+      return { value: option.value, label: option.textContent || "", name, district: getDistrict(option), number: extractNumber(name) };
+    });
+}
+
+function inferNativeCategory(native: NativeOption, catalog?: CatalogInstitution) {
+  if (catalog?.category) return catalog.category;
+  const name = normalizeText(native.name);
+  if (name.includes("ясла") || name.includes("сдя")) return "Ясла";
+  return "ДГ";
 }
 
 function buildUiOptions(catalog: Catalog | null, nativeOptions: NativeOption[]) {
   const nativeByKey = new Map(nativeOptions.map((option) => [optionKey(option.name, option.district), option]));
+  const nativeByNumberDistrict = new Map<string, NativeOption>();
+  nativeOptions.forEach((option) => {
+    const key = numberDistrictKey(option.number, option.district);
+    if (key && !nativeByNumberDistrict.has(key)) nativeByNumberDistrict.set(key, option);
+  });
+
   const catalogItems = catalog?.institutions?.length ? catalog.institutions : [];
+  const usedNativeValues = new Set<string>();
 
-  if (!catalogItems.length) {
-    return nativeOptions.map<UiInstitutionOption>((option) => ({
-      id: option.value,
-      name: option.name,
-      type: "kindergarten",
-      category: "ДГ",
-      district: option.district,
-      submitValue: option.value,
-      submitLabel: option.label,
-      isSubmitReady: true
-    }));
-  }
-
-  return catalogItems.map<UiInstitutionOption>((item) => {
-    const native = nativeByKey.get(optionKey(item.name, item.district));
+  const fromCatalog = catalogItems.map<UiInstitutionOption>((item) => {
+    const number = extractNumber(item.name);
+    const native = nativeByKey.get(optionKey(item.name, item.district)) || nativeByNumberDistrict.get(numberDistrictKey(number, item.district) || "");
+    if (native?.value) usedNativeValues.add(native.value);
     return {
       ...item,
       category: item.category || (item.type === "nursery" ? "Ясла" : item.type === "school" ? "Училище с подготвителни групи" : "ДГ"),
@@ -255,6 +266,24 @@ function buildUiOptions(catalog: Catalog | null, nativeOptions: NativeOption[]) 
       isSubmitReady: Boolean(native?.value)
     };
   });
+
+  const fromNative = nativeOptions
+    .filter((option) => !usedNativeValues.has(option.value))
+    .map<UiInstitutionOption>((option) => ({
+      id: option.value,
+      name: option.name,
+      type: "kindergarten",
+      category: inferNativeCategory(option, catalogItems.find((item) => extractNumber(item.name) === option.number && item.district === option.district)),
+      district: option.district,
+      submitValue: option.value,
+      submitLabel: option.label,
+      isSubmitReady: true
+    }));
+
+  const selectable = [...fromCatalog.filter((option) => option.isSubmitReady), ...fromNative];
+  const unavailable = fromCatalog.filter((option) => !option.isSubmitReady);
+
+  return [...selectable, ...unavailable];
 }
 
 async function enhanceSection(section: HTMLElement) {
@@ -377,10 +406,22 @@ async function enhanceSection(section: HTMLElement) {
     visibleSelect.innerHTML = "";
     visibleSelect.appendChild(makeOption("", placeholder));
 
-    filteredOptions().forEach((option) => {
-      const label = `${option.name}${option.district ? ` · ${option.district}` : ""}${option.isSubmitReady ? "" : " · синхронизирай каталога"}`;
-      visibleSelect.appendChild(makeOption(option.submitValue || `unavailable:${option.id}`, label, !option.isSubmitReady));
+    const visibleOptions = filteredOptions();
+    const selectable = visibleOptions.filter((option) => option.isSubmitReady);
+    const unavailable = visibleOptions.filter((option) => !option.isSubmitReady);
+
+    selectable.forEach((option) => {
+      const label = `${option.name}${option.district ? ` · ${option.district}` : ""}`;
+      visibleSelect.appendChild(makeOption(option.submitValue, label));
     });
+
+    if (unavailable.length) {
+      visibleSelect.appendChild(makeOption("", "── Само в официалния каталог ──", true));
+      unavailable.forEach((option) => {
+        const label = `${option.name}${option.district ? ` · ${option.district}` : ""} · още не е в базата`;
+        visibleSelect.appendChild(makeOption(`unavailable:${option.id}`, label, true));
+      });
+    }
 
     visibleSelect.value = previous && Array.from(visibleSelect.options).some((option) => option.value === previous && !option.disabled) ? previous : "";
     setNativeValue(originalSelect, visibleSelect.value);
