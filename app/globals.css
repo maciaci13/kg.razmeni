@@ -36,7 +36,6 @@ a { color: inherit; text-decoration: none; }
   background-size: 22px 22px;
 }
 
-/* Dropdown chevrons — uses uploaded SVG assets. */
 .pointer-events-none.absolute.right-5.top-1\/2.-translate-y-1\/2,
 .app-select-chevron {
   position: absolute;
@@ -66,7 +65,6 @@ a { color: inherit; text-decoration: none; }
 
 .playground-toggle-icon.is-open { transform: rotate(180deg); }
 
-/* Keep the leave confirmation as a true top modal on mobile browsers. */
 main > div.fixed.inset-0.z-50,
 main .fixed.inset-0.z-50[role="dialog"] {
   position: fixed !important;
@@ -110,7 +108,6 @@ button .grid.h-8.w-8.shrink-0.place-items-center.rounded-full.bg-white\/85.text-
   -webkit-mask-image: url('/icons/angle-up.svg');
 }
 
-/* Clean premium app background. */
 main.min-h-screen.bg-paper {
   background: #fffcfa !important;
 }
@@ -198,7 +195,6 @@ main h3,
 main .font-black,
 main .font-extrabold { font-weight: 800 !important; }
 
-/* Main app should not expose playground profile switching. */
 main:has(nav.fixed.bottom-4) > div > .mb-5.flex.items-center.justify-between button:last-child {
   display: none !important;
 }
@@ -206,4 +202,19 @@ main:has(nav.fixed.bottom-4) > div > .mb-5.flex.items-center.justify-between but
 main:has(nav.fixed.bottom-4) section.rounded-\[2\.2rem\].bg-white\/90.p-5.shadow-soft.backdrop-blur > label.mt-5,
 main:has(nav.fixed.bottom-4) section.rounded-\[2\.2rem\].bg-white\/90.p-5.shadow-soft.backdrop-blur > label.mt-5 + .relative {
   display: none !important;
+}
+
+/* Force request form replacement while app/page.tsx is still a monolith. */
+main:has(nav.fixed.bottom-4) section:has(.mzm-enhanced-request-panel) > .rounded-\[1\.8rem\].bg-paper,
+main:has(nav.fixed.bottom-4) section:has(.mzm-enhanced-request-panel) > .rounded-\[1\.8rem\].bg-\[\#F7F5EF\] {
+  display: none !important;
+}
+
+main:has(nav.fixed.bottom-4) section:has(.mzm-enhanced-request-panel) > .mzm-enhanced-request-panel {
+  display: grid !important;
+}
+
+main:has(nav.fixed.bottom-4) section:has(.mzm-enhanced-request-panel) > button.mt-4.w-full.rounded-full.bg-orange,
+main:has(nav.fixed.bottom-4) section:has(.mzm-enhanced-request-panel) > p.mt-3.text-center {
+  display: block !important;
 }
