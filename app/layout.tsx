@@ -3,6 +3,7 @@ import { Sofia_Sans } from "next/font/google";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
 import RequestFormEnhancer from "./RequestFormEnhancer";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
+import TextCopyNormalizer from "./TextCopyNormalizer";
 import "./globals.css";
 
 const sofiaSans = Sofia_Sans({
@@ -13,7 +14,7 @@ const sofiaSans = Sofia_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "МястоЗаМясто",
+  title: "Място За Място",
   description: "Безплатна платформа за потенциални съвпадения между родители за детски градини."
 };
 
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <HomeGuidanceEnhancer />
         <RequestFormEnhancer />
         <ShareRequestEnhancer />
+        <TextCopyNormalizer />
       </body>
     </html>
   );
