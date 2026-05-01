@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
+import ShareRequestEnhancer from "./ShareRequestEnhancer";
 import "./globals.css";
 
 const sofiaSans = Sofia_Sans({
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="bg">
       <body className={sofiaSans.className}>
         {children}
+        <ShareRequestEnhancer />
         <script dangerouslySetInnerHTML={{ __html: requestFormEnhancerScript }} />
       </body>
     </html>
