@@ -1,0 +1,8 @@
+{
+  "district": "Банкя",
+  "entries": [
+    { "id": "raw-dg-025-main", "institutionId": "dg-025", "name": "ДГ №25 Изворче", "district": "Банкя", "address": "гр. Банкя, ул. П. Д. Петков, №15", "contact": "02/967 66 20", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-025-b2", "institutionId": "dg-025", "name": "ДГ №25 Изворче - сграда 2", "district": "Банкя", "address": "гр. Банкя, ул. Восток-2, №4", "contact": "02/967 66 20", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-025-b3", "institutionId": "dg-025", "name": "ДГ №25 Изворче - сграда 3", "district": "Банкя", "address": "гр. Банкя, ул. Царибродска, №5", "contact": "02/967 66 20", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false }
+  ]
+}
