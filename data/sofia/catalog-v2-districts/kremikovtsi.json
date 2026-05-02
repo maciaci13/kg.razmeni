@@ -1,0 +1,17 @@
+{
+  "district": "Кремиковци",
+  "entries": [
+    { "id": "raw-sdya-038-main", "institutionId": "sdya-038", "name": "СДЯ №38", "district": "Кремиковци", "address": "гр. София, кв. Кремиковци до бл. 30", "contact": "", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-044-main", "institutionId": "dg-044", "name": "ДГ №44 Калина (с яслени групи)", "district": "Кремиковци", "address": "гр. София, кв. Ботунец, ул. Балкан № 14, бл. 12", "contact": "02/994 36 33", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-058-main", "institutionId": "dg-058", "name": "ДГ №58 Слънчево утро (с яслени групи)", "district": "Кремиковци", "address": "гр. София, кв. Челопечене, ул. Яне Стоянов, №19", "contact": "02/483 28 83", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-058-hourly", "institutionId": "dg-058", "name": "ДГ №58 Слънчево утро - почасова организация", "district": "Кремиковци", "address": "гр. София, кв. Челопечене, ул. Яне Стоянов, №19", "contact": "", "entryType": "hourly", "hasNurseryGroups": false, "isHourlyOrganization": true },
+    { "id": "raw-dg-089-main", "institutionId": "dg-089", "name": "ДГ №89 Шарена дъга (с яслени групи)", "district": "Кремиковци", "address": "гр. София, кв. Враждебна, ул. 27, №3", "contact": "02/840 63 35", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-094-main", "institutionId": "dg-094", "name": "ДГ №94 Детски свят (с яслени групи)", "district": "Кремиковци", "address": "гр. Бухово, ул. Никола Бонев, №6", "contact": "02/994 23 00", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-094-hourly", "institutionId": "dg-094", "name": "ДГ №94 Детски свят - почасова организация", "district": "Кремиковци", "address": "гр. Бухово, ул. Никола Бонев, №6", "contact": "", "entryType": "hourly", "hasNurseryGroups": false, "isHourlyOrganization": true },
+    { "id": "raw-dg-140-main", "institutionId": "dg-140", "name": "ДГ №140 Зорница (с яслени групи)", "district": "Кремиковци", "address": "с. Долни Богров, ул. 10-та, №27", "contact": "", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-146-main", "institutionId": "dg-146", "name": "ДГ №146 Звездица (с яслени групи)", "district": "Кремиковци", "address": "гр. София, кв. Kремиковци, ул. Св.Св.Кирил и Методий, №2", "contact": "02/994 70 49", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-146-seslavtsi", "institutionId": "dg-146", "name": "ДГ №146 Звездица - сграда 2 (с яслени групи), кв. Сеславци", "district": "Кремиковци", "address": "гр. София, кв. Сеславци, ул. Мургаш, №3", "contact": "+359 889 195 844; 02/994 70 49", "entryType": "building", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-147-main", "institutionId": "dg-147", "name": "ДГ №147 Славейче (с яслени групи)", "district": "Кремиковци", "address": "с. Горни Богров, ул. Трайчо Костов, №1", "contact": "02/994 34 15", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-147-yana", "institutionId": "dg-147", "name": "ДГ №147 Славейче - филиал с. Яна", "district": "Кремиковци", "address": "с. Яна, ул. Райна Княгиня, №4", "contact": "02/994 34 15", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false }
+  ]
+}
