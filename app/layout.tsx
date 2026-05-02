@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
+import HomeStatsCleanup from "./HomeStatsCleanup";
 import RequestFormHardReset from "./RequestFormHardReset";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={sofiaSans.className}>
         {children}
         <HomeGuidanceEnhancer />
+        <HomeStatsCleanup />
         <RequestFormHardReset />
         <RequestVisualPolish />
         <ShareRequestEnhancer />
