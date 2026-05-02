@@ -22,7 +22,7 @@ function getPrefs(): Prefs {
   try { return JSON.parse(localStorage.getItem(PREF_KEY) || "{}"); } catch { return {}; }
 }
 function savePrefs(prefs: Prefs) { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); }
-function option(value: string, label: string) { const o = document.createElement("option"); o.value = value; o.textContent = label; return o; }
+function option(value: string, labelText: string) { const o = document.createElement("option"); o.value = value; o.textContent = labelText; return o; }
 function label(text: string) { const el = document.createElement("label"); el.className = "mzm-form-label"; el.textContent = text; return el; }
 function select(placeholder: string) { const wrap = document.createElement("div"); wrap.className = "mzm-select-wrap"; const sel = document.createElement("select"); sel.className = "mzm-select"; sel.appendChild(option("", placeholder)); wrap.appendChild(sel); return [wrap, sel] as const; }
 function valueOf(item: CatalogInstitution) { return item.id.startsWith("catalog:") ? item.id : `catalog:${item.id}`; }
@@ -72,7 +72,7 @@ function getOrCreateCarouselShell(myRequestsSection: HTMLElement) {
   let raf = 0;
   track?.addEventListener("scroll", () => {
     cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => updateCarouselState(shell!));
+    raf = requestAnimationFrame(() => updateCarouselState(shell as HTMLElement));
   }, { passive: true });
 
   return shell;
@@ -179,7 +179,10 @@ function upsertCard(data: CardData) {
   const track = shell.querySelector<HTMLElement>(".mzm-request-carousel");
   if (!track) return;
 
-  if (data.requestId) track.querySelector(`[data-request-id='${CSS.escape(data.requestId)}']`)?.remove();
+  if (data.requestId) {
+    Array.from(track.querySelectorAll<HTMLElement>("[data-request-id]")).find((card) => card.dataset.requestId === data.requestId)?.remove();
+  }
+
   const card = createRequestCard(data);
   track.appendChild(card);
   placeShareAfterCarousel();
@@ -194,7 +197,11 @@ function hydrateExistingCards(snapshot: Snapshot | null, placeType: string) {
   const requests = (snapshot?.requests || []).filter((request) => request.user_id === userId && request.is_active);
   if (!requests.length) return false;
 
-  const kgById = new Map((snapshot?.kindergartens || []).flatMap((kg) => [[kg.id, kg], [rawId(kg.id), kg]]));
+  const kgById = new Map<string, CatalogInstitution>();
+  (snapshot?.kindergartens || []).forEach((kg) => {
+    kgById.set(kg.id, kg);
+    kgById.set(rawId(kg.id), kg);
+  });
   const wantedByRequest = new Map((snapshot?.wantedKindergartens || []).map((wanted) => [wanted.request_id, wanted]));
 
   requests.forEach((request) => {
