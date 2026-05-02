@@ -157,7 +157,7 @@ function injectStyles() {
       inset: 0;
       z-index: 9999;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
       padding: 1rem;
       background: rgba(28,27,25,.26);
@@ -167,11 +167,13 @@ function injectStyles() {
     .mzm-share-popup__panel {
       position: relative;
       width: min(100%, 27rem);
+      max-height: calc(100dvh - 2rem);
+      overflow: auto;
       border-radius: 2rem;
       padding: 1.25rem;
       background: #fffcfa;
       box-shadow: 0 24px 70px rgba(28,27,25,.22);
-      animation: mzmShareSheet .22s cubic-bezier(.2,.8,.2,1);
+      animation: mzmSharePop .22s cubic-bezier(.2,.8,.2,1);
     }
     .mzm-share-popup__close {
       position: absolute;
@@ -246,8 +248,8 @@ function injectStyles() {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    @keyframes mzmShareSheet {
-      from { transform: translateY(1.2rem) scale(.98); opacity: .5; }
+    @keyframes mzmSharePop {
+      from { transform: translateY(.75rem) scale(.98); opacity: .5; }
       to { transform: translateY(0) scale(1); opacity: 1; }
     }
   `;
