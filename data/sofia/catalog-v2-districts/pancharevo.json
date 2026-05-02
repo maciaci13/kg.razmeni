@@ -1,0 +1,16 @@
+{
+  "district": "Панчарево",
+  "entries": [
+    { "id": "raw-dg-003-main", "institutionId": "dg-003", "name": "ДГ №3 Детелина", "district": "Панчарево", "address": "с. Казичене, Христо Ботев, №2", "contact": "02/999 50 13", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-003-exp", "institutionId": "dg-003", "name": "ДГ №3 Детелина - Експериментална сграда", "district": "Панчарево", "address": "с. Казичене, ул. Хан Крум, №2", "contact": "02/999 50 13", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-sdya-044-main", "institutionId": "sdya-044", "name": "СДЯ №44", "district": "Панчарево", "address": "с. Бистрица, ул. Тинтява, №8", "contact": "02/992 20 97", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-066-main", "institutionId": "dg-066", "name": "ДГ №66 Елица (с яслени групи)", "district": "Панчарево", "address": "с. Панчарево, ул. Риляник, №10", "contact": "02/992 31 46", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-097-main", "institutionId": "dg-097", "name": "ДГ №97 Изгрев", "district": "Панчарево", "address": "с. Лозен, ул. Янко Панайотов, №29", "contact": "0883345016", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-097-dolni-lozen", "institutionId": "dg-097", "name": "ДГ №97 Изгрев - сграда с. Долни Лозен (с яслени групи)", "district": "Панчарево", "address": "с. Лозен, ул. Светлина, №2", "contact": "", "entryType": "building", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-143-main", "institutionId": "dg-143", "name": "ДГ №143 Щурче", "district": "Панчарево", "address": "с. Бистрица, ул. Тинтява, №6", "contact": "0884801757", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-143-prosveta", "institutionId": "dg-143", "name": "ДГ №143 Щурче - сграда ул. Просвета № 14", "district": "Панчарево", "address": "с. Бистрица, ул. Просвета, №14", "contact": "+359 884 801 757", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-180-main", "institutionId": "dg-180", "name": "ДГ №180 Зайченцето бяло", "district": "Панчарево", "address": "с. Герман, ул. Патриарх Герман, №81А", "contact": "02/992 80 74", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-181-main", "institutionId": "dg-181", "name": "ДГ №181 Радост", "district": "Панчарево", "address": "с. Железница, ул. Плана планина, №26", "contact": "02/992 76 54", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-182-main", "institutionId": "dg-182", "name": "ДГ №182 Пчелица", "district": "Панчарево", "address": "с. Долни Пасарел, ВЕЦ Пасарел, №17", "contact": "02/992 42 08", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false }
+  ]
+}
