@@ -65,21 +65,21 @@ a { color: inherit; text-decoration: none; }
 
 .playground-toggle-icon.is-open { transform: rotate(180deg); }
 
+/* Center generic app dialogs vertically. */
 main > div.fixed.inset-0.z-50,
 main .fixed.inset-0.z-50[role="dialog"] {
   position: fixed !important;
   inset: 0 !important;
   display: flex !important;
-  align-items: flex-start !important;
+  align-items: center !important;
   justify-content: center !important;
-  padding: 28px 16px 0 !important;
+  padding: 16px !important;
   overflow-y: auto !important;
 }
 
 main > div.fixed.inset-0.z-50 > div,
 main .fixed.inset-0.z-50[role="dialog"] > div {
-  margin-top: 0 !important;
-  margin-bottom: auto !important;
+  margin: auto !important;
 }
 
 button[aria-expanded="true"] .playground-chevron,
