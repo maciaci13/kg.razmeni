@@ -1,29 +1,16 @@
-import { gunzipSync } from "node:zlib";
-import pdfCatalogBundle from "@/data/sofia/mzm-catalog-pdf.json";
+import catalogJson from "@/data/sofia/mzm-catalog.json";
 
 export type SofiaSourceStatus = { id: string; label: string; url: string; status: "ok" | "error" | "fallback"; checkedAt: string; detail?: string };
 export type SofiaInstitutionCategory = "ДГ" | "Детска градина с яслени групи" | "Ясла";
 export type SofiaInstitution = { id: string; name: string; type: "kindergarten" | "nursery" | "unknown"; category?: SofiaInstitutionCategory; subtype?: string; district?: string; districtCode?: string; address?: string | null; website?: string | null; phone?: string | null; email?: string | null; source: string; sourceUrl: string; raw?: Record<string, unknown> };
 export type SofiaCatalog = { generatedAt: string; districts: string[]; years: string[]; categories: SofiaInstitutionCategory[]; institutions: SofiaInstitution[]; groupedByDistrict: Record<string, Record<string, SofiaInstitution[]>>; sources: SofiaSourceStatus[]; stats: { institutionsTotal: number; districtsTotal: number; byCategory: Record<string, number>; byType: Record<string, number>; byDistrict: Record<string, number>; rawEntriesTotal: number }; notes: string[] };
 
-type RawEntry = Record<string, unknown> & { id?: string; institutionId?: string; name?: string; district?: string; address?: string; contact?: string; phone?: string; email?: string; website?: string; category?: string; type?: string; subtype?: string; entryType?: string; hasNurseryGroups?: boolean; isHourlyOrganization?: boolean };
-type RawCatalog = { generatedAt?: string; notes?: string[]; districts?: string[]; years?: string[]; categories?: SofiaInstitutionCategory[]; rawEntries?: RawEntry[]; raw_entries?: RawEntry[]; institutions?: RawEntry[] };
-type Bundle = RawCatalog & { encoding?: string; payload?: string; stats?: Record<string, unknown> };
+type RawEntry = Record<string, unknown> & { id?: string; institutionId?: string; name?: string; district?: string; districtCode?: string; address?: string; contact?: string; phone?: string; email?: string; website?: string; category?: string; type?: string; subtype?: string; entryType?: string; hasNurseryGroups?: boolean; isHourlyOrganization?: boolean; source?: string; sourceUrl?: string };
+type RawCatalog = { generatedAt?: string; source?: string; notes?: string[]; districts?: string[]; years?: string[]; categories?: SofiaInstitutionCategory[]; rawEntries?: RawEntry[]; raw_entries?: RawEntry[]; institutions?: RawEntry[]; stats?: Record<string, unknown> };
 
-const bundle = pdfCatalogBundle as unknown as Bundle;
-const SOURCE_URL = "/data/sofia/mzm-catalog-pdf.json";
+const catalog = catalogJson as unknown as RawCatalog;
+const SOURCE_URL = "/data/sofia/mzm-catalog.json";
 const CATEGORIES: SofiaInstitutionCategory[] = ["ДГ", "Детска градина с яслени групи", "Ясла"];
-let cachedCatalog: RawCatalog | null = null;
-
-function decodeCatalog(): RawCatalog {
-  if (cachedCatalog) return cachedCatalog;
-  if (bundle.encoding === "gzip+base64+json" && typeof bundle.payload === "string") {
-    cachedCatalog = JSON.parse(gunzipSync(Buffer.from(bundle.payload, "base64")).toString("utf8")) as RawCatalog;
-    return cachedCatalog;
-  }
-  cachedCatalog = bundle;
-  return cachedCatalog;
-}
 
 function str(value: unknown) { return typeof value === "string" ? value.trim() || undefined : typeof value === "number" ? String(value) : undefined; }
 function bool(value: unknown) { return typeof value === "boolean" ? value : typeof value === "number" ? value === 1 : typeof value === "string" ? ["true", "1", "yes", "да"].includes(value.trim().toLowerCase()) : false; }
@@ -76,7 +63,7 @@ function toInstitution(entry: RawEntry, index: number): SofiaInstitution | null 
     phone: str(entry.contact) ?? str(entry.phone) ?? null,
     email: str(entry.email) ?? null,
     website: str(entry.website) ?? null,
-    source: str(entry.source) ?? "mzm.pdf_catalog_2026_05_02",
+    source: str(entry.source) ?? "mzm.pdf_catalog_plain_json",
     sourceUrl: str(entry.sourceUrl) ?? SOURCE_URL,
     raw: entry
   };
@@ -87,20 +74,19 @@ function counter(items: Record<string, unknown>[], key: string) { return items.r
 export function getCatalogYears(now = new Date()) { const currentYear = now.getFullYear(); return Array.from({ length: 7 }, (_, index) => String(currentYear - index)); }
 
 export async function getSofiaCatalog(): Promise<SofiaCatalog> {
-  const raw = decodeCatalog();
-  const entries = getRawEntries(raw);
+  const entries = getRawEntries(catalog);
   const institutions = entries.map(toInstitution).filter((item): item is SofiaInstitution => Boolean(item));
-  const districts = Array.isArray(raw.districts) && raw.districts.length > 0 ? raw.districts : Array.from(new Set(institutions.map((item) => item.district).filter((item): item is string => Boolean(item))));
-  const generatedAt = raw.generatedAt ?? bundle.generatedAt ?? new Date().toISOString();
+  const districts = Array.isArray(catalog.districts) && catalog.districts.length > 0 ? catalog.districts : Array.from(new Set(institutions.map((item) => item.district).filter((item): item is string => Boolean(item))));
+  const generatedAt = catalog.generatedAt ?? new Date().toISOString();
   return {
     generatedAt,
     districts,
-    years: raw.years?.length ? raw.years : getCatalogYears(),
+    years: catalog.years?.length ? catalog.years : getCatalogYears(),
     categories: CATEGORIES.filter((category) => institutions.some((item) => item.category === category)),
     institutions,
     groupedByDistrict: groupByDistrict(institutions),
-    sources: [{ id: "mzm-pdf-catalog", label: "MZM PDF catalog", url: SOURCE_URL, status: institutions.length > 0 ? "ok" : "fallback", checkedAt: generatedAt, detail: `Loaded ${institutions.length} PDF records.` }],
+    sources: [{ id: "mzm-catalog-json", label: "MZM plain JSON catalog", url: SOURCE_URL, status: institutions.length > 0 ? "ok" : "fallback", checkedAt: generatedAt, detail: `Loaded ${institutions.length} records from editable plain JSON catalog.` }],
     stats: { institutionsTotal: institutions.length, districtsTotal: districts.length, byCategory: counter(institutions, "category"), byType: counter(institutions, "type"), byDistrict: counter(institutions, "district"), rawEntriesTotal: entries.length },
-    notes: [...(Array.isArray(raw.notes) ? raw.notes : []), "Runtime catalog source: data/sofia/mzm-catalog-pdf.json", "Loader accepts rawEntries, raw_entries or institutions from the decoded PDF payload."]
+    notes: [...(Array.isArray(catalog.notes) ? catalog.notes : []), "Runtime catalog source: data/sofia/mzm-catalog.json", "This file is plain JSON and is safe to edit when contacts, buildings or institution records change."]
   };
 }
