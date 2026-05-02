@@ -93,9 +93,20 @@ function updateCarouselState(shell: HTMLElement) {
   if (!track || !dots) return;
 
   const cards = Array.from(track.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
-  const firstCard = cards[0];
-  const step = firstCard ? firstCard.getBoundingClientRect().width + 14 : 1;
-  const activeIndex = Math.max(0, Math.min(cards.length - 1, Math.round(track.scrollLeft / step)));
+  const trackRect = track.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+  let activeIndex = 0;
+  let closestDistance = Number.POSITIVE_INFINITY;
+
+  cards.forEach((card, index) => {
+    const rect = card.getBoundingClientRect();
+    const cardCenter = rect.left + rect.width / 2;
+    const distance = Math.abs(cardCenter - trackCenter);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      activeIndex = index;
+    }
+  });
 
   cards.forEach((card, index) => {
     const distance = Math.abs(index - activeIndex);
@@ -235,12 +246,12 @@ function injectStyles() {
     .mzm-submit{margin-top:1rem;width:100%;border:0;border-radius:999px;background:var(--study-orange,#ff5a14);padding:1rem 1.25rem;color:white;font-weight:900;font-size:.9rem;box-shadow:0 16px 34px rgba(255,90,20,.24)}.mzm-submit:disabled{opacity:.42;background:#ffc0aa}.mzm-note{margin-top:.75rem;text-align:center;color:rgba(28,27,25,.45);font-size:.78rem;font-weight:700;line-height:1.45}.mzm-status{display:none!important}
     .mzm-collapsed{display:none}.mzm-toggle-open{width:100%;border:0;border-radius:1.8rem;background:#f7f5ef;padding:1rem;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:1rem}.mzm-toggle-open p{margin:0;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:rgba(28,27,25,.42)}.mzm-toggle-open h3{margin:.38rem 0 0;font-size:1.05rem;line-height:1.15;font-weight:900;color:#1c1b19}.mzm-toggle-open span{display:grid;place-items:center;width:2.35rem;height:2.35rem;border-radius:999px;background:white;color:#1c1b19;font-size:1.2rem;font-weight:900;box-shadow:0 10px 22px rgba(33,28,17,.04)}
     .mzm-request-form-card.is-collapsed .mzm-form-close,.mzm-request-form-card.is-collapsed .mzm-form-inner,.mzm-request-form-card.is-collapsed .mzm-submit,.mzm-request-form-card.is-collapsed .mzm-note{display:none}.mzm-request-form-card.is-collapsed .mzm-collapsed{display:block}
-    .mzm-carousel-shell{position:relative;margin:.2rem -1rem .35rem 0;padding:.15rem 0 .4rem}.mzm-carousel-shell.has-multiple::before,.mzm-carousel-shell.has-multiple::after{content:"";position:absolute;left:1.35rem;right:2.15rem;height:1.8rem;border-radius:2rem;background:#dfe7b8;box-shadow:0 14px 34px rgba(40,34,20,.05);pointer-events:none}.mzm-carousel-shell.has-multiple::before{top:.65rem;transform:translateY(-.5rem) scale(.92);opacity:.55}.mzm-carousel-shell.has-multiple::after{top:1.05rem;transform:translateY(-.25rem) scale(.96);opacity:.72}
-    .mzm-request-carousel{position:relative;z-index:2;display:flex;gap:.9rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.5rem 1rem .85rem 0;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}.mzm-request-carousel::-webkit-scrollbar{display:none}
-    .mzm-request-card{position:relative;flex:0 0 88%;scroll-snap-align:center;border-radius:2rem;background:#ECECC7;padding:1.25rem;box-shadow:0 18px 42px rgba(40,34,20,.08);transform:scale(.92) translateY(.35rem);opacity:.72;transition:transform 240ms cubic-bezier(.2,.8,.2,1),opacity 240ms ease,box-shadow 240ms ease}.mzm-request-card.is-active-card{transform:scale(1) translateY(0);opacity:1;box-shadow:0 22px 52px rgba(40,34,20,.12)}.mzm-request-card.is-near-card{transform:scale(.95) translateY(.2rem);opacity:.84}.mzm-request-card.is-far-card{transform:scale(.9) translateY(.45rem);opacity:.55}.mzm-request-card.is-inactive{opacity:.6}
+    .mzm-carousel-shell{position:relative;margin:.35rem 0 .5rem;padding:.25rem 0 .45rem;overflow:hidden}.mzm-carousel-shell.has-multiple::before,.mzm-carousel-shell.has-multiple::after{content:"";position:absolute;height:calc(100% - 2.35rem);border-radius:2rem;background:#dfe7b8;box-shadow:0 14px 34px rgba(40,34,20,.05);pointer-events:none;z-index:0}.mzm-carousel-shell.has-multiple::before{top:.45rem;left:2.1rem;right:2.1rem;transform:translateY(.15rem) scale(.92);opacity:.45}.mzm-carousel-shell.has-multiple::after{top:.65rem;left:1.55rem;right:1.55rem;transform:translateY(.2rem) scale(.96);opacity:.62}
+    .mzm-request-carousel{position:relative;z-index:2;display:flex;gap:.85rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.85rem 1.1rem 1rem;scroll-padding-inline:1.1rem;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}.mzm-request-carousel::-webkit-scrollbar{display:none}
+    .mzm-request-card{position:relative;flex:0 0 calc(100% - 2.2rem);max-width:calc(100% - 2.2rem);scroll-snap-align:center;border-radius:2rem;background:#ECECC7;padding:1.25rem;box-shadow:0 18px 42px rgba(40,34,20,.08);transform:scale(.94) translateY(.28rem);transform-origin:center center;opacity:.62;transition:transform 240ms cubic-bezier(.2,.8,.2,1),opacity 240ms ease,box-shadow 240ms ease}.mzm-request-card.is-active-card{transform:scale(1) translateY(0);opacity:1;box-shadow:0 22px 52px rgba(40,34,20,.12)}.mzm-request-card.is-near-card{transform:scale(.94) translateY(.22rem);opacity:.68}.mzm-request-card.is-far-card{transform:scale(.9) translateY(.45rem);opacity:.42}.mzm-request-card.is-inactive{opacity:.6}
     .mzm-request-card-content{padding-right:2.8rem}.mzm-request-card-content p{margin:0;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:rgba(28,27,25,.42)}.mzm-request-card-content h3{margin:.55rem 0 0;display:grid;gap:.35rem;font-size:1.08rem;line-height:1.12;font-weight:900;color:#1c1b19}.mzm-request-card-content h3 b{font-size:1.25rem}.mzm-request-card-content em{display:block;margin-top:.75rem;font-style:normal;font-size:.9rem;font-weight:800;color:rgba(28,27,25,.55)}.mzm-request-card-content mark{display:inline-block;margin-top:.85rem;border-radius:999px;background:rgba(255,255,255,.7);padding:.5rem .75rem;font-size:.7rem;font-weight:900;color:#1c1b19}
     .mzm-card-menu{position:absolute;top:1rem;right:1rem;z-index:6}.mzm-card-menu summary{list-style:none;width:2.45rem;height:2.45rem;border-radius:999px;background:rgba(255,255,255,.74);display:grid;place-items:center;font-size:1.15rem;font-weight:900;letter-spacing:.04em;color:#1c1b19;cursor:pointer;box-shadow:0 10px 22px rgba(33,28,17,.05)}.mzm-card-menu summary::-webkit-details-marker{display:none}.mzm-card-menu[open] summary{background:#fff}.mzm-card-menu-popover{position:absolute;right:0;top:2.75rem;min-width:10.5rem;border-radius:1.1rem;background:rgba(255,255,255,.96);padding:.35rem;box-shadow:0 18px 38px rgba(33,28,17,.16);backdrop-filter:blur(12px)}.mzm-card-menu-popover button{width:100%;border:0;background:transparent;border-radius:.85rem;padding:.8rem .85rem;text-align:left;font-size:.78rem;font-weight:900;color:#1c1b19}.mzm-card-menu-popover button[data-action='delete']{color:var(--study-orange,#ff5a14)}
-    .mzm-carousel-dots{display:flex;justify-content:center;gap:.38rem;margin:.05rem 1rem .25rem 0}.mzm-carousel-dots button{width:.42rem;height:.42rem;border:0;border-radius:999px;background:rgba(28,27,25,.18);padding:0;transition:width 180ms ease,background 180ms ease}.mzm-carousel-dots button.is-active{width:1.15rem;background:var(--study-orange,#ff5a14)}
+    .mzm-carousel-dots{display:flex;justify-content:center;gap:.38rem;margin:.05rem 0 .25rem}.mzm-carousel-dots button{width:.42rem;height:.42rem;border:0;border-radius:999px;background:rgba(28,27,25,.18);padding:0;transition:width 180ms ease,background 180ms ease}.mzm-carousel-dots button.is-active{width:1.15rem;background:var(--study-orange,#ff5a14)}
   `;
   document.head.appendChild(style);
 }
@@ -261,7 +272,7 @@ async function mount() {
   section.className = "mzm-request-form-card";
 
   const root = document.createElement("div"); root.id = ROOT_ID;
-  const closeToggle = document.createElement("button"); closeToggle.type = "button"; closeToggle.className = "mzm-form-close"; closeToggle.innerHTML = `Сгъни формата <span>⌃</span>`; closeToggle.addEventListener("click", () => setFormMode(section, "collapsed"));
+  const closeToggle = document.createElement("button"); closeToggle.type = "button"; closeToggle.className = "mzm-form-close"; closeToggle.innerHTML = `Активирай заявка <span>⌃</span>`; closeToggle.addEventListener("click", () => setFormMode(section, "collapsed"));
   const inner = document.createElement("div"); inner.className = "mzm-form-inner";
 
   const [districtWrap, districtSelect] = select("Избери район"); districts.forEach((d) => districtSelect.appendChild(option(d, d))); if (prefs.district && districts.includes(prefs.district)) districtSelect.value = prefs.district;
