@@ -1,0 +1,13 @@
+{
+  "district": "Илинден",
+  "entries": [
+    { "id": "raw-dg-051-main", "institutionId": "dg-051", "name": "ДГ №51 Щурче (с яслени групи)", "district": "Илинден", "address": "гр. София, ул. Цар Симеон, №271", "contact": "02/822 11 37", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-052-main", "institutionId": "dg-052", "name": "ДГ №52 Илинденче", "district": "Илинден", "address": "гр. София, ул. Пловдив, №25", "contact": "0884801576", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-052-kukush", "institutionId": "dg-052", "name": "ДГ №52 Илинденче - сграда ул. Кукуш № 1 (с яслени групи)", "district": "Илинден", "address": "гр. София, ж.к. Захарна фабрика, кв. 16, ул. Кукуш, №1", "contact": "02/426 77 80", "entryType": "building", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-153-main", "institutionId": "dg-153", "name": "ДГ №153 Света Троица", "district": "Илинден", "address": "гр. София, ул. Цар Симеон, №225", "contact": "+359 882 411 977", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-158-main", "institutionId": "dg-158", "name": "ДГ №158 Зора (с яслени групи)", "district": "Илинден", "address": "гр. София, кв. Захарна фабрика", "contact": "02/821 91 85", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-158-tsar-simeon", "institutionId": "dg-158", "name": "ДГ №158 Зора - сграда ул. Цар Симеон, бл. 313", "district": "Илинден", "address": "гр. София, ул. Цар Симеон, бл. 313, вх. А", "contact": "02/821 91 85", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-158-iliya-kushev", "institutionId": "dg-158", "name": "ДГ №158 Зора - сграда ул. Илия Кушев, бл. 118", "district": "Илинден", "address": "гр. София, ул. Илия Кушев, бл. 118, вх. Д", "contact": "02/821 91 85", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-179-main", "institutionId": "dg-179", "name": "ДГ №179 Синчец (с яслени групи)", "district": "Илинден", "address": "гр. София, ул. Kукуш, №34", "contact": "02/820 24 71; 02/821 00 25", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false }
+  ]
+}
