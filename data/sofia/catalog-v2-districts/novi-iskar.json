@@ -1,0 +1,16 @@
+{
+  "district": "Нови Искър",
+  "entries": [
+    { "id": "raw-dg-102-main", "institutionId": "dg-102", "name": "ДГ №102 Кременица (с яслени групи)", "district": "Нови Искър", "address": "гр. Нови Искър, кв. Курило, ул. Кременица, №18", "contact": "0879042872", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-102-katina", "institutionId": "dg-102", "name": "ДГ №102 Кременица - филиал с. Кътина", "district": "Нови Искър", "address": "с. Кътина", "contact": "02/991 72 49", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-102-gnilyane", "institutionId": "dg-102", "name": "ДГ №102 Кременица - сграда кв. Гниляне", "district": "Нови Искър", "address": "гр. Нови Искър, Гниляне", "contact": "", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-114-main", "institutionId": "dg-114", "name": "ДГ №114 Светулка (с яслени групи)", "district": "Нови Искър", "address": "с. Световрачене, ул. Миладин Цветков, №3", "contact": "0879459615", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-121-main", "institutionId": "dg-121", "name": "ДГ №121 (с яслени групи)", "district": "Нови Искър", "address": "гр. Нови Искър, кв. Кумарица, ул. Искърско дефиле, №73", "contact": "", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-121-dobroslavtsi", "institutionId": "dg-121", "name": "ДГ №121 - филиал с. Доброславци", "district": "Нови Искър", "address": "с. Доброславци, ул. Площад Мегдана, №1", "contact": "0884371785", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-132-main", "institutionId": "dg-132", "name": "ДГ №132 Светлина (с яслени групи)", "district": "Нови Искър", "address": "с. Чепинци, ул. Стара планина, №1", "contact": "0884801730", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-132-podgumer", "institutionId": "dg-132", "name": "ДГ №132 Светлина - филиал с. Подгумер", "district": "Нови Искър", "address": "с. Подгумер, ул. Стара планина, №4", "contact": "", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-135-main", "institutionId": "dg-135", "name": "ДГ №135 Мое детство (с яслени групи)", "district": "Нови Искър", "address": "гр. Нови Искър, ул. Варна, № 1", "contact": "0879043173; 0884801726", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-157-main", "institutionId": "dg-157", "name": "ДГ №157 Детска стряха (с яслени групи)", "district": "Нови Искър", "address": "гр. Нови Искър, ул. Беласица, №26", "contact": "02/991 75 93", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-201-main", "institutionId": "dg-201", "name": "ДГ №201 Детелинка (с яслени групи)", "district": "Нови Искър", "address": "с. Мировяне, ул. Христо Ботев № 3", "contact": "0882 569 583", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false }
+  ]
+}
