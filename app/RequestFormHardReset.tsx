@@ -60,20 +60,46 @@ function removeOldRequestUi(myRequestsSection: HTMLElement) {
   });
 }
 
+function getActiveIndex(shell: HTMLElement) {
+  const index = Number(shell.dataset.activeIndex || "0");
+  return Number.isFinite(index) ? index : 0;
+}
+function setActiveIndex(shell: HTMLElement, index: number) {
+  const cards = Array.from(shell.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
+  if (!cards.length) {
+    shell.dataset.activeIndex = "0";
+    updateCarouselState(shell);
+    return;
+  }
+  const next = ((index % cards.length) + cards.length) % cards.length;
+  shell.dataset.activeIndex = String(next);
+  updateCarouselState(shell);
+}
+function moveStack(shell: HTMLElement, direction: number) {
+  setActiveIndex(shell, getActiveIndex(shell) + direction);
+}
+
 function getOrCreateCarouselShell(myRequestsSection: HTMLElement) {
   let shell = myRequestsSection.querySelector<HTMLElement>(".mzm-carousel-shell");
   if (shell) return shell;
 
   shell = document.createElement("div");
   shell.className = "mzm-carousel-shell";
+  shell.dataset.activeIndex = "0";
   shell.innerHTML = `<div class="mzm-request-carousel" aria-label="Активни заявки"></div><div class="mzm-carousel-dots" aria-label="Навигация по заявки"></div>`;
   myRequestsSection.querySelector("h2")?.insertAdjacentElement("afterend", shell);
 
-  const track = shell.querySelector<HTMLElement>(".mzm-request-carousel");
-  let raf = 0;
-  track?.addEventListener("scroll", () => {
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => updateCarouselState(shell as HTMLElement));
+  const stage = shell.querySelector<HTMLElement>(".mzm-request-carousel");
+  let startX = 0;
+  let startY = 0;
+  stage?.addEventListener("pointerdown", (event) => {
+    startX = event.clientX;
+    startY = event.clientY;
+  }, { passive: true });
+  stage?.addEventListener("pointerup", (event) => {
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if (Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy)) moveStack(shell as HTMLElement, dx < 0 ? 1 : -1);
   }, { passive: true });
 
   return shell;
@@ -88,40 +114,30 @@ function placeShareAfterCarousel() {
 }
 
 function updateCarouselState(shell: HTMLElement) {
-  const track = shell.querySelector<HTMLElement>(".mzm-request-carousel");
   const dots = shell.querySelector<HTMLElement>(".mzm-carousel-dots");
-  if (!track || !dots) return;
+  if (!dots) return;
 
-  const cards = Array.from(track.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
-  const trackRect = track.getBoundingClientRect();
-  const trackCenter = trackRect.left + trackRect.width / 2;
-  let activeIndex = 0;
-  let closestDistance = Number.POSITIVE_INFINITY;
+  const cards = Array.from(shell.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
+  const activeIndex = cards.length ? ((getActiveIndex(shell) % cards.length) + cards.length) % cards.length : 0;
+  shell.dataset.activeIndex = String(activeIndex);
 
   cards.forEach((card, index) => {
-    const rect = card.getBoundingClientRect();
-    const cardCenter = rect.left + rect.width / 2;
-    const distance = Math.abs(cardCenter - trackCenter);
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      activeIndex = index;
-    }
-  });
-
-  cards.forEach((card, index) => {
-    const distance = Math.abs(index - activeIndex);
-    card.classList.toggle("is-active-card", index === activeIndex);
-    card.classList.toggle("is-near-card", distance === 1);
-    card.classList.toggle("is-far-card", distance > 1);
+    const forward = (index - activeIndex + cards.length) % cards.length;
+    const backward = (activeIndex - index + cards.length) % cards.length;
+    card.classList.toggle("is-active-card", forward === 0);
+    card.classList.toggle("is-next-card", forward === 1);
+    card.classList.toggle("is-next-next-card", forward === 2);
+    card.classList.toggle("is-prev-card", backward === 1);
+    card.classList.toggle("is-hidden-card", forward > 2 && backward > 1);
   });
 
   dots.innerHTML = "";
-  cards.forEach((card, index) => {
+  cards.forEach((_card, index) => {
     const dot = document.createElement("button");
     dot.type = "button";
     dot.className = index === activeIndex ? "is-active" : "";
     dot.setAttribute("aria-label", `Заявка ${index + 1}`);
-    dot.addEventListener("click", () => card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" }));
+    dot.addEventListener("click", () => setActiveIndex(shell, index));
     dots.appendChild(dot);
   });
 
@@ -188,38 +204,46 @@ function upsertCard(data: CardData) {
   if (!myRequestsSection) return;
   removeOldRequestUi(myRequestsSection);
   const shell = getOrCreateCarouselShell(myRequestsSection);
-  const track = shell.querySelector<HTMLElement>(".mzm-request-carousel");
-  if (!track) return;
+  const stage = shell.querySelector<HTMLElement>(".mzm-request-carousel");
+  if (!stage) return;
 
   if (data.requestId) {
-    Array.from(track.querySelectorAll<HTMLElement>("[data-request-id]")).find((card) => card.dataset.requestId === data.requestId)?.remove();
+    Array.from(stage.querySelectorAll<HTMLElement>("[data-request-id]")).find((card) => card.dataset.requestId === data.requestId)?.remove();
   }
 
   const card = createRequestCard(data);
-  track.appendChild(card);
+  stage.appendChild(card);
   placeShareAfterCarousel();
   requestAnimationFrame(() => {
-    updateCarouselState(shell);
-    card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    const cards = Array.from(stage.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
+    setActiveIndex(shell, Math.max(0, cards.length - 1));
   });
 }
 
-function hydrateExistingCards(snapshot: Snapshot | null, placeType: string) {
+function addInstitutionToMap(map: Map<string, CatalogInstitution>, kg: CatalogInstitution) {
+  map.set(kg.id, kg);
+  map.set(rawId(kg.id), kg);
+  map.set(valueOf(kg), kg);
+  map.set(`catalog:${rawId(kg.id)}`, kg);
+}
+function findInstitution(map: Map<string, CatalogInstitution>, id: string) {
+  return map.get(id) || map.get(rawId(id)) || map.get(`catalog:${rawId(id)}`);
+}
+
+function hydrateExistingCards(snapshot: Snapshot | null, placeType: string, catalogInstitutions: CatalogInstitution[]) {
   const userId = getSelectedUserId(snapshot);
   const requests = (snapshot?.requests || []).filter((request) => request.user_id === userId && request.is_active);
   if (!requests.length) return false;
 
   const kgById = new Map<string, CatalogInstitution>();
-  (snapshot?.kindergartens || []).forEach((kg) => {
-    kgById.set(kg.id, kg);
-    kgById.set(rawId(kg.id), kg);
-  });
+  catalogInstitutions.forEach((kg) => addInstitutionToMap(kgById, kg));
+  (snapshot?.kindergartens || []).forEach((kg) => addInstitutionToMap(kgById, kg));
   const wantedByRequest = new Map((snapshot?.wantedKindergartens || []).map((wanted) => [wanted.request_id, wanted]));
 
   requests.forEach((request) => {
     const wanted = wantedByRequest.get(request.id);
-    const from = kgById.get(request.from_kindergarten_id);
-    const wantedKg = wanted ? kgById.get(wanted.wanted_kindergarten_id) : undefined;
+    const from = findInstitution(kgById, request.from_kindergarten_id);
+    const wantedKg = wanted ? findInstitution(kgById, wanted.wanted_kindergarten_id) : undefined;
     upsertCard({
       requestId: request.id,
       fromText: from?.name || "Избрана градина",
@@ -246,9 +270,7 @@ function injectStyles() {
     .mzm-submit{margin-top:1rem;width:100%;border:0;border-radius:999px;background:var(--study-orange,#ff5a14);padding:1rem 1.25rem;color:white;font-weight:900;font-size:.9rem;box-shadow:0 16px 34px rgba(255,90,20,.24)}.mzm-submit:disabled{opacity:.42;background:#ffc0aa}.mzm-note{margin-top:.75rem;text-align:center;color:rgba(28,27,25,.45);font-size:.78rem;font-weight:700;line-height:1.45}.mzm-status{display:none!important}
     .mzm-collapsed{display:none}.mzm-toggle-open{width:100%;border:0;border-radius:1.8rem;background:#f7f5ef;padding:1rem;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:1rem}.mzm-toggle-open p{margin:0;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:rgba(28,27,25,.42)}.mzm-toggle-open h3{margin:.38rem 0 0;font-size:1.05rem;line-height:1.15;font-weight:900;color:#1c1b19}.mzm-toggle-open span{display:grid;place-items:center;width:2.35rem;height:2.35rem;border-radius:999px;background:white;color:#1c1b19;font-size:1.2rem;font-weight:900;box-shadow:0 10px 22px rgba(33,28,17,.04)}
     .mzm-request-form-card.is-collapsed .mzm-form-close,.mzm-request-form-card.is-collapsed .mzm-form-inner,.mzm-request-form-card.is-collapsed .mzm-submit,.mzm-request-form-card.is-collapsed .mzm-note{display:none}.mzm-request-form-card.is-collapsed .mzm-collapsed{display:block}
-    .mzm-carousel-shell{position:relative;margin:.35rem 0 .5rem;padding:.25rem 0 .45rem;overflow:hidden}.mzm-carousel-shell.has-multiple::before,.mzm-carousel-shell.has-multiple::after{content:"";position:absolute;height:calc(100% - 2.35rem);border-radius:2rem;background:#dfe7b8;box-shadow:0 14px 34px rgba(40,34,20,.05);pointer-events:none;z-index:0}.mzm-carousel-shell.has-multiple::before{top:.45rem;left:2.1rem;right:2.1rem;transform:translateY(.15rem) scale(.92);opacity:.45}.mzm-carousel-shell.has-multiple::after{top:.65rem;left:1.55rem;right:1.55rem;transform:translateY(.2rem) scale(.96);opacity:.62}
-    .mzm-request-carousel{position:relative;z-index:2;display:flex;gap:.85rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.85rem 1.1rem 1rem;scroll-padding-inline:1.1rem;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}.mzm-request-carousel::-webkit-scrollbar{display:none}
-    .mzm-request-card{position:relative;flex:0 0 calc(100% - 2.2rem);max-width:calc(100% - 2.2rem);scroll-snap-align:center;border-radius:2rem;background:#ECECC7;padding:1.25rem;box-shadow:0 18px 42px rgba(40,34,20,.08);transform:scale(.94) translateY(.28rem);transform-origin:center center;opacity:.62;transition:transform 240ms cubic-bezier(.2,.8,.2,1),opacity 240ms ease,box-shadow 240ms ease}.mzm-request-card.is-active-card{transform:scale(1) translateY(0);opacity:1;box-shadow:0 22px 52px rgba(40,34,20,.12)}.mzm-request-card.is-near-card{transform:scale(.94) translateY(.22rem);opacity:.68}.mzm-request-card.is-far-card{transform:scale(.9) translateY(.45rem);opacity:.42}.mzm-request-card.is-inactive{opacity:.6}
+    .mzm-carousel-shell{position:relative;margin:.45rem 0 .75rem;padding:.25rem 0 .45rem;overflow:visible;perspective:900px}.mzm-request-carousel{position:relative;height:16.8rem;overflow:visible;touch-action:pan-y;user-select:none}.mzm-request-card{position:absolute;inset:.55rem .85rem 1.05rem;border-radius:2rem;background:#ECECC7;padding:1.25rem;box-shadow:0 18px 42px rgba(40,34,20,.08);opacity:0;pointer-events:none;transform-origin:center center;transition:transform 280ms cubic-bezier(.2,.8,.2,1),opacity 240ms ease,box-shadow 240ms ease;will-change:transform,opacity}.mzm-request-card.is-active-card{z-index:5;opacity:1;pointer-events:auto;transform:translateX(0) translateY(0) rotate(0deg) scale(1);box-shadow:0 24px 60px rgba(40,34,20,.14)}.mzm-request-card.is-next-card{z-index:4;opacity:.72;transform:translateX(.78rem) translateY(.35rem) rotate(3deg) scale(.955)}.mzm-request-card.is-next-next-card{z-index:3;opacity:.42;transform:translateX(1.38rem) translateY(.7rem) rotate(6deg) scale(.91)}.mzm-request-card.is-prev-card{z-index:2;opacity:.26;transform:translateX(-.9rem) translateY(.5rem) rotate(-4deg) scale(.92)}.mzm-request-card.is-hidden-card{z-index:1;opacity:0;transform:translateX(2.2rem) translateY(1rem) rotate(8deg) scale(.86)}.mzm-request-card.is-inactive{opacity:.5}
     .mzm-request-card-content{padding-right:2.8rem}.mzm-request-card-content p{margin:0;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:rgba(28,27,25,.42)}.mzm-request-card-content h3{margin:.55rem 0 0;display:grid;gap:.35rem;font-size:1.08rem;line-height:1.12;font-weight:900;color:#1c1b19}.mzm-request-card-content h3 b{font-size:1.25rem}.mzm-request-card-content em{display:block;margin-top:.75rem;font-style:normal;font-size:.9rem;font-weight:800;color:rgba(28,27,25,.55)}.mzm-request-card-content mark{display:inline-block;margin-top:.85rem;border-radius:999px;background:rgba(255,255,255,.7);padding:.5rem .75rem;font-size:.7rem;font-weight:900;color:#1c1b19}
     .mzm-card-menu{position:absolute;top:1rem;right:1rem;z-index:6}.mzm-card-menu summary{list-style:none;width:2.45rem;height:2.45rem;border-radius:999px;background:rgba(255,255,255,.74);display:grid;place-items:center;font-size:1.15rem;font-weight:900;letter-spacing:.04em;color:#1c1b19;cursor:pointer;box-shadow:0 10px 22px rgba(33,28,17,.05)}.mzm-card-menu summary::-webkit-details-marker{display:none}.mzm-card-menu[open] summary{background:#fff}.mzm-card-menu-popover{position:absolute;right:0;top:2.75rem;min-width:10.5rem;border-radius:1.1rem;background:rgba(255,255,255,.96);padding:.35rem;box-shadow:0 18px 38px rgba(33,28,17,.16);backdrop-filter:blur(12px)}.mzm-card-menu-popover button{width:100%;border:0;background:transparent;border-radius:.85rem;padding:.8rem .85rem;text-align:left;font-size:.78rem;font-weight:900;color:#1c1b19}.mzm-card-menu-popover button[data-action='delete']{color:var(--study-orange,#ff5a14)}
     .mzm-carousel-dots{display:flex;justify-content:center;gap:.38rem;margin:.05rem 0 .25rem}.mzm-carousel-dots button{width:.42rem;height:.42rem;border:0;border-radius:999px;background:rgba(28,27,25,.18);padding:0;transition:width 180ms ease,background 180ms ease}.mzm-carousel-dots button.is-active{width:1.15rem;background:var(--study-orange,#ff5a14)}
@@ -321,7 +343,7 @@ async function mount() {
   };
 
   root.append(closeToggle, inner, submit, note, collapsed); section.appendChild(root); rebuild(prefs.from, prefs.wanted);
-  const hasExisting = hydrateExistingCards(snapshot, selectedType); setFormMode(section, hasExisting ? "collapsed" : "expanded"); placeShareAfterCarousel();
+  const hasExisting = hydrateExistingCards(snapshot, selectedType, institutions); setFormMode(section, hasExisting ? "collapsed" : "expanded"); placeShareAfterCarousel();
 }
 
 function run() { void mount(); }
