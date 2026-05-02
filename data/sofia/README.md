@@ -1,23 +1,100 @@
-# Sofia kindergarten / school source data
+# Sofia catalog — МястоЗаМясто
 
-Тази папка е запазена за локални/официални източници от SofiaPlan и Столична община.
+Runtime catalog source:
 
-Към текущия билд каталогът се зарежда server-side от публичното API на SofiaPlan, вместо от placeholder fallback данни.
+```txt
+data/sofia/mzm-catalog.json
+```
 
-## Полезни източници
+The app must read only this editable plain JSON file. The compressed PDF bundle is an archive/reference and must not be used by runtime code.
 
-- `https://api.sofiaplan.bg/datasets` — списък с публични набори.
-- `https://api.sofiaplan.bg/datasets/142` — детски градини / ясли, GeoJSON.
-- `https://api.sofiaplan.bg/datasets/166` — училища, GeoJSON.
-- `https://api.sofiaplan.bg/datasets/628` — райони, GeoJSON.
-- `https://kg.sofia.bg/#/home` — официален родителски интерфейс.
+## Structure
 
-## Файлове, намерени за допълнително обогатяване
+The important editable section is `rawEntries`.
 
-- `Регистър-ДГ-2025-2026-1.xlsx` — актуален регистър с групи, капацитет и контакти.
-- `dg_reg_karti_26_sofpr_20180808.geojson.json` — регистър карти: име, район, адрес, телефон, email, сайт, директор, тип.
-- `dg_reg_karti_grupi_26_sofpr_20180808.json` — групи по регистър карта: яслена, първа, втора, подготвителни и брой деца.
-- `dg_sgr_26_sofpr_20180808_mv.json` — сгради/адресни записи.
-- `dg_pi_26_sofpr_20180808_mv.json` — имоти/парцели.
+Each row is one selectable option in the app. Do not merge buildings, branches or hourly organizations unless the municipality explicitly removes them.
 
-Бележка: бинарният `.xlsx` не е подходящ за директен import в Next runtime. За приложението е по-добре да се нормализира в JSON snapshot или да се държи като source artifact извън runtime bundle.
+Recommended fields:
+
+```json
+{
+  "id": "raw-dg-019-main",
+  "institutionId": "dg-019",
+  "name": "ДГ №19 Света София",
+  "district": "Лозенец",
+  "address": "гр. София, ул. Христо Смирненски, №36",
+  "contact": "02/866 12 30",
+  "entryType": "main",
+  "hasNurseryGroups": false,
+  "isHourlyOrganization": false,
+  "source": "pdf-catalog-2026-05-02"
+}
+```
+
+## How to update contacts
+
+Change only `contact` on the relevant `rawEntries` row.
+
+Example:
+
+```json
+"contact": "02/866 12 30; 0888 000 000"
+```
+
+## How to add a new building
+
+Add a new row to `rawEntries` with the same `institutionId` and a unique `id`.
+
+Example:
+
+```json
+{
+  "id": "raw-dg-019-b2",
+  "institutionId": "dg-019",
+  "name": "ДГ №19 Света София - сграда 2",
+  "district": "Лозенец",
+  "address": "гр. София, ...",
+  "contact": "02/...",
+  "entryType": "building",
+  "hasNurseryGroups": false,
+  "isHourlyOrganization": false,
+  "source": "manual-update-YYYY-MM-DD"
+}
+```
+
+## Entry types
+
+Use:
+
+- `main` — main institution row
+- `building` — additional building / branch
+- `hourly` — hourly organization
+
+## Categories
+
+The loader infers the selectable category:
+
+- name includes `СДЯ` or `детска ясла` → `Ясла`
+- `hasNurseryGroups: true` or name includes `с яслени групи` → `Детска градина с яслени групи`
+- otherwise → `ДГ`
+
+## Validation before deploy
+
+Run:
+
+```bash
+npm run validate:catalog
+```
+
+The script checks:
+
+- `rawEntries` is not empty
+- every row has `id`, `name`, `district`
+- every district is included in `districts`
+- duplicate ids
+- missing contact/address warnings
+- stats consistency
+
+## Rule
+
+Never add demo or placeholder institutions such as `Дъга` to this file. The app should never show records that are not present in `mzm-catalog.json`.
