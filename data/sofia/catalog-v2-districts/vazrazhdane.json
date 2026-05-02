@@ -1,0 +1,12 @@
+{
+  "district": "Възраждане",
+  "entries": [
+    { "id": "raw-dg-001-main", "institutionId": "dg-001", "name": "ДГ №1 Червената шапчица (с яслени групи)", "district": "Възраждане", "address": "гр. София, ул. Брегалница, №48", "contact": "02/831 70 17", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-050-main", "institutionId": "dg-050", "name": "ДГ №50 Зайчето Куики (с яслени групи)", "district": "Възраждане", "address": "гр. София, кв. Зона Б-5", "contact": "02/822 91 41; 02/829 26 70", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-081-main", "institutionId": "dg-081", "name": "ДГ №81 Лилия (с яслени групи)", "district": "Възраждане", "address": "гр. София, ул. Одрин, №62", "contact": "02/822 08 18; 02/822 18 82; 02/829 12 99", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-119-main", "institutionId": "dg-119", "name": "ДГ №119 Детска планета", "district": "Възраждане", "address": "гр. София, ул. Брегалница, №26", "contact": "028293846; 0889580056", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-119-b2", "institutionId": "dg-119", "name": "ДГ №119 Детска планета - сграда 2", "district": "Възраждане", "address": "гр. София, ул. Гюешево, №78", "contact": "024422261; 0885036048", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-120-main", "institutionId": "dg-120", "name": "ДГ №120 Детство под липите (с яслени групи)", "district": "Възраждане", "address": "гр. София, ул. Позитано, №125", "contact": "02/822 32 19", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-194-main", "institutionId": "dg-194", "name": "ДГ №194 Милувка", "district": "Възраждане", "address": "гр. София, Овче поле, №123", "contact": "02/831 03 24", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false }
+  ]
+}
