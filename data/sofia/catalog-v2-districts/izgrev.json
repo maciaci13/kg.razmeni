@@ -1,0 +1,15 @@
+{
+  "district": "Изгрев",
+  "entries": [
+    { "id": "raw-dg-023-main", "institutionId": "dg-023", "name": "ДГ №23 Здраве (с яслени групи)", "district": "Изгрев", "address": "гр. София, ул. Майор Ю. Гагарин, №14-16", "contact": "02/872 00 33", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-029-main", "institutionId": "dg-029", "name": "ДГ №29 Слънце (с яслени групи)", "district": "Изгрев", "address": "гр. София, ул. Тодор Стоянов, №18", "contact": "02/870 83 88", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-030-main", "institutionId": "dg-030", "name": "ДГ №30 Радецки (с яслени групи)", "district": "Изгрев", "address": "гр. София, ул. Hикола Габровски, №26", "contact": "0884801523", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-034-main", "institutionId": "dg-034", "name": "ДГ №34 Брезичка (с яслени групи)", "district": "Изгрев", "address": "гр. София, ул. Владимир Трендафилов, №1", "contact": "02/862 82 40; 02/862 83 40", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-034-hourly", "institutionId": "dg-034", "name": "ДГ №34 Брезичка - почасова организация", "district": "Изгрев", "address": "гр. София, ул. Владимир Трендафилов, №1", "contact": "", "entryType": "hourly", "hasNurseryGroups": false, "isHourlyOrganization": true },
+    { "id": "raw-sdya-036-main", "institutionId": "sdya-036", "name": "СДЯ №36 Слънчево зайче", "district": "Изгрев", "address": "гр. София, ул. Тодор Стоянов, №15", "contact": "02/872 05 40", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-sdya-037-main", "institutionId": "sdya-037", "name": "СДЯ №37 Проф. д-р Иван Митев", "district": "Изгрев", "address": "гр. София, ул. Вълко Раденски № 5", "contact": "", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-049-main", "institutionId": "dg-049", "name": "ДГ №49 Радост (с яслени групи)", "district": "Изгрев", "address": "гр. София, ул. Св. Пимен Зографски, №5", "contact": "02/962 05 31", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-133-main", "institutionId": "dg-133", "name": "ДГ №133 Зорница", "district": "Изгрев", "address": "гр. София, ул. Еужен Потие, №1", "contact": "02/872 03 90", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-165-main", "institutionId": "dg-165", "name": "ДГ №165 Латинка", "district": "Изгрев", "address": "гр. София, ул. Чарлз Дарвин, №19", "contact": "02/872 01 02", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false }
+  ]
+}
