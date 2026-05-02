@@ -219,6 +219,7 @@ main:has(nav.fixed.bottom-4) section:has(.mzm-enhanced-request-panel) > p.mt-3.t
   display: block !important;
 }
 
-main:has(nav.fixed.bottom-4) .mzm-catalog-status {
+main:has(nav.fixed.bottom-4) .mzm-catalog-status,
+main:has(nav.fixed.bottom-4) .mzm-hard-status {
   display: none !important;
 }
