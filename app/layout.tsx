@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
 import HomeStatsCleanup from "./HomeStatsCleanup";
+import PersistentCoordination from "./PersistentCoordination";
 import RequestFormHardReset from "./RequestFormHardReset";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {children}
         <HomeGuidanceEnhancer />
         <HomeStatsCleanup />
+        <PersistentCoordination />
         <RequestFormHardReset />
         <RequestVisualPolish />
         <ShareRequestEnhancer />
