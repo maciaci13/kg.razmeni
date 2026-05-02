@@ -1,0 +1,16 @@
+{
+  "district": "Средец",
+  "entries": [
+    { "id": "raw-sdya-001-main", "institutionId": "sdya-001", "name": "СДЯ №1", "district": "Средец", "address": "гр. София, ул. Хан Крум, №23", "contact": "0889040084", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-018-main", "institutionId": "dg-018", "name": "ДГ №18 Детски свят (с яслени групи)", "district": "Средец", "address": "гр. София, ж.к. Яворов ул. Георги Марков, №2", "contact": "02/943 79 54", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-018-b2", "institutionId": "dg-018", "name": "ДГ №18 Детски свят - сграда 2", "district": "Средец", "address": "гр. София, ул. Цар Иван Асен II, №66", "contact": "02/943 76 41", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-sdya-028-main", "institutionId": "sdya-028", "name": "СДЯ №28", "district": "Средец", "address": "гр. София, ул. Христо Белчев, №41", "contact": "02/987 20 77", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-077-main", "institutionId": "dg-077", "name": "ДГ №77 Магнолия", "district": "Средец", "address": "гр. София, ул. Мизия, № 6", "contact": "02/944 17 22", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-113-main", "institutionId": "dg-113", "name": "ДГ №113 Преспа", "district": "Средец", "address": "гр. София, ул. Преспа, №3", "contact": "02/987 61 25", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-113-b2", "institutionId": "dg-113", "name": "ДГ №113 Преспа - сграда", "district": "Средец", "address": "гр. София, ул. Хан Аспарух, №52", "contact": "", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-159-main", "institutionId": "dg-159", "name": "ДГ №159 Олимпийче", "district": "Средец", "address": "гр. София, ул. Гладстон, №38", "contact": "02/988 5 683", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-159-b2", "institutionId": "dg-159", "name": "ДГ №159 Олимпийче - сграда 2", "district": "Средец", "address": "гр. София, ул. Христо Белчев, №13", "contact": "02/988 56 83", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-159-b2-hourly", "institutionId": "dg-159", "name": "ДГ №159 Олимпийче - сграда 2, почасова организация", "district": "Средец", "address": "гр. София, ул. Христо Белчев, № 13", "contact": "02/988 56 83", "entryType": "hourly", "hasNurseryGroups": false, "isHourlyOrganization": true },
+    { "id": "raw-dg-159-b3", "institutionId": "dg-159", "name": "ДГ №159 Олимпийче - сграда 3", "district": "Средец", "address": "гр. София, ул. Христо Белчев, №36", "contact": "", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false }
+  ]
+}
