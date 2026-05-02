@@ -15,6 +15,7 @@ type Snapshot = {
   requests?: Array<{ id: string; user_id: string; from_kindergarten_id: string; is_active: boolean; is_locked?: boolean; child_group_year_or_age_group: string }>;
   wantedKindergartens?: Array<{ id: string; request_id: string; wanted_kindergarten_id: string; priority_order: number }>;
 };
+type ApiSnapshot = Snapshot & { error?: string };
 type Prefs = { district?: string; year?: string; placeType?: string; from?: string; wanted?: string };
 type CardData = { requestId?: string; fromText: string; wantedText: string; ageGroup: string; placeType: string; locked?: boolean };
 
@@ -300,8 +301,8 @@ async function mount() {
     const ageGroup = yearSelect.value;
     submit.disabled = true; submit.textContent = "Записвам...";
     const response = await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "createRequest", userId, fromKindergartenId: fromSelect.value, wantedKindergartenId: wantedSelect.value, ageGroup }) });
-    const data = await response.json().catch(() => null) as Snapshot | { error?: string } | null;
-    if (!response.ok || !data || "error" in data) { submit.textContent = "Активирай заявка"; updateSubmit(); return; }
+    const data = await response.json().catch(() => null) as ApiSnapshot | null;
+    if (!response.ok || !data || data.error) { submit.textContent = "Активирай заявка"; updateSubmit(); return; }
     const created = data.requests?.find((request) => request.user_id === userId && request.child_group_year_or_age_group === ageGroup);
     savePrefs({ district: districtSelect.value, year: ageGroup, placeType: selectedType, from: fromSelect.value, wanted: wantedSelect.value });
     upsertCard({ requestId: created?.id, fromText, wantedText, ageGroup, placeType: selectedType, locked: created?.is_locked });
