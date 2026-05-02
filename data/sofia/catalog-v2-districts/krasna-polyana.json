@@ -1,0 +1,16 @@
+{
+  "district": "Красна поляна",
+  "entries": [
+    { "id": "raw-sdya-048-main", "institutionId": "sdya-048", "name": "СДЯ №48", "district": "Красна поляна", "address": "гр. София, ул. Суходолска, №2", "contact": "02/822 33 64", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-sdya-051-main", "institutionId": "sdya-051", "name": "СДЯ №51", "district": "Красна поляна", "address": "гр. София, ул. Братин дол, №29", "contact": "02/822 33 29", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-054-main", "institutionId": "dg-054", "name": "ДГ №54 Дъга (с яслени групи)", "district": "Красна поляна", "address": "гр. София, ул. Уста Генчо № 4-А", "contact": "02/821 70 75; 02/929 07 33", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-126-main", "institutionId": "dg-126", "name": "ДГ №126 Тинтява", "district": "Красна поляна", "address": "гр. София, ж.к. Красна поляна II, ул. Спас Вацов, №1", "contact": "02/822 34 56", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-126-b2", "institutionId": "dg-126", "name": "ДГ №126 Тинтява - сграда 2", "district": "Красна поляна", "address": "гр. София, ул. Проф. Вайганд, №6", "contact": "0885036241", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-128-main", "institutionId": "dg-128", "name": "ДГ №128 Феникс", "district": "Красна поляна", "address": "гр. София, ж.к. Западен парк, ул. Суходолска, №2 (до 17 СОУ)", "contact": "02/822 36 18; 02/920 02 68", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-128-b2", "institutionId": "dg-128", "name": "ДГ №128 Феникс - сграда 2 (с яслени групи)", "district": "Красна поляна", "address": "гр. София, ж.к. Западен парк, ул. Суходолска, №2 (до бл. 110 - сградата на бившата 32 СДЯ)", "contact": "02/822 35 97", "entryType": "building", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-130-main", "institutionId": "dg-130", "name": "ДГ №130 Приказка", "district": "Красна поляна", "address": "гр. София, ул. Булина ливада, №41", "contact": "02/822 36 73", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-169-main", "institutionId": "dg-169", "name": "ДГ №169 Коледарче", "district": "Красна поляна", "address": "гр. София, бул. Алеко Туранджа, №4", "contact": "02/822 10 43", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-187-main", "institutionId": "dg-187", "name": "ДГ №187 Жар птица (с яслени групи)", "district": "Красна поляна", "address": "гр. София, ул. Добротич, №48", "contact": "", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-196-main", "institutionId": "dg-196", "name": "ДГ №196 Шарл Перо", "district": "Красна поляна", "address": "гр. София, ул. Братин дол, №7", "contact": "02/822 17 87; 02/929 02 25", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false }
+  ]
+}
