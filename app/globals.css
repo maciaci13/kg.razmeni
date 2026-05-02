@@ -168,22 +168,22 @@ main .rounded-\[1\.8rem\],
 main .rounded-\[2\.2rem\] { box-shadow: 0 10px 24px rgba(33, 28, 17, 0.04); }
 
 main nav.fixed.bottom-4 {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border: 1px solid rgba(255, 255, 255, 0.96) !important;
   box-shadow:
-    0 -10px 34px rgba(28, 27, 25, 0.08),
-    0 18px 56px rgba(28, 27, 25, 0.10),
-    inset 0 0 0 1px rgba(28, 27, 25, 0.035) !important;
-  border: 1px solid rgba(255, 255, 255, 0.88);
+    0 -10px 34px rgba(28, 27, 25, 0.09),
+    0 20px 60px rgba(28, 27, 25, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(28, 27, 25, 0.05) !important;
+  backdrop-filter: blur(26px) saturate(1.25) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.25) !important;
 }
 
-main nav.fixed.bottom-4::before {
-  content: "";
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 100%;
-  height: 34px;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,252,250,0), rgba(255,252,250,0.82));
+main nav.fixed.bottom-4::before { display: none !important; }
+
+main:has(nav.fixed.bottom-4) nav.fixed.bottom-4 button:not(.bg-orange) {
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 main .text-orange { color: var(--study-orange) !important; }
@@ -202,6 +202,17 @@ main:has(nav.fixed.bottom-4) > div > .mb-5.flex.items-center.justify-between but
 main:has(nav.fixed.bottom-4) section.rounded-\[2\.2rem\].bg-white\/90.p-5.shadow-soft.backdrop-blur > label.mt-5,
 main:has(nav.fixed.bottom-4) section.rounded-\[2\.2rem\].bg-white\/90.p-5.shadow-soft.backdrop-blur > label.mt-5 + .relative {
   display: none !important;
+}
+
+/* Hide the legacy request form immediately, before the client hard-reset mounts. */
+main:has(nav.fixed.bottom-4) section.rounded-\[2\.2rem\].bg-white\/90.p-4.shadow-soft.backdrop-blur:has(.app-select) {
+  visibility: hidden !important;
+  min-height: 360px;
+}
+
+main:has(nav.fixed.bottom-4) section.mzm-request-form-card,
+main:has(nav.fixed.bottom-4) section:has(#mzm-request-polish-root) {
+  visibility: visible !important;
 }
 
 /* Force request form replacement while app/page.tsx is still a monolith. */
