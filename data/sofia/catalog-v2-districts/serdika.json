@@ -1,0 +1,15 @@
+{
+  "district": "Сердика",
+  "entries": [
+    { "id": "raw-dg-045-main", "institutionId": "dg-045", "name": "ДГ №45 Алиса", "district": "Сердика", "address": "гр. София, ул. Шумен, №2", "contact": "02/831 00 58", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-048-main", "institutionId": "dg-048", "name": "ДГ №48 Братя Грим (с яслени групи)", "district": "Сердика", "address": "гр. София, ул. Марин Д. Христов, №5", "contact": "02/832 10 22", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-053-main", "institutionId": "dg-053", "name": "ДГ №53 Дядовата ръкавичка (с яслени групи)", "district": "Сердика", "address": "гр. София, ул. Ив. Тургенев, №10", "contact": "02/832 21 76", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-063-main", "institutionId": "dg-063", "name": "ДГ №63 Слънце (с яслени групи)", "district": "Сердика", "address": "гр. София, ул. Стария кладенец, №2", "contact": "02/936 70 91", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-sdya-070-main", "institutionId": "sdya-070", "name": "СДЯ №70 Мечо Пух", "district": "Сердика", "address": "гр. София, ул. Ком, №24", "contact": "02/936 71 79", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-106-main", "institutionId": "dg-106", "name": "ДГ №106 Княгиня Мария-Луиза", "district": "Сердика", "address": "гр. София, ул. Родопи, №8", "contact": "0882958181", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-118-main", "institutionId": "dg-118", "name": "ДГ №118 Усмивка", "district": "Сердика", "address": "гр. София, ул. Тайга, №29", "contact": "02/936 73 12", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-149-main", "institutionId": "dg-149", "name": "ДГ №149 Зорница", "district": "Сердика", "address": "гр. София, ул. Железопътна, №22", "contact": "02/936 75 82", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-149-b2", "institutionId": "dg-149", "name": "ДГ №149 Зорница - сграда 2", "district": "Сердика", "address": "гр. София, кв. Малашевци, ул. Училищна, №10", "contact": "02/936 75 82", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-199-main", "institutionId": "dg-199", "name": "ДГ №199 Сарагоса (с яслени групи)", "district": "Сердика", "address": "гр. София, ул. Струга, №15а", "contact": "02/831 31 40", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false }
+  ]
+}
