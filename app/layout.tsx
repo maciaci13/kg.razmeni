@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
-import CatalogSelectBridge from "./CatalogSelectBridge";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
-import RequestFormEnhancer from "./RequestFormEnhancer";
+import RequestFormHardReset from "./RequestFormHardReset";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
 import TextCopyNormalizer from "./TextCopyNormalizer";
 import "./globals.css";
@@ -25,8 +24,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={sofiaSans.className}>
         {children}
         <HomeGuidanceEnhancer />
-        <RequestFormEnhancer />
-        <CatalogSelectBridge />
+        <RequestFormHardReset />
         <ShareRequestEnhancer />
         <TextCopyNormalizer />
       </body>
