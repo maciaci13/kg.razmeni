@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "build:catalog": "node scripts/build-catalog-v2.mjs",
     "validate:catalog": "node scripts/validate-catalog.mjs",
-    "prebuild": "npm run validate:catalog"
+    "prebuild": "npm run build:catalog && npm run validate:catalog"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
