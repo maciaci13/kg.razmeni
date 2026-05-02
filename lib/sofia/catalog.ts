@@ -1,32 +1,96 @@
-export type SofiaSourceStatus={id:string;label:string;url:string;status:"ok"|"error"|"fallback";checkedAt:string;detail?:string};
-export type SofiaInstitutionCategory="ДГ"|"Детска градина с яслени групи";
-export type SofiaInstitution={id:string;name:string;type:"kindergarten"|"unknown";category?:SofiaInstitutionCategory;subtype?:string;district?:string;districtCode?:string;address?:string;website?:string;phone?:string;email?:string;source:string;sourceUrl:string;raw?:Record<string,unknown>};
-export type SofiaCatalog={generatedAt:string;districts:string[];years:string[];categories:SofiaInstitutionCategory[];institutions:SofiaInstitution[];groupedByDistrict:Record<string,Record<string,SofiaInstitution[]>>;sources:SofiaSourceStatus[];stats:{institutionsTotal:number;districtsTotal:number;byCategory:Record<string,number>;byType:Record<string,number>};notes:string[]};
+import { gunzipSync } from "node:zlib";
+import pdfCatalogBundle from "@/data/sofia/mzm-catalog-pdf.json";
 
-type Feature={properties?:Record<string,unknown>};
-type GeoJson={features?:Feature[]};
+export type SofiaSourceStatus = { id: string; label: string; url: string; status: "ok" | "error" | "fallback"; checkedAt: string; detail?: string };
+export type SofiaInstitutionCategory = "ДГ" | "Детска градина с яслени групи" | "Ясла";
+export type SofiaInstitution = { id: string; name: string; type: "kindergarten" | "nursery" | "unknown"; category?: SofiaInstitutionCategory; subtype?: string; district?: string; districtCode?: string; address?: string | null; website?: string | null; phone?: string | null; email?: string | null; source: string; sourceUrl: string; raw?: Record<string, unknown> };
+export type SofiaCatalog = { generatedAt: string; districts: string[]; years: string[]; categories: SofiaInstitutionCategory[]; institutions: SofiaInstitution[]; groupedByDistrict: Record<string, Record<string, SofiaInstitution[]>>; sources: SofiaSourceStatus[]; stats: { institutionsTotal: number; districtsTotal: number; byCategory: Record<string, number>; byType: Record<string, number>; byDistrict: Record<string, number>; rawEntriesTotal: number }; notes: string[] };
 
-export const SOFIA_DISTRICTS=["Банкя","Витоша","Връбница","Възраждане","Изгрев","Илинден","Искър","Красна поляна","Красно село","Кремиковци","Лозенец","Люлин","Младост","Надежда","Нови Искър","Оборище","Овча купел","Панчарево","Подуяне","Сердика","Слатина","Средец","Студентски","Триадица"];
-export const SOFIA_DISTRICT_CODES:Record<string,string>={"01":"Средец","02":"Красно село","03":"Възраждане","04":"Оборище","05":"Сердика","06":"Подуяне","07":"Слатина","08":"Изгрев","09":"Лозенец","10":"Триадица","11":"Красна поляна","12":"Илинден","13":"Надежда","14":"Искър","15":"Младост","16":"Студентски","17":"Витоша","18":"Овча купел","19":"Люлин","20":"Връбница","21":"Нови Искър","22":"Кремиковци","23":"Панчарево","24":"Банкя"};
-export const OFFICIAL_SOURCE_URLS={kgHome:"https://kg.sofia.bg/#/home",kgSpots:"https://kg.sofia.bg/#/spots",kgKindergartens:"https://kg.sofia.bg/#/kindergartens",sofiaPlanApi:"https://api.sofiaplan.bg",sofiaPlanDatasets:"https://api.sofiaplan.bg/datasets",sofiaPlanMunicipalKindergartens:"https://api.sofiaplan.bg/datasets/311",sofiaKindergartenRegister:"https://www.sofia.bg/kinder-garden",sofiaAdmissionService:"https://www.sofia.bg/web/svc/w/priem-v-detski-zavedenia"};
+type RawEntry = Record<string, unknown> & { id?: string; institutionId?: string; name?: string; district?: string; address?: string; contact?: string; phone?: string; email?: string; website?: string; category?: string; type?: string; entryType?: string; hasNurseryGroups?: boolean; isHourlyOrganization?: boolean };
+type RawCatalog = { generatedAt?: string; notes?: string[]; districts?: string[]; rawEntries?: RawEntry[]; raw_entries?: RawEntry[] };
+type Bundle = RawCatalog & { encoding?: string; payload?: string };
 
-const CATEGORIES:SofiaInstitutionCategory[]=["ДГ","Детска градина с яслени групи"];
-const FALLBACK_INSTITUTIONS:SofiaInstitution[]=[{id:"fallback-catalog",name:"Каталогът временно не е зареден",type:"unknown",category:"ДГ",district:"Средец",source:"fallback",sourceUrl:OFFICIAL_SOURCE_URLS.sofiaPlanApi}];
+const bundle = pdfCatalogBundle as unknown as Bundle;
+const SOURCE_URL = "/data/sofia/mzm-catalog-pdf.json";
+const CATEGORIES: SofiaInstitutionCategory[] = ["ДГ", "Детска градина с яслени групи", "Ясла"];
+let cachedCatalog: RawCatalog | null = null;
 
-function slugify(value:string){return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^\p{L}\p{N}]+/gu,"-").replace(/^-+|-+$/g,"").slice(0,90)}
-function asString(value:unknown){if(typeof value==="string")return value.trim()||undefined;if(typeof value==="number")return String(value);return undefined}
-function code(value:unknown){const raw=asString(value);return raw?raw.padStart(2,"0"):undefined}
-function numberFromName(value:string){return value.match(/№\s*([0-9]+)/)?.[1]}
-function displayKindergartenName(value:string){const number=numberFromName(value);const quoted=value.match(/"([^"]+)"/)?.[1];if(number&&quoted)return `ДГ № ${number} "${quoted}"`;return value.replace(/^ДЕТСКА ГРАДИНА\s*/i,"ДГ ")}
-export function getCatalogYears(now=new Date()){const currentYear=now.getFullYear();const years:string[]=[];for(let year=currentYear;year>=currentYear-6;year-=1)years.push(String(year));return years}
+function decodeCatalog(): RawCatalog {
+  if (cachedCatalog) return cachedCatalog;
+  if (bundle.encoding === "gzip+base64+json" && typeof bundle.payload === "string") {
+    cachedCatalog = JSON.parse(gunzipSync(Buffer.from(bundle.payload, "base64")).toString("utf8")) as RawCatalog;
+    return cachedCatalog;
+  }
+  cachedCatalog = bundle;
+  return cachedCatalog;
+}
 
-function isPrivateOrUnsupported(record:Record<string,unknown>){const typeCode=asString(record.type)??asString(record.tip);const name=(asString(record.object_nam)??asString(record.ime)??"").toLowerCase();const ownership=(asString(record.ownership)??asString(record.vid_sobstvenost)??asString(record.sobstvenost)??asString(record.forma)??"").toLowerCase();return typeCode==="3"||ownership.includes("част")||name.includes("частна")||name.includes("частно")||name.includes("чдг")||name.includes("чоу")||name.includes("частно основно")||name.includes("училище")}
-function classifyKindergarten(record:Record<string,unknown>):Pick<SofiaInstitution,"type"|"category"|"subtype">{const name=asString(record.object_nam)??asString(record.ime)??"";const t=asString(record.type)??asString(record.tip);const lower=name.toLowerCase();if(t==="4"||lower.includes("яслен"))return{type:"kindergarten",category:"Детска градина с яслени групи",subtype:"kindergarten_with_nursery_groups"};return{type:"kindergarten",category:"ДГ",subtype:"kindergarten"}}
-function normalizeKindergarten(record:Record<string,unknown>,index:number):SofiaInstitution|null{const rawName=asString(record.object_nam)??asString(record.ime);if(!rawName||isPrivateOrUnsupported(record))return null;const districtCode=code(record.kod_rayon);const classification=classifyKindergarten(record);return{id:`${classification.subtype}-${districtCode??"unknown"}-${slugify(rawName)}-${asString(record.id)??index}`,name:displayKindergartenName(rawName),...classification,district:districtCode?SOFIA_DISTRICT_CODES[districtCode]:asString(record.raion),districtCode,address:asString(record.adres),website:asString(record.website),phone:asString(record.telefon),email:asString(record.email),source:"sofiaplan.municipal_kindergarten_register",sourceUrl:OFFICIAL_SOURCE_URLS.sofiaPlanMunicipalKindergartens,raw:record}}
+function str(value: unknown) { return typeof value === "string" ? value.trim() || undefined : typeof value === "number" ? String(value) : undefined; }
+function bool(value: unknown) { return typeof value === "boolean" ? value : typeof value === "number" ? value === 1 : typeof value === "string" ? ["true", "1", "yes", "да"].includes(value.trim().toLowerCase()) : false; }
+function norm(value: string) { return value.toLowerCase().replace(/[„“”]/g, '"').replace(/\s+/g, " ").trim(); }
+function slug(value: string) { return norm(value).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 80); }
+function numberFromName(value: string) { return value.match(/(?:№|No|N|ДГ|СДЯ)\s*[- ]?\s*(\d{1,4})/i)?.[1]; }
+function getRawEntries(raw: RawCatalog) { return Array.isArray(raw.rawEntries) ? raw.rawEntries : Array.isArray(raw.raw_entries) ? raw.raw_entries : []; }
 
-async function fetchGeoJson(url:string,checkedAt:string):Promise<{source:SofiaSourceStatus;features:Feature[]}>{const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),8500);try{const response=await fetch(url,{signal:controller.signal,headers:{accept:"application/geo+json,application/json,text/plain,*/*","user-agent":"MZM Sofia municipal kindergarten catalog"},next:{revalidate:60*60*24}});const text=await response.text();if(!response.ok)throw new Error(`HTTP ${response.status}`);const parsed=JSON.parse(text) as GeoJson;const features=Array.isArray(parsed.features)?parsed.features:[];return{features,source:{id:`sofiaplan-${url.split("/").pop()}`,label:`SofiaPlan общински ДГ регистър — ${url}`,url,status:"ok",checkedAt,detail:`Loaded ${features.length} municipal kindergarten records.`}}}catch(error){return{features:[],source:{id:`sofiaplan-${url.split("/").pop()}`,label:`SofiaPlan общински ДГ регистър — ${url}`,url,status:"error",checkedAt,detail:error instanceof Error?error.message:"Unknown SofiaPlan error"}}}finally{clearTimeout(timeout)}}
-function dedupe(institutions:SofiaInstitution[]){const seen=new Map<string,SofiaInstitution>();for(const item of institutions){const key=`${item.district??""}|${item.name.toLowerCase()}|${item.address??""}`;if(!seen.has(key))seen.set(key,item)}return Array.from(seen.values()).sort((a,b)=>`${a.districtCode??"99"}-${a.name}`.localeCompare(`${b.districtCode??"99"}-${b.name}`,"bg"))}
-function groupByDistrict(institutions:SofiaInstitution[]){return institutions.reduce<Record<string,Record<string,SofiaInstitution[]>>>((acc,item)=>{const district=item.district??"Без район";const category=item.category??item.type;acc[district]??={};acc[district][category]??=[];acc[district][category].push(item);return acc},{})}
-function stats(institutions:SofiaInstitution[]):SofiaCatalog["stats"]{return institutions.reduce<SofiaCatalog["stats"]>((s,item)=>{s.institutionsTotal+=1;s.byCategory[item.category??item.type]=(s.byCategory[item.category??item.type]??0)+1;s.byType[item.type]=(s.byType[item.type]??0)+1;return s},{institutionsTotal:0,districtsTotal:SOFIA_DISTRICTS.length,byCategory:{},byType:{}})}
+function getCategory(entry: RawEntry): SofiaInstitutionCategory {
+  const explicit = str(entry.category) ?? str(entry.type);
+  if (explicit && CATEGORIES.includes(explicit as SofiaInstitutionCategory)) return explicit as SofiaInstitutionCategory;
+  const name = norm(str(entry.name) ?? "");
+  if (name.includes("сдя") || name.includes("самостоятелна детска ясла") || name.includes("детска ясла")) return "Ясла";
+  if (bool(entry.hasNurseryGroups) || name.includes("яслени групи")) return "Детска градина с яслени групи";
+  return "ДГ";
+}
 
-export async function getSofiaCatalog():Promise<SofiaCatalog>{const checkedAt=new Date().toISOString();const kindergartens=await fetchGeoJson(OFFICIAL_SOURCE_URLS.sofiaPlanMunicipalKindergartens,checkedAt);const live=dedupe(kindergartens.features.map((f,i)=>normalizeKindergarten(f.properties??{},i)).filter((x):x is SofiaInstitution=>Boolean(x)));const institutions=live.length?live:FALLBACK_INSTITUTIONS;return{generatedAt:checkedAt,districts:SOFIA_DISTRICTS,years:getCatalogYears(),categories:CATEGORIES,institutions,groupedByDistrict:groupByDistrict(institutions),sources:[kindergartens.source,{id:"official-register-file",label:"Регистър-ДГ-2025-2026-1.xlsx — стабилен гръбнак за първа версия",url:OFFICIAL_SOURCE_URLS.sofiaKindergartenRegister,status:"ok",checkedAt,detail:"Първата версия използва само общински детски градини. Частни градини, частни ясли и училища са изключени."},{id:"kg-sofia",label:"kg.sofia.bg — официален родителски интерфейс",url:OFFICIAL_SOURCE_URLS.kgHome,status:"ok",checkedAt,detail:"Used only as official user-facing reference, not as broad mixed catalog."},...(live.length?[]:[{id:"fallback-catalog",label:"Fallback каталог",url:OFFICIAL_SOURCE_URLS.sofiaPlanApi,status:"fallback" as const,checkedAt,detail:"SofiaPlan municipal register did not return usable records."}])],stats:stats(institutions),notes:["Първата версия е ограничена до общинските детски градини от официалния регистър.","Училища, частни училища, частни детски градини и частни ясли са изключени, за да няма грешни опции във формата.","Следващ етап: отделна валидация на училищата с подготвителни групи само от официален източник."]}}
+function getSubtype(entry: RawEntry, category: SofiaInstitutionCategory) {
+  const entryType = str(entry.entryType);
+  if (entryType === "hourly" || bool(entry.isHourlyOrganization)) return "hourly_organization";
+  if (entryType === "building") return "building";
+  if (category === "Ясла") return "independent_nursery";
+  if (category === "Детска градина с яслени групи") return "kindergarten_with_nursery_groups";
+  return "kindergarten";
+}
+
+function toInstitution(entry: RawEntry, index: number): SofiaInstitution | null {
+  const name = str(entry.name);
+  if (!name) return null;
+  const category = getCategory(entry);
+  const subtype = getSubtype(entry, category);
+  return {
+    id: str(entry.id) ?? `${str(entry.institutionId) ?? subtype}-${numberFromName(name) ?? slug(name)}-${index}`,
+    name,
+    type: category === "Ясла" ? "nursery" : "kindergarten",
+    category,
+    subtype,
+    district: str(entry.district),
+    address: str(entry.address) ?? null,
+    phone: str(entry.contact) ?? str(entry.phone) ?? null,
+    email: str(entry.email) ?? null,
+    website: str(entry.website) ?? null,
+    source: "mzm.pdf_catalog_2026_05_02",
+    sourceUrl: SOURCE_URL,
+    raw: entry
+  };
+}
+
+function groupByDistrict(items: SofiaInstitution[]) { return items.reduce<Record<string, Record<string, SofiaInstitution[]>>>((acc, item) => { const district = item.district ?? "Без район"; const category = item.category ?? item.type; acc[district] ??= {}; acc[district][category] ??= []; acc[district][category].push(item); return acc; }, {}); }
+function counter(items: Record<string, unknown>[], key: string) { return items.reduce<Record<string, number>>((acc, item) => { const value = str(item[key]) ?? "Без стойност"; acc[value] = (acc[value] ?? 0) + 1; return acc; }, {}); }
+export function getCatalogYears(now = new Date()) { const currentYear = now.getFullYear(); return Array.from({ length: 7 }, (_, index) => String(currentYear - index)); }
+
+export async function getSofiaCatalog(): Promise<SofiaCatalog> {
+  const raw = decodeCatalog();
+  const entries = getRawEntries(raw);
+  const institutions = entries.map(toInstitution).filter((item): item is SofiaInstitution => Boolean(item));
+  const districts = Array.isArray(raw.districts) && raw.districts.length > 0 ? raw.districts : Array.from(new Set(institutions.map((item) => item.district).filter((item): item is string => Boolean(item))));
+  const generatedAt = raw.generatedAt ?? bundle.generatedAt ?? new Date().toISOString();
+  return {
+    generatedAt,
+    districts,
+    years: getCatalogYears(),
+    categories: CATEGORIES.filter((category) => institutions.some((item) => item.category === category)),
+    institutions,
+    groupedByDistrict: groupByDistrict(institutions),
+    sources: [{ id: "mzm-pdf-catalog", label: "MZM PDF catalog", url: SOURCE_URL, status: institutions.length > 0 ? "ok" : "fallback", checkedAt: generatedAt, detail: `Loaded ${institutions.length} PDF records.` }],
+    stats: { institutionsTotal: institutions.length, districtsTotal: districts.length, byCategory: counter(institutions, "category"), byType: counter(institutions, "type"), byDistrict: counter(institutions, "district"), rawEntriesTotal: entries.length },
+    notes: [...(Array.isArray(raw.notes) ? raw.notes : []), "Runtime catalog source: data/sofia/mzm-catalog-pdf.json", "No remote catalog fetch is used by the loader."]
+  };
+}
