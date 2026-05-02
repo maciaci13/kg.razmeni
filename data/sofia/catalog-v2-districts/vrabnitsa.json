@@ -1,0 +1,15 @@
+{
+  "district": "Връбница",
+  "entries": [
+    { "id": "raw-dg-005-main", "institutionId": "dg-005", "name": "ДГ №5 Надежда", "district": "Връбница", "address": "гр. София, кв. Връбница I ч. бл. 510 А,Б", "contact": "02/934 66 10", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-005-obelya1", "institutionId": "dg-005", "name": "ДГ №5 Надежда - сграда Обеля 1", "district": "Връбница", "address": "гр. София, жк. Обеля - 1, бл.102, вх.А и вх.Г", "contact": "02/934 66 10", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-005-vrabnitsa2", "institutionId": "dg-005", "name": "ДГ №5 Надежда - сграда Връбница 2", "district": "Връбница", "address": "гр. София, жк. Връбница - 2, бл. 621, вх. А", "contact": "02/934 66 10", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-005-obelya2", "institutionId": "dg-005", "name": "ДГ №5 Надежда - сграда Обеля 2", "district": "Връбница", "address": "гр. София, ж.к. Обеля - 2, бл. 204, бл. 207, бл. 214, бл.221", "contact": "02/934 66 10", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-042-main", "institutionId": "dg-042", "name": "ДГ №42 Чайка (с яслени групи)", "district": "Връбница", "address": "гр. София, ул. Връбница I част", "contact": "02/938 81 61", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-082-main", "institutionId": "dg-082", "name": "ДГ №82 Джани Родари (с яслени групи)", "district": "Връбница", "address": "гр. София, ж.к. Обеля 2", "contact": "02/934 38 81", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-138-main", "institutionId": "dg-138", "name": "ДГ №138 Приятели (с яслени групи)", "district": "Връбница", "address": "гр. София, кв. Обеля, ул. 3 № 13", "contact": "02/834 10 57", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-176-main", "institutionId": "dg-176", "name": "ДГ №176 Зорница (с яслени групи)", "district": "Връбница", "address": "с. Мрамор, ул. Л. Kаравелов, №16", "contact": "02/998 23 72", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-176-voluyak", "institutionId": "dg-176", "name": "ДГ №176 Зорница - филиал с. Волуяк", "district": "Връбница", "address": "с. Волуяк, ул. Зорница, №42", "contact": "02/998 90 41", "entryType": "building", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-198-main", "institutionId": "dg-198", "name": "ДГ №198 Косе Босе (с яслени групи)", "district": "Връбница", "address": "гр. София, ул. Войводово, №4", "contact": "", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false }
+  ]
+}
