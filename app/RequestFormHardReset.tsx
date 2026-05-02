@@ -42,6 +42,9 @@ function labelOf(item: CatalogInstitution) { return `${item.name}${item.district
 function shortName(label: string) { return label.split(" · ")[0]?.trim() || label; }
 function sortItems(items: CatalogInstitution[]) { return [...items].sort((a, b) => `${a.district ?? ""}-${a.name}-${a.address ?? ""}`.localeCompare(`${b.district ?? ""}-${b.name}-${b.address ?? ""}`, "bg")); }
 function currentYearOptions() { const y = new Date().getFullYear(); return Array.from({ length: 7 }, (_, i) => String(y - i)); }
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char] || char));
+}
 
 async function getJson<T>(url: string): Promise<T | null> {
   try {
@@ -65,13 +68,40 @@ function findMyRequestsSection() {
   }) || null;
 }
 
-function findInviteCard(myRequestsSection: HTMLElement) {
-  return Array.from(myRequestsSection.children).find((child) => child.textContent?.includes("Покани други родители")) as HTMLElement | undefined;
-}
-
 function findSelectedUserId(snapshot: Snapshot | null) {
   const users = snapshot?.users || [];
   return users[0]?.id || "";
+}
+
+function removeStaleEmptyStates(scope: ParentNode = document) {
+  const candidates = Array.from(scope.querySelectorAll<HTMLElement>("section, article, div"));
+  candidates.forEach((item) => {
+    const text = (item.textContent || "").replace(/\s+/g, " ").trim();
+    const isEmptyState = text.includes("Няма активна заявка") && text.length < 180;
+    const ownsActiveCard = Boolean(item.querySelector("[data-mzm-hard-active-request='true'], .mzm-hard-request-carousel"));
+    if (isEmptyState && !ownsActiveCard) item.remove();
+  });
+}
+
+function getOrCreateCarousel(myRequestsSection: HTMLElement) {
+  let carousel = myRequestsSection.querySelector<HTMLElement>(".mzm-hard-request-carousel");
+  if (carousel) return carousel;
+
+  carousel = document.createElement("div");
+  carousel.className = "mzm-hard-request-carousel";
+  carousel.dataset.mzmHardRequestCarousel = "true";
+
+  const heading = myRequestsSection.querySelector("h2");
+  if (heading) heading.insertAdjacentElement("afterend", carousel);
+  else myRequestsSection.prepend(carousel);
+
+  return carousel;
+}
+
+function placeShareAfterCarousel(myRequestsSection: HTMLElement) {
+  const carousel = myRequestsSection.querySelector<HTMLElement>(".mzm-hard-request-carousel");
+  const share = myRequestsSection.querySelector<HTMLElement>("[data-mzm-share-card='true']");
+  if (carousel && share && share.previousElementSibling !== carousel) carousel.insertAdjacentElement("afterend", share);
 }
 
 function renderActiveRequestCard(params: {
@@ -81,15 +111,16 @@ function renderActiveRequestCard(params: {
   placeType: string;
   requestId?: string;
 }) {
-  const card = document.createElement("div");
+  const card = document.createElement("article");
   card.className = "mzm-hard-active-card";
   card.dataset.mzmHardActiveRequest = "true";
+  if (params.requestId) card.dataset.requestId = params.requestId;
   card.innerHTML = `
     <div class="mzm-hard-active-head">
       <div>
-        <p>Активна · ${params.placeType}</p>
-        <h3><span>${params.fromText}</span><b>→</b><span>${params.wantedText}</span></h3>
-        <em>Набор ${params.ageGroup}</em>
+        <p>Активна · ${escapeHtml(params.placeType)}</p>
+        <h3><span>${escapeHtml(params.fromText)}</span><b>→</b><span>${escapeHtml(params.wantedText)}</span></h3>
+        <em>Набор ${escapeHtml(params.ageGroup)}</em>
       </div>
       <strong>ON</strong>
     </div>
@@ -128,17 +159,24 @@ function updateMyRequestsDom(params: {
   const myRequestsSection = findMyRequestsSection();
   if (!myRequestsSection) return;
 
-  myRequestsSection.querySelectorAll("[data-mzm-hard-active-request='true']").forEach((item) => item.remove());
+  removeStaleEmptyStates(myRequestsSection);
+  const carousel = getOrCreateCarousel(myRequestsSection);
 
-  const emptyCard = Array.from(myRequestsSection.children).find((child) => child.textContent?.includes("Няма активна заявка"));
-  emptyCard?.remove();
+  if (params.requestId) {
+    carousel.querySelector(`[data-request-id='${CSS.escape(params.requestId)}']`)?.remove();
+  }
 
-  const card = renderActiveRequestCard(params);
-  const inviteCard = findInviteCard(myRequestsSection);
-  if (inviteCard) {
-    myRequestsSection.insertBefore(card, inviteCard);
-  } else {
-    myRequestsSection.appendChild(card);
+  carousel.appendChild(renderActiveRequestCard(params));
+  placeShareAfterCarousel(myRequestsSection);
+  removeStaleEmptyStates(myRequestsSection);
+}
+
+function cleanupRequestUi() {
+  const myRequestsSection = findMyRequestsSection();
+  if (!myRequestsSection) return;
+  if (myRequestsSection.querySelector("[data-mzm-hard-active-request='true']")) {
+    removeStaleEmptyStates(myRequestsSection);
+    placeShareAfterCarousel(myRequestsSection);
   }
 }
 
@@ -156,15 +194,17 @@ function injectStyles() {
     .mzm-hard-save{display:flex;gap:.65rem;align-items:center;border-radius:1.25rem;background:rgba(255,255,255,.66);padding:.85rem .9rem;color:rgba(28,27,25,.65);font-size:.76rem;font-weight:800}.mzm-hard-save input{width:1rem;height:1rem;accent-color:var(--study-orange,#ff5a14)}
     .mzm-hard-submit{margin-top:1rem;width:100%;border:0;border-radius:999px;background:var(--study-orange,#ff5a14);padding:1rem 1.25rem;color:white;font-weight:900;font-size:.9rem;box-shadow:0 16px 34px rgba(255,90,20,.24)}.mzm-hard-submit:disabled{opacity:.42;background:#ffc0aa}
     .mzm-hard-note{margin-top:.75rem;text-align:center;color:rgba(28,27,25,.45);font-size:.78rem;font-weight:700;line-height:1.45}.mzm-hard-status{border-radius:1.1rem;padding:.78rem .9rem;background:rgba(255,255,255,.62);color:rgba(28,27,25,.55);font-size:.72rem;line-height:1.35;font-weight:800}
-    .mzm-hard-collapsed{display:none;margin-top:.2rem;border-radius:1.8rem;background:#f7f5ef;padding:1rem}.mzm-hard-collapsed p{margin:0;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:rgba(28,27,25,.42)}.mzm-hard-collapsed h3{margin:.4rem 0 0;font-size:1.05rem;line-height:1.15;font-weight:900;color:#1c1b19}
+    .mzm-hard-collapsed{display:none}.mzm-hard-toggle{width:100%;border:0;border-radius:1.8rem;background:#f7f5ef;padding:1rem 1rem;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:1rem}.mzm-hard-toggle p{margin:0;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:rgba(28,27,25,.42)}.mzm-hard-toggle h3{margin:.38rem 0 0;font-size:1.05rem;line-height:1.15;font-weight:900;color:#1c1b19}.mzm-hard-toggle span{display:grid;place-items:center;width:2.35rem;height:2.35rem;border-radius:999px;background:white;color:#1c1b19;font-size:1.2rem;font-weight:900;box-shadow:0 10px 22px rgba(33,28,17,.04)}
     .mzm-hard-card.is-collapsed .mzm-hard-inner,.mzm-hard-card.is-collapsed .mzm-hard-submit,.mzm-hard-card.is-collapsed .mzm-hard-note{display:none}.mzm-hard-card.is-collapsed .mzm-hard-collapsed{display:block}
-    .mzm-hard-active-card{order:-1;border-radius:2rem;background:#ECECC7;padding:1.25rem;box-shadow:0 16px 40px rgba(40,34,20,.055)}.mzm-hard-active-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.mzm-hard-active-head p{margin:0;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:rgba(28,27,25,.42)}.mzm-hard-active-head h3{margin:.55rem 0 0;display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;font-size:1.12rem;line-height:1.15;font-weight:900;color:#1c1b19}.mzm-hard-active-head h3 b{font-size:1.25rem}.mzm-hard-active-head em{display:block;margin-top:.75rem;font-style:normal;font-size:.9rem;font-weight:800;color:rgba(28,27,25,.55)}.mzm-hard-active-head strong{border-radius:999px;background:rgba(255,255,255,.68);padding:.65rem .9rem;font-size:.78rem;font-weight:900}.mzm-hard-active-actions{margin-top:1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:.65rem}.mzm-hard-active-actions button{border:0;border-radius:999px;padding:.9rem 1rem;font-size:.78rem;font-weight:900}.mzm-hard-active-actions button:first-child{background:rgba(255,255,255,.68);color:#1c1b19}.mzm-hard-active-actions button:last-child{background:var(--study-orange,#ff5a14);color:white}.mzm-hard-active-card.is-inactive{opacity:.72}
+    .mzm-hard-request-carousel{display:flex;gap:.85rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.15rem 0 .7rem;margin:.15rem -1rem .15rem 0;-webkit-overflow-scrolling:touch}.mzm-hard-request-carousel::-webkit-scrollbar{display:none}
+    .mzm-hard-active-card{flex:0 0 88%;scroll-snap-align:start;border-radius:2rem;background:#ECECC7;padding:1.25rem;box-shadow:0 16px 40px rgba(40,34,20,.055)}.mzm-hard-active-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.mzm-hard-active-head p{margin:0;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:rgba(28,27,25,.42)}.mzm-hard-active-head h3{margin:.55rem 0 0;display:grid;gap:.35rem;font-size:1.08rem;line-height:1.12;font-weight:900;color:#1c1b19}.mzm-hard-active-head h3 b{font-size:1.25rem}.mzm-hard-active-head em{display:block;margin-top:.75rem;font-style:normal;font-size:.9rem;font-weight:800;color:rgba(28,27,25,.55)}.mzm-hard-active-head strong{border-radius:999px;background:rgba(255,255,255,.68);padding:.65rem .9rem;font-size:.78rem;font-weight:900}.mzm-hard-active-actions{margin-top:1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:.65rem}.mzm-hard-active-actions button{border:0;border-radius:999px;padding:.9rem 1rem;font-size:.78rem;font-weight:900}.mzm-hard-active-actions button:first-child{background:rgba(255,255,255,.68);color:#1c1b19}.mzm-hard-active-actions button:last-child{background:var(--study-orange,#ff5a14);color:white}.mzm-hard-active-card.is-inactive{opacity:.72}
   `;
   document.head.appendChild(style);
 }
 
 async function mount() {
   injectStyles();
+  cleanupRequestUi();
   const section = findRequestsSection();
   if (!section || section.dataset.mzmHardReset === "true") return;
 
@@ -247,6 +287,8 @@ async function mount() {
   note.textContent = "Заявката ще се скрие автоматично при потенциален цикъл.";
   const collapsed = document.createElement("div");
   collapsed.className = "mzm-hard-collapsed";
+  collapsed.innerHTML = `<button type="button" class="mzm-hard-toggle"><div><p>Нова заявка</p><h3>Разгъни формата</h3></div><span>⌄</span></button>`;
+  collapsed.querySelector("button")?.addEventListener("click", () => section.classList.remove("is-collapsed"));
 
   districtSelect.onchange = () => rebuild();
   yearSelect.onchange = () => { maybeSave(); updateSubmit(); };
@@ -280,7 +322,6 @@ async function mount() {
     const createdRequest = data?.requests?.find((request) => request.user_id === userId && request.child_group_year_or_age_group === ageGroup) ?? data?.requests?.find((request) => request.user_id === userId);
     savePrefs({ district: districtSelect.value, year: ageGroup, placeType: selectedType, from: fromSelect.value, wanted: wantedSelect.value });
 
-    collapsed.innerHTML = `<p>Активна заявка</p><h3>${fromText} → ${wantedText}</h3>`;
     section.classList.add("is-collapsed");
     updateMyRequestsDom({ fromText, wantedText, ageGroup, placeType: selectedType, requestId: createdRequest?.id });
     submit.textContent = "Активирай заявка";
