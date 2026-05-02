@@ -34,7 +34,16 @@ function normalizeName(value: string) {
 }
 
 function extractOfficialNumber(value: string) {
-  return value.match(/(?:№|No|N|ДГ)\s*[- ]?\s*(\d{1,3})/i)?.[1] ?? null;
+  return value.match(/(?:№|No|N|ДГ|СДЯ)\s*[- ]?\s*(\d{1,3})/i)?.[1] ?? null;
+}
+
+async function getPdfKindergartenOptions() {
+  const catalog = await getSofiaCatalog();
+  return catalog.institutions.map((institution) => ({
+    id: `catalog:${institution.id}`,
+    name: institution.name,
+    district: institution.district ?? null
+  }));
 }
 
 async function resolveKindergartenId(supabase: ReturnType<typeof createSupabaseAdminClient>, submittedId: string) {
@@ -43,7 +52,7 @@ async function resolveKindergartenId(supabase: ReturnType<typeof createSupabaseA
   const catalogId = submittedId.slice("catalog:".length);
   const catalog = await getSofiaCatalog();
   const institution = catalog.institutions.find((item) => item.id === catalogId);
-  if (!institution) throw new Error("Избраното заведение не беше намерено в официалния каталог.");
+  if (!institution) throw new Error("Избраното заведение не беше намерено в PDF каталога.");
 
   const normalizedName = normalizeName(institution.name);
   const district = institution.district || null;
@@ -80,18 +89,9 @@ async function resolveKindergartenId(supabase: ReturnType<typeof createSupabaseA
 }
 
 async function ensurePlaygroundBase(supabase: ReturnType<typeof createSupabaseAdminClient>) {
-  const [users, kindergartens] = await Promise.all([
-    supabase.from("app_users").select("id", { count: "exact", head: true }).eq("is_playground", true),
-    supabase.from("kindergartens").select("id", { count: "exact", head: true }).eq("source_name", "playground")
-  ]);
-
+  const users = await supabase.from("app_users").select("id", { count: "exact", head: true }).eq("is_playground", true);
   if (users.error) throw new Error(users.error.message);
-  if (kindergartens.error) throw new Error(kindergartens.error.message);
-
-  const hasEnoughUsers = (users.count ?? 0) >= 4;
-  const hasEnoughKindergartens = (kindergartens.count ?? 0) >= 4;
-
-  if (hasEnoughUsers && hasEnoughKindergartens) return;
+  if ((users.count ?? 0) >= 4) return;
 
   const { error } = await supabase.rpc("seed_playground_base");
   if (error) throw new Error(error.message);
@@ -136,44 +136,32 @@ async function leaveMatchDirectly(supabase: ReturnType<typeof createSupabaseAdmi
 
   const { error: matchUpdateError } = await supabase
     .from("matches")
-    .update({
-      status: keepChat ? "at_risk" : "cancelled",
-      failure_reason: "participant_left_match",
-      cancelled_at: keepChat ? null : new Date().toISOString()
-    })
+    .update({ status: keepChat ? "at_risk" : "cancelled", failure_reason: "participant_left_match", cancelled_at: keepChat ? null : new Date().toISOString() })
     .eq("id", matchId);
   if (matchUpdateError) throw new Error(matchUpdateError.message);
 
   const { error: chatUpdateError } = await supabase
     .from("chats")
-    .update(keepChat
-      ? { status: "active", unlocked_at: new Date().toISOString(), archived_at: null }
-      : { status: "archived", archived_at: new Date().toISOString() })
+    .update(keepChat ? { status: "active", unlocked_at: new Date().toISOString(), archived_at: null } : { status: "archived", archived_at: new Date().toISOString() })
     .eq("match_id", matchId);
   if (chatUpdateError) throw new Error(chatUpdateError.message);
 
   await supabase.from("match_progress_events").insert({ match_id: matchId, user_id: userId, participant_id: participant.id, event_type: "participant_left", event_label: "Участник се отказа от координацията" });
 
-  const notifyUsers = (participantRows ?? []).filter((row) => row.user_id !== userId).map((row) => ({
-    user_id: row.user_id,
-    type: "participant_left",
-    title: "Участник се отказа",
-    body: "Една от страните се отказа от потенциалното съвпадение.",
-    match_id: matchId
-  }));
+  const notifyUsers = (participantRows ?? []).filter((row) => row.user_id !== userId).map((row) => ({ user_id: row.user_id, type: "participant_left", title: "Участник се отказа", body: "Една от страните се отказа от потенциалното съвпадение.", match_id: matchId }));
   if (notifyUsers.length > 0) await supabase.from("notifications").insert(notifyUsers);
 }
 
 async function getSnapshot(): Promise<PlaygroundSnapshot> {
   const supabase = createSupabaseAdminClient();
+  const pdfKindergartens = await getPdfKindergartenOptions();
 
   const users = await supabase.from("app_users").select("id, display_name, email").eq("is_playground", true).order("display_name");
   if (users.error) throw new Error(users.error.message);
 
   const userIds = (users.data ?? []).map((user) => user.id);
 
-  const [kindergartens, requests, matches, participants] = await Promise.all([
-    supabase.from("kindergartens").select("id, name, district").eq("is_active", true).order("district").order("name"),
+  const [requests, matches, participants] = await Promise.all([
     userIds.length > 0
       ? supabase.from("swap_requests").select("id, user_id, from_kindergarten_id, request_type, status, is_active, is_locked, child_group_year_or_age_group").in("user_id", userIds).order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
@@ -181,7 +169,7 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
     supabase.from("match_participants").select("id, match_id, user_id, participant_label, participant_order, confirmation_status, coordination_status, from_kindergarten_id, wants_kindergarten_id").order("participant_order")
   ]);
 
-  const firstErrors = [kindergartens, requests, matches, participants].map((result) => result.error).filter(Boolean);
+  const firstErrors = [requests, matches, participants].map((result) => result.error).filter(Boolean);
   if (firstErrors.length > 0) throw new Error(firstErrors.map((error) => error?.message).join(" | "));
 
   const confirmedMatchIds = (matches.data ?? [])
@@ -234,15 +222,11 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
 
   if (wantedKindergartens.error) throw new Error(wantedKindergartens.error.message);
 
-  const normalizedChats = (chats.data ?? []).map((chat) => ({
-    direct_user_1_id: null,
-    direct_user_2_id: null,
-    ...chat
-  }));
+  const normalizedChats = (chats.data ?? []).map((chat) => ({ direct_user_1_id: null, direct_user_2_id: null, ...chat }));
 
   return {
     users: users.data ?? [],
-    kindergartens: kindergartens.data ?? [],
+    kindergartens: pdfKindergartens,
     requests: requests.data ?? [],
     wantedKindergartens: wantedKindergartens.data ?? [],
     matches: matches.data ?? [],
