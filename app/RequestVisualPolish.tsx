@@ -124,7 +124,7 @@ function injectStyles() {
       inset: 0;
       z-index: 9999;
       display: grid;
-      place-items: end center;
+      place-items: center;
       padding: 1rem;
       background: rgba(28,27,25,.22);
       backdrop-filter: blur(16px);
