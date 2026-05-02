@@ -1,0 +1,14 @@
+{
+  "district": "Студентски",
+  "entries": [
+    { "id": "raw-dg-010-main", "institutionId": "dg-010", "name": "ДГ №10 Чебурашка (с яслени групи)", "district": "Студентски", "address": "гр. София, ул. Арх. Виктория Ангелова - Винарова, №16", "contact": "+359884193155", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-012-main", "institutionId": "dg-012", "name": "ДГ №12 Лилия (с яслени групи)", "district": "Студентски", "address": "гр. София, ул. Боян Дановски, №3", "contact": "02/871 01 58; 02/871 91 73", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-016-main", "institutionId": "dg-016", "name": "ДГ №16 Приказен свят", "district": "Студентски", "address": "гр. София, ул. Атанас Манчев, №1", "contact": "02/862 86 41; 02/862 87 41", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-016-b2", "institutionId": "dg-016", "name": "ДГ №16 Приказен свят - сграда 2 (с яслени групи)", "district": "Студентски", "address": "гр. София, Студентски град", "contact": "02/862 87 41", "entryType": "building", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-sdya-069-main", "institutionId": "sdya-069", "name": "СДЯ №69", "district": "Студентски", "address": "гр. София, ул. Йордан Йосифов, №1", "contact": "02/868 31 03", "entryType": "main", "hasNurseryGroups": false, "isHourlyOrganization": false },
+    { "id": "raw-dg-072-main", "institutionId": "dg-072", "name": "ДГ №72 Приказка без край (с яслени групи)", "district": "Студентски", "address": "гр. София, кв. Дървеница, ул. Белимел, №11", "contact": "", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-078-main", "institutionId": "dg-078", "name": "ДГ №78 Детски свят (с яслени групи)", "district": "Студентски", "address": "гр. София, кв. Дървеница, ул. Айдемир, №4", "contact": "02/885 7676", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-079-main", "institutionId": "dg-079", "name": "ДГ №79 Слънчице (с яслени групи)", "district": "Студентски", "address": "гр. София, ул. Джон Ленън, №10", "contact": "02/868 21 49", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false },
+    { "id": "raw-dg-190-main", "institutionId": "dg-190", "name": "ДГ №190 (с яслени групи)", "district": "Студентски", "address": "гр. София, ул. Проф. Живко Сталев № 21", "contact": "", "entryType": "main", "hasNurseryGroups": true, "isHourlyOrganization": false }
+  ]
+}
