@@ -5,6 +5,7 @@ import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
 import MatchSimulatorBridge from "./MatchSimulatorBridge";
 import MobileChromePolish from "./MobileChromePolish";
+import NavEmergencyFix from "./NavEmergencyFix";
 import RequestFormHardReset from "./RequestFormHardReset";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <RequestVisualPolish />
         <ShareRequestEnhancer />
         <TextCopyNormalizer />
+        <NavEmergencyFix />
       </body>
     </html>
   );
