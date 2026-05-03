@@ -234,3 +234,13 @@ main:has(nav.fixed.bottom-4) .mzm-catalog-status,
 main:has(nav.fixed.bottom-4) .mzm-hard-status {
   display: none !important;
 }
+
+/* The match bridge is inserted immediately after the page title. Its own injected CSS
+   hides the legacy section after the title; this higher-specificity rule prevents the
+   bridge section itself from being caught by that adjacent-sibling selector. */
+main:has(#mzm-match-simulator-bridge-root) #mzm-match-simulator-bridge-root {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-height: 1px;
+}
