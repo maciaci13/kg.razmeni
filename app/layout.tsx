@@ -4,6 +4,7 @@ import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
 import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
 import MatchSimulatorBridge from "./MatchSimulatorBridge";
+import MobileChromePolish from "./MobileChromePolish";
 import RequestFormHardReset from "./RequestFormHardReset";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <HomeStatLinks />
         <HomeStatsCleanup />
         <MatchSimulatorBridge />
+        <MobileChromePolish />
         <RequestFormHardReset />
         <RequestVisualPolish />
         <ShareRequestEnhancer />
