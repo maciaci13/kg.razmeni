@@ -24,13 +24,13 @@ const statusLabels: Record<string, string> = {
   dropped_out: "Отказва се"
 };
 
-const stepList = [
-  "Потвърждение",
-  "Отключена координация",
-  "Проверка на процедурата",
-  "Готовност за действие",
-  "Официални действия",
-  "Резултат"
+const steps = [
+  { title: "Потвърждение", helper: "Всички страни приемат потенциалното съвпадение." },
+  { title: "Отключена координация", helper: "Чатовете се отварят и започва уточняване." },
+  { title: "Проверка на процедурата", helper: "Всеки проверява официалния ред и контакт със заведение." },
+  { title: "Готовност за действие", helper: "Всички маркират дали могат да продължат." },
+  { title: "Официални действия", helper: "Следват се само официалните административни стъпки." },
+  { title: "Резултат", helper: "Цикълът се отбелязва като приключен или отпаднал." }
 ];
 
 function injectStyles() {
@@ -45,31 +45,19 @@ function injectStyles() {
     }
 
     .mzm-persist-shell {
-      border-radius: 2.2rem;
+      border-radius: 2rem;
       background: rgba(255,255,255,.9);
-      padding: 1rem;
+      padding: 1.25rem;
       box-shadow: 0 18px 48px rgba(40,34,20,.08), inset 0 0 0 1px rgba(28,27,25,.025);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
     }
 
-    .mzm-persist-hero {
-      position: relative;
-      overflow: hidden;
-      border-radius: 1.8rem;
-      background: linear-gradient(145deg, #ECECC7, #D9E7CB);
-      padding: 1rem;
-    }
-
-    .mzm-persist-hero::after {
-      content: "";
-      position: absolute;
-      right: -2.8rem;
-      top: -3rem;
-      width: 8rem;
-      height: 8rem;
-      border-radius: 999px;
-      background: rgba(255,255,255,.32);
+    .mzm-persist-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: .75rem;
     }
 
     .mzm-persist-eyebrow {
@@ -78,7 +66,7 @@ function injectStyles() {
       font-weight: 900;
       letter-spacing: .2em;
       text-transform: uppercase;
-      color: rgba(28,27,25,.45);
+      color: rgba(28,27,25,.42);
     }
 
     .mzm-persist-title {
@@ -90,62 +78,148 @@ function injectStyles() {
       color: #1c1b19;
     }
 
-    .mzm-persist-helper {
-      margin: .4rem 0 0;
-      max-width: 19rem;
-      font-size: .84rem;
-      line-height: 1.38;
+    .mzm-persist-badge {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: .52rem .75rem;
+      background: #f7f5ef;
+      font-size: .62rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: rgba(28,27,25,.56);
+    }
+
+    .mzm-persist-stage {
+      margin-top: 1rem;
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      border: 0;
+      border-radius: 1.6rem;
+      background: #d9e7cb;
+      padding: 1rem 1.1rem;
+      text-align: left;
+      box-shadow: 0 10px 24px rgba(33,28,17,.04);
+    }
+
+    .mzm-persist-stage.is-closed {
+      background: #ffe1d5;
+    }
+
+    .mzm-persist-stage small {
+      display: block;
+      font-size: .68rem;
+      font-weight: 900;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(28,27,25,.45);
+    }
+
+    .mzm-persist-stage strong {
+      display: block;
+      margin-top: .45rem;
+      font-size: 1.08rem;
+      line-height: 1.1;
+      font-weight: 900;
+      color: #1c1b19;
+    }
+
+    .mzm-persist-stage span {
+      display: block;
+      margin-top: .22rem;
+      font-size: .76rem;
+      line-height: 1.35;
       font-weight: 700;
       color: rgba(28,27,25,.58);
     }
 
+    .mzm-persist-chevron {
+      width: 1.1rem;
+      height: 1.1rem;
+      flex: 0 0 auto;
+      background: #1c1b19;
+      opacity: .78;
+      mask: url('/icons/angle-up.svg') center / contain no-repeat;
+      -webkit-mask: url('/icons/angle-up.svg') center / contain no-repeat;
+    }
+
     .mzm-persist-timeline {
       margin-top: 1rem;
-      display: grid;
-      gap: .65rem;
+      border-radius: 1.75rem;
+      background: #f7f5ef;
+      padding: 1.25rem 1rem;
     }
 
     .mzm-persist-step {
+      position: relative;
       display: grid;
       grid-template-columns: 2rem 1fr;
-      gap: .7rem;
-      align-items: start;
+      gap: .75rem;
+      padding-bottom: 1.5rem;
+    }
+
+    .mzm-persist-step:last-child {
+      padding-bottom: 0;
+    }
+
+    .mzm-persist-step::after {
+      content: "";
+      position: absolute;
+      left: .94rem;
+      top: 2rem;
+      height: calc(100% - 1.35rem);
+      border-left: 2px dashed rgba(28,27,25,.14);
+    }
+
+    .mzm-persist-step:last-child::after {
+      display: none;
+    }
+
+    .mzm-persist-step.is-done::after {
+      border-color: #d9e7cb;
     }
 
     .mzm-persist-dot {
+      position: relative;
+      z-index: 2;
       display: grid;
       place-items: center;
       width: 2rem;
       height: 2rem;
       border-radius: 999px;
-      background: rgba(255,255,255,.72);
+      background: #fff;
       font-size: .72rem;
       font-weight: 900;
-      color: rgba(28,27,25,.45);
-      box-shadow: inset 0 0 0 1px rgba(28,27,25,.04);
+      color: rgba(28,27,25,.35);
+      box-shadow: inset 0 0 0 1px rgba(28,27,25,.08);
     }
 
     .mzm-persist-step.is-done .mzm-persist-dot {
       background: #1c1b19;
       color: white;
+      box-shadow: none;
     }
 
     .mzm-persist-step.is-current .mzm-persist-dot {
       background: var(--study-orange,#f95e08);
       color: white;
+      box-shadow: none;
     }
 
     .mzm-persist-step strong {
       display: block;
       padding-top: .18rem;
-      font-size: .84rem;
+      font-size: .86rem;
       font-weight: 900;
       color: #1c1b19;
     }
 
     .mzm-persist-step span {
       display: block;
-      margin-top: .12rem;
+      margin-top: .14rem;
       font-size: .72rem;
       font-weight: 700;
       color: rgba(28,27,25,.5);
@@ -153,8 +227,20 @@ function injectStyles() {
 
     .mzm-persist-cards {
       display: grid;
-      gap: .7rem;
+      gap: .75rem;
       margin-top: 1rem;
+      border-radius: 1.75rem;
+      background: #f7f5ef;
+      padding: 1rem;
+    }
+
+    .mzm-persist-cards-label {
+      margin: 0 0 .2rem;
+      font-size: .64rem;
+      font-weight: 900;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(28,27,25,.42);
     }
 
     .mzm-persist-card {
@@ -164,10 +250,10 @@ function injectStyles() {
       box-shadow: inset 0 0 0 1px rgba(28,27,25,.03);
     }
 
-    .mzm-persist-card:nth-child(4n+1) { background: #F7F5EF; }
-    .mzm-persist-card:nth-child(4n+2) { background: #D9E7CB; }
-    .mzm-persist-card:nth-child(4n+3) { background: #DED1E8; }
-    .mzm-persist-card:nth-child(4n+4) { background: #D2E4E2; }
+    .mzm-persist-card:nth-of-type(4n+2) { background: #D9E7CB; }
+    .mzm-persist-card:nth-of-type(4n+3) { background: #DED1E8; }
+    .mzm-persist-card:nth-of-type(4n+4) { background: #ECECC7; }
+    .mzm-persist-card:nth-of-type(4n+5) { background: #D2E4E2; }
 
     .mzm-persist-card-head {
       display: flex;
@@ -214,14 +300,6 @@ function injectStyles() {
       font-weight: 900;
       color: rgba(28,27,25,.68);
     }
-
-    .mzm-persist-closed {
-      background: #ffe1d5 !important;
-    }
-
-    main:has(nav.fixed.bottom-4) section:has(h3):has(+ #${ROOT_ID}) {
-      display: none !important;
-    }
   `;
   document.head.appendChild(style);
 }
@@ -249,6 +327,10 @@ async function getKindergartenMap(ids: string[]) {
   }
 }
 
+function isConfirmedLike(participant: Participant) {
+  return participant.confirmation_status === "confirmed" || participant.confirmation_status === "interested";
+}
+
 function pickActiveMatch(snapshot: PlaygroundSnapshot) {
   const matches = snapshot.matches || [];
   const participants = snapshot.participants || [];
@@ -262,10 +344,11 @@ function pickActiveMatch(snapshot: PlaygroundSnapshot) {
 
 function stepFor(match: Match, participants: Participant[]) {
   if (["cancelled", "rejected", "failed"].includes(match.status)) return 6;
-  if (participants.some((p) => p.confirmation_status === "pending")) return 1;
-  if (["confirmed", "at_risk"].includes(match.status)) {
-    if (participants.some((p) => ["can_continue", "cannot_continue", "dropped_out"].includes(p.coordination_status))) return 4;
-    if (participants.some((p) => ["checking_procedure", "contacted_kindergarten"].includes(p.coordination_status))) return 3;
+  if (participants.some((participant) => !isConfirmedLike(participant) && participant.confirmation_status !== "declined")) return 1;
+  if (["confirmed", "at_risk", "pending", "candidate", "created"].includes(match.status)) {
+    if (participants.every((participant) => participant.coordination_status === "can_continue")) return 5;
+    if (participants.some((participant) => ["can_continue", "cannot_continue", "dropped_out"].includes(participant.coordination_status))) return 4;
+    if (participants.some((participant) => ["checking_procedure", "contacted_kindergarten"].includes(participant.coordination_status))) return 3;
     return 2;
   }
   return 1;
@@ -273,17 +356,29 @@ function stepFor(match: Match, participants: Participant[]) {
 
 function statusText(participant: Participant, allConfirmed: boolean) {
   if (participant.confirmation_status === "declined") return "Отказана размяна";
-  if (participant.confirmation_status === "pending") return "Очаква потвърждение";
+  if (!isConfirmedLike(participant)) return "Очаква потвърждение";
   if (!allConfirmed) return "Потвърдил/а · чака останалите";
   return statusLabels[participant.coordination_status] || participant.coordination_status || "—";
 }
 
 function isMatchesTabVisible() {
-  const title = Array.from(document.querySelectorAll<HTMLElement>("h1")).find((h1) => {
+  return Array.from(document.querySelectorAll<HTMLElement>("h1")).some((h1) => {
     const text = h1.textContent || "";
     return text.includes("Координация") || text.includes("Още няма цикъл") || text.includes("Има потенциален цикъл") || text.includes("Отказано");
   });
-  return Boolean(title);
+}
+
+function nativeCoordinationAlreadyVisible() {
+  const pageText = document.body.textContent || "";
+  const hasNativeCycle = pageText.includes("Верига и статуси") || pageText.includes("Приемам") || pageText.includes("Отказвам") || pageText.includes("Отказ от процеса");
+  const hasEmptyState = pageText.includes("Още няма цикъл") || pageText.includes("Няма match");
+  return hasNativeCycle && !hasEmptyState;
+}
+
+function shouldRenderFallback() {
+  if (!isMatchesTabVisible()) return false;
+  if (nativeCoordinationAlreadyVisible()) return false;
+  return true;
 }
 
 function removePrevious() {
@@ -301,7 +396,8 @@ function mountAfterTitle(root: HTMLElement) {
 
 async function renderPersistentCoordination() {
   injectStyles();
-  if (!isMatchesTabVisible()) {
+
+  if (!shouldRenderFallback()) {
     removePrevious();
     return;
   }
@@ -321,27 +417,44 @@ async function renderPersistentCoordination() {
   const kgMap = await getKindergartenMap(kgIds);
   const userById = new Map<string, User>((snapshot.users || []).map((user) => [user.id, user]));
   const activeStep = stepFor(match, participants);
-  const allConfirmed = participants.every((participant) => participant.confirmation_status === "confirmed");
-  const closed = ["cancelled", "rejected", "failed"].includes(match.status) || participants.some((p) => p.confirmation_status === "declined" || p.coordination_status === "dropped_out");
+  const allConfirmed = participants.length > 0 && participants.every(isConfirmedLike);
+  const closed = ["cancelled", "rejected", "failed"].includes(match.status) || participants.some((participant) => participant.confirmation_status === "declined" || participant.coordination_status === "dropped_out");
+  const currentStepInfo = closed ? { title: "Отказано", helper: "Процесът е прекратен. Веригата и чатовете са затворени." } : steps[Math.max(activeStep - 1, 0)] ?? steps[0];
 
   removePrevious();
   const root = document.createElement("section");
   root.id = ROOT_ID;
   root.innerHTML = `
     <div class="mzm-persist-shell">
-      <div class="mzm-persist-hero ${closed ? "mzm-persist-closed" : ""}">
-        <p class="mzm-persist-eyebrow">${closed ? "Процесът е прекратен" : "Активна координация"}</p>
-        <h2 class="mzm-persist-title">${closed ? "Веригата е затворена" : "Пътеката остава видима"}</h2>
-        <p class="mzm-persist-helper">${closed ? "Историята остава тук, за да е ясно кой кога е променил статуса си." : "Следи всички родители, етапите и статуса на веригата. Това не изчезва след приемане."}</p>
+      <div class="mzm-persist-head">
+        <div>
+          <p class="mzm-persist-eyebrow">Статус в прогрес</p>
+          <h2 class="mzm-persist-title">${closed ? "Отказано" : "Координация"}</h2>
+        </div>
+        <span class="mzm-persist-badge">${closed ? "отказано" : match.status}</span>
+      </div>
+      <div class="mzm-persist-stage ${closed ? "is-closed" : ""}">
+        <div>
+          <small>Стъпка ${activeStep || 1} от ${steps.length}</small>
+          <strong>${escapeHtml(currentStepInfo.title)}</strong>
+          <span>${escapeHtml(currentStepInfo.helper)}</span>
+        </div>
+        <i class="mzm-persist-chevron"></i>
       </div>
       <div class="mzm-persist-timeline">
-        ${stepList.map((title, index) => {
+        ${steps.map((step, index) => {
           const n = index + 1;
-          const cls = n < activeStep ? "is-done" : n === activeStep ? "is-current" : "";
-          return `<div class="mzm-persist-step ${cls}"><div class="mzm-persist-dot">${n < activeStep ? "✓" : n}</div><div><strong>${escapeHtml(title)}</strong><span>${n === activeStep ? "Текущ етап" : n < activeStep ? "Минат етап" : "Предстои"}</span></div></div>`;
+          const done = n < activeStep;
+          const current = n === activeStep;
+          const cls = done ? "is-done" : current ? "is-current" : "";
+          return `<div class="mzm-persist-step ${cls}">
+            <div class="mzm-persist-dot">${done ? "✓" : n}</div>
+            <div><strong>${escapeHtml(closed && n === 6 ? "Отказано" : step.title)}</strong><span>${current ? "Текущ етап" : done ? "Минат етап" : "Предстои"}</span></div>
+          </div>`;
         }).join("")}
       </div>
       <div class="mzm-persist-cards">
+        <p class="mzm-persist-cards-label">Верига и статуси</p>
         ${participants.map((participant, index) => {
           const user = userById.get(participant.user_id);
           const from = kgMap[participant.from_kindergarten_id]?.name || "Избрана градина";
