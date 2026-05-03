@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
+import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
 import MatchSimulatorBridge from "./MatchSimulatorBridge";
 import RequestFormHardReset from "./RequestFormHardReset";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={sofiaSans.className}>
         {children}
         <HomeGuidanceEnhancer />
+        <HomeStatLinks />
         <HomeStatsCleanup />
         <MatchSimulatorBridge />
         <RequestFormHardReset />
