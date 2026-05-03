@@ -13,6 +13,7 @@ type KgMapResponse = { kindergartens?: KgMap; error?: string };
 const ROOT_ID = "mzm-match-simulator-bridge-root";
 const STYLE_ID = "mzm-match-simulator-bridge-style";
 const LEAVE_MODAL_ID = "mzm-match-leave-modal";
+const REJECTED_STEP_PREFIX = "mzm_rejected_step:";
 
 let lastSignature = "";
 let userInteractingUntil = 0;
@@ -36,11 +37,6 @@ const steps = [
   { title: "Резултат", helper: "Цикълът се отбелязва като приключен или отпаднал." }
 ];
 
-const rejectedStep = {
-  title: "Отказано",
-  helper: "Процесът е прекратен. Веригата и чатовете са затворени."
-};
-
 function injectStyles() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
@@ -51,8 +47,8 @@ function injectStyles() {
     .mzm-match-card { border-radius: 2.2rem; background: rgba(255,255,255,.9); padding: 1rem; box-shadow: 0 18px 48px rgba(40,34,20,.08), inset 0 0 0 1px rgba(28,27,25,.025); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
     .mzm-match-invite-title { margin: 0; font-size: 1.8rem; line-height: .98; font-weight: 900; letter-spacing: -.06em; color: #1c1b19; }
     .mzm-match-muted { margin: .65rem 0 0; font-size: .9rem; line-height: 1.55; font-weight: 700; color: rgba(28,27,25,.58); }
-    .mzm-match-stage { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem; border: 0; border-radius: 1.6rem; background: #d9e7cb; padding: 1rem 1.1rem; text-align: left; box-shadow: 0 10px 24px rgba(33,28,17,.04); }
-    .mzm-match-stage.is-closed { background: #ffe1d5; }
+    .mzm-match-stage { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem; border: 0; border-radius: 1.6rem; background: #d9e7cb; padding: 1rem 1.1rem; text-align: left; box-shadow: 0 10px 24px rgba(33,28,17,.04); transition: background .16s ease; }
+    #${ROOT_ID} .mzm-match-stage.is-closed { background: #ffe1d5 !important; }
     .mzm-match-stage small { display: block; font-size: .68rem; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; color: rgba(28,27,25,.45); }
     .mzm-match-stage strong { display: block; margin-top: .45rem; font-size: 1.08rem; line-height: 1.1; font-weight: 900; color: #1c1b19; }
     .mzm-match-stage span { display: block; margin-top: .22rem; font-size: .76rem; line-height: 1.35; font-weight: 700; color: rgba(28,27,25,.58); }
@@ -67,6 +63,8 @@ function injectStyles() {
     .mzm-match-dot { position: relative; z-index: 2; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 999px; background: #fff; font-size: .72rem; font-weight: 900; color: rgba(28,27,25,.35); box-shadow: inset 0 0 0 1px rgba(28,27,25,.08); }
     .mzm-match-step.is-done .mzm-match-dot { background: #1c1b19; color: #fff; box-shadow: none; }
     .mzm-match-step.is-current .mzm-match-dot { background: var(--study-orange,#f95e08); color: #fff; box-shadow: none; }
+    .mzm-match-step.is-rejected .mzm-match-dot { background: #ff6f61 !important; color: #fff; box-shadow: none; }
+    .mzm-match-step.is-rejected strong { color: #1c1b19; }
     .mzm-match-step strong { display: block; padding-top: .18rem; font-size: .86rem; font-weight: 900; color: #1c1b19; }
     .mzm-match-step span { display: block; margin-top: .14rem; font-size: .72rem; font-weight: 700; color: rgba(28,27,25,.5); }
     .mzm-match-cycle { margin-top: 1rem; border-radius: 1.75rem; background: #f7f5ef; padding: 1rem; }
@@ -77,16 +75,19 @@ function injectStyles() {
     .mzm-match-person:nth-of-type(4) { background: #ECECC7; }
     .mzm-match-person:nth-of-type(5) { background: #DED1E8; }
     .mzm-match-person.is-me { background: var(--study-orange,#f95e08) !important; color: #fff; }
+    .mzm-match-person.is-closed { background: #ffe1d5 !important; color: #1c1b19 !important; }
     .mzm-match-person-head { display: flex; align-items: center; gap: .75rem; }
     .mzm-match-avatar { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 999px; background: rgba(255,255,255,.9); font-size: .86rem; font-weight: 900; color: #1c1b19; box-shadow: 0 8px 18px rgba(33,28,17,.05); flex: 0 0 auto; }
     .mzm-match-person h3 { margin: 0; font-size: 1rem; line-height: 1.1; font-weight: 900; color: inherit; }
     .mzm-match-person p { margin: .25rem 0 0; font-size: .73rem; line-height: 1.35; font-weight: 700; color: rgba(28,27,25,.56); }
     .mzm-match-person.is-me p { color: rgba(255,255,255,.72); }
+    .mzm-match-person.is-closed p { color: rgba(28,27,25,.58) !important; }
     .mzm-match-status-text { margin-top: .75rem; display: inline-flex; border-radius: 999px; background: rgba(255,255,255,.68); padding: .48rem .7rem; font-size: .68rem; font-weight: 900; color: rgba(28,27,25,.68); }
     .mzm-match-status-select { margin-top: .75rem; width: 100%; border: 0; outline: 0; appearance: none; border-radius: 999px; background: rgba(255,255,255,.92); padding: .78rem 2.5rem .78rem .9rem; font-size: .76rem; font-weight: 900; color: #1c1b19; box-shadow: inset 0 0 0 1px rgba(28,27,25,.04); }
     .mzm-match-actions { margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
     .mzm-match-actions button, .mzm-match-leave-button { border: 0; border-radius: 999px; padding: 1rem; font-size: .9rem; font-weight: 900; box-shadow: 0 10px 24px rgba(33,28,17,.04); }
     .mzm-match-primary { background: var(--study-orange,#f95e08); color: #fff; }
+    .mzm-match-danger { background: #ff6f61 !important; color: #fff !important; }
     .mzm-match-secondary { background: #f7f5ef; color: #1c1b19; }
     .mzm-match-leave-button { width: 100%; margin-top: 1rem; background: #f7f5ef; color: #1c1b19; }
     .mzm-match-empty { border-radius: 2rem; background: rgba(255,255,255,.85); padding: 1.25rem; box-shadow: 0 18px 48px rgba(40,34,20,.06); }
@@ -96,11 +97,9 @@ function injectStyles() {
     .mzm-match-leave-panel { width: min(100%, 27rem); max-height: calc(100dvh - 2rem); overflow: auto; border-radius: 2rem; background: #fffcfa; padding: 1rem; box-shadow: 0 24px 70px rgba(28,27,25,.22); }
     .mzm-match-leave-panel h3 { margin: 0; font-size: 1.45rem; line-height: 1.02; font-weight: 900; letter-spacing: -.05em; }
     .mzm-match-leave-panel p { margin: .65rem 0 0; font-size: .86rem; line-height: 1.5; font-weight: 700; color: rgba(28,27,25,.58); }
+    .mzm-match-leave-panel textarea { width: 100%; min-height: 7rem; margin-top: 1rem; border: 0; resize: vertical; border-radius: 1.4rem; background: #f7f5ef; padding: 1rem; font: inherit; font-size: .86rem; font-weight: 700; color: #1c1b19; outline: none; box-shadow: inset 0 0 0 1px rgba(28,27,25,.04); }
     .mzm-match-leave-panel button { width: 100%; border: 0; border-radius: 999px; padding: 1rem; font-size: .86rem; font-weight: 900; }
     .mzm-match-leave-list { display: grid; gap: .6rem; margin-top: 1rem; }
-    main:has(nav.fixed.bottom-4) nav.fixed.bottom-4 button { text-align: center !important; }
-    main:has(nav.fixed.bottom-4) nav.fixed.bottom-4 button.bg-orange { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: .22rem !important; text-align: center !important; line-height: 1.05 !important; }
-    main:has(nav.fixed.bottom-4) nav.fixed.bottom-4 button.bg-orange span, main:has(nav.fixed.bottom-4) nav.fixed.bottom-4 button.bg-orange p, main:has(nav.fixed.bottom-4) nav.fixed.bottom-4 button.bg-orange div { text-align: center !important; margin-left: auto !important; margin-right: auto !important; }
   `;
   document.head.appendChild(style);
 }
@@ -131,6 +130,20 @@ async function fetchKindergartenMap(ids: string[]) {
   }
 }
 
+function rememberRejectedStep(matchId: string, step: number) {
+  try { window.localStorage.setItem(`${REJECTED_STEP_PREFIX}${matchId}`, String(step)); } catch {}
+}
+
+function getRememberedRejectedStep(matchId: string) {
+  try {
+    const value = window.localStorage.getItem(`${REJECTED_STEP_PREFIX}${matchId}`);
+    const parsed = value ? Number(value) : 0;
+    return Number.isFinite(parsed) && parsed >= 1 && parsed <= steps.length ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function isConfirmedLike(participant: Participant) {
   return participant.confirmation_status === "interested" || participant.confirmation_status === "confirmed";
 }
@@ -139,10 +152,12 @@ function statusLabel(status?: string) {
   return statusOptions.find(([value]) => value === status)?.[1] ?? status ?? "—";
 }
 
-function participantStatus(participant: Participant, allConfirmed: boolean) {
+function participantStatus(participant: Participant, allConfirmed: boolean, closed = false) {
   if (participant.confirmation_status === "declined") return "Отказана размяна";
+  if (participant.coordination_status === "dropped_out") return "Отказал/а се е";
   if (!isConfirmedLike(participant)) return "Очаква потвърждение";
   if (!allConfirmed) return "Потвърдил/а · чака останалите";
+  if (closed) return "Процесът е затворен";
   return statusLabel(participant.coordination_status);
 }
 
@@ -182,8 +197,14 @@ function stepState(match: Match, participants: Participant[]) {
   const anyStarted = participants.some((participant) => ["checking_procedure", "contacted_kindergarten"].includes(participant.coordination_status));
   const allConfirmed = participants.length > 0 && participants.every(isConfirmedLike);
   const closed = anyDeclined || anyDropped || ["at_risk", "cancelled", "rejected", "failed"].includes(match.status);
-  const currentStep = closed ? 6 : !allConfirmed ? 1 : allCan ? 5 : anyCannot ? 4 : anyStarted ? 3 : 2;
-  return { allConfirmed, closed, currentStep, currentStepInfo: closed ? rejectedStep : steps[Math.max(currentStep - 1, 0)] ?? steps[0] };
+  const liveStep = !allConfirmed ? 1 : allCan ? 5 : anyCannot ? 4 : anyStarted ? 3 : 2;
+  const fallbackClosedStep = anyDeclined && !allConfirmed ? 1 : ["cancelled", "rejected", "failed"].includes(match.status) && !anyDropped && !anyCannot ? 6 : liveStep;
+  const currentStep = closed ? (getRememberedRejectedStep(match.id) ?? fallbackClosedStep) : liveStep;
+  const baseTitle = steps[Math.max(currentStep - 1, 0)]?.title ?? "процеса";
+  const currentStepInfo = closed
+    ? { title: "Отказано", helper: `Процесът е прекратен на етап: ${baseTitle}. Веригата и чатовете са затворени.` }
+    : steps[Math.max(currentStep - 1, 0)] ?? steps[0];
+  return { allConfirmed, closed, currentStep, currentStepInfo };
 }
 
 function kgName(snapshot: PlaygroundSnapshot, kgMap: KgMap, id: string) {
@@ -199,18 +220,19 @@ function timelineHtml(currentStep: number, rejected: boolean) {
     const n = index + 1;
     const done = n < currentStep;
     const current = n === currentStep;
-    const title = rejected && n === 6 ? "Отказано" : step.title;
-    const helper = rejected && n === 6 ? rejectedStep.helper : step.helper;
-    return `<div class="mzm-match-step ${done ? "is-done" : current ? "is-current" : ""}"><div class="mzm-match-dot">${done ? "✓" : rejected && current ? "!" : n}</div><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(helper)}</span></div></div>`;
+    const rejectedHere = rejected && current;
+    const title = rejectedHere ? `Отказано · ${step.title}` : step.title;
+    const helper = rejectedHere ? "Процесът е спрян на този етап." : step.helper;
+    return `<div class="mzm-match-step ${done ? "is-done" : current ? "is-current" : ""} ${rejectedHere ? "is-rejected" : ""}"><div class="mzm-match-dot">${done ? "✓" : rejectedHere ? "!" : n}</div><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(helper)}</span></div></div>`;
   }).join("")}</div>`;
 }
 
-function cycleHtml(snapshot: PlaygroundSnapshot, kgMap: KgMap, participants: Participant[], selectedUserId: string, allConfirmed: boolean, readOnly: boolean) {
+function cycleHtml(snapshot: PlaygroundSnapshot, kgMap: KgMap, participants: Participant[], selectedUserId: string, allConfirmed: boolean, readOnly: boolean, closed: boolean) {
   const userById = new Map<string, User>(snapshot.users.map((user) => [user.id, user]));
   return `<div class="mzm-match-cycle"><p class="mzm-match-cycle-label">Верига и статуси</p>${participants.map((participant, index) => {
     const me = participant.user_id === selectedUserId;
     const user = userById.get(participant.user_id);
-    return `<article class="mzm-match-person ${me ? "is-me" : ""}" data-user-id="${escapeHtml(participant.user_id)}"><div class="mzm-match-person-head"><div class="mzm-match-avatar">${me ? "Ти" : index + 1}</div><div><h3>${escapeHtml(me ? "Ти" : user?.display_name || participant.participant_label || `Родител ${index + 1}`)}</h3><p>${escapeHtml(fromTo(snapshot, kgMap, participant))}</p></div></div>${me && allConfirmed && !readOnly ? `<select class="mzm-match-status-select" data-status-select="true">${statusOptions.map(([value, label]) => `<option value="${value}" ${participant.coordination_status === value ? "selected" : ""}>${label}</option>`).join("")}</select>` : `<span class="mzm-match-status-text">${escapeHtml(participantStatus(participant, allConfirmed))}</span>`}</article>`;
+    return `<article class="mzm-match-person ${me ? "is-me" : ""} ${closed ? "is-closed" : ""}" data-user-id="${escapeHtml(participant.user_id)}"><div class="mzm-match-person-head"><div class="mzm-match-avatar">${me ? "Ти" : index + 1}</div><div><h3>${escapeHtml(me ? "Ти" : user?.display_name || participant.participant_label || `Родител ${index + 1}`)}</h3><p>${escapeHtml(fromTo(snapshot, kgMap, participant))}</p></div></div>${me && allConfirmed && !readOnly && !closed ? `<select class="mzm-match-status-select" data-status-select="true" data-current-status="${escapeHtml(participant.coordination_status || "not_started")}">${statusOptions.map(([value, label]) => `<option value="${value}" ${participant.coordination_status === value ? "selected" : ""}>${label}</option>`).join("")}</select>` : `<span class="mzm-match-status-text">${escapeHtml(participantStatus(participant, allConfirmed, closed))}</span>`}</article>`;
   }).join("")}</div>`;
 }
 
@@ -231,7 +253,7 @@ function mountRoot(html: string) {
   return root;
 }
 
-function attachHandlers(root: HTMLElement, match: Match, selectedUserId: string) {
+function attachHandlers(root: HTMLElement, match: Match, selectedUserId: string, currentStep: number) {
   const stage = root.querySelector<HTMLButtonElement>("[data-toggle-timeline]");
   const timelineWrap = root.querySelector<HTMLElement>("[data-timeline-wrap]");
   stage?.addEventListener("click", () => {
@@ -241,13 +263,24 @@ function attachHandlers(root: HTMLElement, match: Match, selectedUserId: string)
   });
 
   root.querySelector<HTMLButtonElement>("[data-confirm]")?.addEventListener("click", () => runAction({ action: "confirm", matchId: match.id, userId: selectedUserId }));
-  root.querySelector<HTMLButtonElement>("[data-decline]")?.addEventListener("click", () => runAction({ action: "decline", matchId: match.id, userId: selectedUserId }));
-  root.querySelector<HTMLSelectElement>("[data-status-select]")?.addEventListener("focus", () => { userInteractingUntil = Date.now() + 12000; });
-  root.querySelector<HTMLSelectElement>("[data-status-select]")?.addEventListener("change", (event) => {
-    const status = (event.target as HTMLSelectElement).value;
+  root.querySelector<HTMLButtonElement>("[data-decline]")?.addEventListener("click", () => {
+    rememberRejectedStep(match.id, 1);
+    runAction({ action: "decline", matchId: match.id, userId: selectedUserId });
+  });
+  const statusSelect = root.querySelector<HTMLSelectElement>("[data-status-select]");
+  statusSelect?.addEventListener("focus", () => { userInteractingUntil = Date.now() + 12000; });
+  statusSelect?.addEventListener("change", (event) => {
+    const select = event.target as HTMLSelectElement;
+    const status = select.value;
+    const previous = select.dataset.currentStatus || "not_started";
+    if (status === "dropped_out") {
+      select.value = previous;
+      openRejectModal(match.id, selectedUserId, currentStep);
+      return;
+    }
     runAction({ action: "status", matchId: match.id, userId: selectedUserId, status });
   });
-  root.querySelector<HTMLButtonElement>("[data-leave]")?.addEventListener("click", () => openLeaveModal(match.id, selectedUserId));
+  root.querySelector<HTMLButtonElement>("[data-leave]")?.addEventListener("click", () => openRejectModal(match.id, selectedUserId, currentStep));
 }
 
 async function runAction(action: object) {
@@ -261,16 +294,20 @@ async function runAction(action: object) {
   }
 }
 
-function openLeaveModal(matchId: string, userId: string) {
+function openRejectModal(matchId: string, userId: string, rejectedAtStep: number) {
   document.getElementById(LEAVE_MODAL_ID)?.remove();
   const modal = document.createElement("div");
   modal.id = LEAVE_MODAL_ID;
   modal.className = "mzm-match-leave-modal";
-  modal.innerHTML = `<div class="mzm-match-leave-panel"><h3>Как да затворим цикъла?</h3><p>Избери дали чатът да остане видим за координация след отказа или всичко да се затвори напълно.</p><div class="mzm-match-leave-list"><button class="mzm-match-primary" data-keep-chat>Отказвам се, но запази чата</button><button class="mzm-match-primary" data-close-chat>Отказвам се и затвори чата</button><button class="mzm-match-secondary" data-cancel>Връщам се назад</button></div></div>`;
+  modal.innerHTML = `<div class="mzm-match-leave-panel"><h3>Сигурна ли си, че искаш да откажеш?</h3><p>Това ще спре процеса, ще затвори веригата и чатовете за този цикъл. Причината не е задължителна, но помага да е ясно защо процесът е прекратен.</p><textarea data-reject-reason placeholder="Причина за отказ, по желание"></textarea><div class="mzm-match-leave-list"><button class="mzm-match-danger" data-confirm-reject>Да, отказвам и спирам процеса</button><button class="mzm-match-secondary" data-cancel>Не, връщам се назад</button></div></div>`;
   modal.addEventListener("click", (event) => { if (event.target === modal) modal.remove(); });
   modal.querySelector("[data-cancel]")?.addEventListener("click", () => modal.remove());
-  modal.querySelector("[data-keep-chat]")?.addEventListener("click", () => { modal.remove(); runAction({ action: "leave", matchId, userId, keepChat: true }); });
-  modal.querySelector("[data-close-chat]")?.addEventListener("click", () => { modal.remove(); runAction({ action: "leave", matchId, userId, keepChat: false }); });
+  modal.querySelector("[data-confirm-reject]")?.addEventListener("click", () => {
+    const reason = (modal.querySelector<HTMLTextAreaElement>("[data-reject-reason]")?.value || "").trim();
+    rememberRejectedStep(matchId, rejectedAtStep);
+    modal.remove();
+    runAction({ action: "leave", matchId, userId, keepChat: false, reason });
+  });
   document.body.appendChild(modal);
 }
 
@@ -278,6 +315,7 @@ function makeSignature(snapshot: PlaygroundSnapshot, match: Match | undefined, s
   return JSON.stringify({
     selectedUserId,
     match: match ? { id: match.id, status: match.status } : null,
+    rejectedStep: match ? getRememberedRejectedStep(match.id) : null,
     participants: participants.map((participant) => ({ id: participant.id, user_id: participant.user_id, confirmation_status: participant.confirmation_status, coordination_status: participant.coordination_status, from: participant.from_kindergarten_id, wants: participant.wants_kindergarten_id }))
   });
 }
@@ -318,13 +356,15 @@ async function renderBridge(force = false) {
   const state = stepState(match, participants);
 
   if (!isConfirmedLike(activeParticipant) && activeParticipant.confirmation_status !== "declined" && !state.closed) {
-    const root = mountRoot(`<div class="mzm-match-card"><h2 class="mzm-match-invite-title">Има потенциален цикъл</h2><p class="mzm-match-muted">Заявката ти вече е скрита. Потвърди интерес, за да се отключи координацията.</p>${cycleHtml(snapshot, kgMap, participants, selected.id, state.allConfirmed, true)}<div class="mzm-match-actions"><button class="mzm-match-primary" data-confirm>Приемам</button><button class="mzm-match-secondary" data-decline>Отказвам</button></div></div>`);
-    if (root) attachHandlers(root, match, selected.id);
+    const root = mountRoot(`<div class="mzm-match-card"><h2 class="mzm-match-invite-title">Има потенциален цикъл</h2><p class="mzm-match-muted">Заявката ти вече е скрита. Потвърди интерес, за да се отключи координацията.</p>${cycleHtml(snapshot, kgMap, participants, selected.id, state.allConfirmed, true, false)}<div class="mzm-match-actions"><button class="mzm-match-primary" data-confirm>Приемам</button><button class="mzm-match-secondary" data-decline>Отказвам</button></div></div>`);
+    if (root) attachHandlers(root, match, selected.id, state.currentStep);
     return;
   }
 
-  const root = mountRoot(`<div class="mzm-match-card"><button type="button" class="mzm-match-stage" data-toggle-timeline><div><small>Стъпка ${state.currentStep || 1} от ${steps.length}</small><strong>${escapeHtml(state.currentStepInfo.title)}</strong><span>${escapeHtml(state.currentStepInfo.helper)}</span></div><i class="mzm-match-toggle-icon"></i></button><div data-timeline-wrap hidden>${timelineHtml(state.currentStep, state.closed)}</div>${state.closed ? `<div class="mzm-match-empty" style="margin-top:1rem"><h3>Веригата е затворена</h3><p>Чатовете вече не се показват за този процес.</p></div>` : cycleHtml(snapshot, kgMap, participants, selected.id, state.allConfirmed, false)}${!state.closed ? `<button class="mzm-match-leave-button" data-leave>Отказ от процеса</button>` : ""}</div>`);
-  if (root) attachHandlers(root, match, selected.id);
+  const timelineHidden = state.closed ? "" : "hidden";
+  const stageOpen = state.closed ? "is-open" : "";
+  const root = mountRoot(`<div class="mzm-match-card"><button type="button" class="mzm-match-stage ${state.closed ? "is-closed" : ""} ${stageOpen}" data-toggle-timeline><div><small>Стъпка ${state.currentStep || 1} от ${steps.length}</small><strong>${escapeHtml(state.currentStepInfo.title)}</strong><span>${escapeHtml(state.currentStepInfo.helper)}</span></div><i class="mzm-match-toggle-icon"></i></button><div data-timeline-wrap ${timelineHidden}>${timelineHtml(state.currentStep, state.closed)}</div>${state.closed ? `<div class="mzm-match-empty" style="margin-top:1rem"><h3>Веригата е затворена</h3><p>Чатовете вече не се показват за този процес.</p></div>` : cycleHtml(snapshot, kgMap, participants, selected.id, state.allConfirmed, false, false)}${!state.closed ? `<button class="mzm-match-leave-button" data-leave>Отказ от процеса</button>` : ""}</div>`);
+  if (root) attachHandlers(root, match, selected.id, state.currentStep);
 }
 
 export default function MatchSimulatorBridge() {
