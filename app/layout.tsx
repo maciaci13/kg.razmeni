@@ -9,6 +9,7 @@ import NavEmergencyFix from "./NavEmergencyFix";
 import RequestFormHardReset from "./RequestFormHardReset";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
+import StatusDropdownCleanup from "./StatusDropdownCleanup";
 import TextCopyNormalizer from "./TextCopyNormalizer";
 import "./globals.css";
 
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <RequestFormHardReset />
         <RequestVisualPolish />
         <ShareRequestEnhancer />
+        <StatusDropdownCleanup />
         <TextCopyNormalizer />
         <NavEmergencyFix />
       </body>
