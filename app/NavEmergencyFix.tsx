@@ -23,23 +23,23 @@ function injectStyles() {
     main:has(nav.fixed.bottom-4) {
       min-height: 100dvh !important;
       overflow: visible !important;
-      padding-bottom: calc(8.75rem + env(safe-area-inset-bottom, 0px)) !important;
-      scroll-padding-bottom: calc(9rem + env(safe-area-inset-bottom, 0px)) !important;
+      padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)) !important;
+      scroll-padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     main:has(nav.fixed.bottom-4) > div {
-      padding-bottom: calc(8.75rem + env(safe-area-inset-bottom, 0px)) !important;
+      padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     main:has(nav.fixed.bottom-4) .mzm-request-form-card,
     main:has(nav.fixed.bottom-4) section:has(#mzm-request-polish-root) {
-      margin-bottom: calc(7.75rem + env(safe-area-inset-bottom, 0px)) !important;
-      scroll-margin-top: 1rem !important;
-      scroll-margin-bottom: calc(9rem + env(safe-area-inset-bottom, 0px)) !important;
+      margin-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px)) !important;
+      scroll-margin-top: .5rem !important;
+      scroll-margin-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     main:has(nav.fixed.bottom-4) .mzm-submit {
-      margin-bottom: 1.25rem !important;
+      margin-bottom: 1rem !important;
     }
 
     main nav.fixed.bottom-4 {
