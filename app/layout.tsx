@@ -18,6 +18,7 @@ import RequestFormHardReset from "./RequestFormHardReset";
 import RequestProfileCheckboxFix from "./RequestProfileCheckboxFix";
 import RequestProfileDefaultsSync from "./RequestProfileDefaultsSync";
 import RequestVisualPolish from "./RequestVisualPolish";
+import SearchableSelectEnhancer from "./SearchableSelectEnhancer";
 import ShareEmptyStates from "./ShareEmptyStates";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
 import StatusDropdownCleanup from "./StatusDropdownCleanup";
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <RequestProfileDefaultsSync />
         <RequestProfileCheckboxFix />
         <RequestVisualPolish />
+        <SearchableSelectEnhancer />
         <ShareRequestEnhancer />
         <ShareEmptyStates />
         <StatusDropdownCleanup />
