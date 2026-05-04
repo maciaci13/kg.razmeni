@@ -37,7 +37,7 @@ function injectStyles() {
       outline: 0 !important;
       border-radius: 1.2rem !important;
       background: #fff !important;
-      padding: 1rem !important;
+      padding: 1rem 1.45rem 1rem 1rem !important;
       color: #1c1b19 !important;
       font: inherit !important;
       font-size: .92rem !important;
@@ -51,6 +51,9 @@ function injectStyles() {
       gap: .85rem !important;
       text-align: left !important;
       min-height: 3.45rem !important;
+      touch-action: pan-y !important;
+      -webkit-tap-highlight-color: transparent !important;
+      user-select: none !important;
     }
 
     .mzm-select-proxy__label {
@@ -58,6 +61,7 @@ function injectStyles() {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      pointer-events: none;
     }
 
     .mzm-select-proxy__chev {
@@ -67,6 +71,8 @@ function injectStyles() {
       opacity: .72;
       font-size: 1.05rem;
       line-height: 1;
+      margin-right: .2rem;
+      pointer-events: none;
     }
 
     .mzm-search-select-backdrop {
@@ -506,11 +512,53 @@ function ensureProxy(select: HTMLSelectElement) {
   proxy.type = "button";
   proxy.className = "mzm-select-proxy";
   proxy.innerHTML = `<span class="mzm-select-proxy__label"></span><span class="mzm-select-proxy__chev">⌄</span>`;
-  proxy.addEventListener("click", (event) => {
+
+  let startX = 0;
+  let startY = 0;
+  let startScrollY = 0;
+  let isPointerDown = false;
+  let hasMoved = false;
+
+  proxy.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    isPointerDown = true;
+    hasMoved = false;
+    startX = event.clientX;
+    startY = event.clientY;
+    startScrollY = window.scrollY;
+  });
+
+  proxy.addEventListener("pointermove", (event) => {
+    if (!isPointerDown) return;
+    const deltaX = Math.abs(event.clientX - startX);
+    const deltaY = Math.abs(event.clientY - startY);
+    const scrollDelta = Math.abs(window.scrollY - startScrollY);
+    if (deltaX > 8 || deltaY > 8 || scrollDelta > 3) hasMoved = true;
+  });
+
+  proxy.addEventListener("pointercancel", () => {
+    isPointerDown = false;
+    hasMoved = true;
+  });
+
+  proxy.addEventListener("pointerup", (event) => {
+    if (!isPointerDown) return;
+    const deltaX = Math.abs(event.clientX - startX);
+    const deltaY = Math.abs(event.clientY - startY);
+    const scrollDelta = Math.abs(window.scrollY - startScrollY);
+    const isTap = !hasMoved && deltaX <= 8 && deltaY <= 8 && scrollDelta <= 3;
+    isPointerDown = false;
+    if (!isTap) return;
     event.preventDefault();
     event.stopPropagation();
     openPicker(select);
   });
+
+  proxy.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  });
+
   proxy.addEventListener("keydown", (event) => {
     if (["Enter", " ", "ArrowDown"].includes(event.key)) {
       event.preventDefault();
