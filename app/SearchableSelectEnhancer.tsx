@@ -42,6 +42,13 @@ function injectStyles() {
       background: rgba(28,27,25,.34);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+
+    .mzm-search-select-backdrop.is-keyboard-open {
+      align-items: flex-start;
+      justify-content: center;
+      padding: .55rem .65rem;
     }
 
     .mzm-search-select-panel {
@@ -56,7 +63,13 @@ function injectStyles() {
       box-shadow: 0 28px 90px rgba(28,27,25,.24);
     }
 
+    .mzm-search-select-backdrop.is-keyboard-open .mzm-search-select-panel {
+      max-height: calc(100% - 1.1rem);
+      border-radius: 1.8rem;
+    }
+
     .mzm-search-select-head {
+      flex: 0 0 auto;
       padding: 1rem 1rem .75rem;
       background: linear-gradient(145deg, rgba(255,240,227,.98), rgba(255,255,255,.94));
     }
@@ -150,11 +163,15 @@ function injectStyles() {
     }
 
     .mzm-search-select-list {
+      flex: 1 1 auto;
+      min-height: 0;
       padding: .75rem;
       overflow: auto;
       display: grid;
+      align-content: start;
       gap: .45rem;
       background: #fffcfa;
+      -webkit-overflow-scrolling: touch;
     }
 
     .mzm-search-select-option {
@@ -200,7 +217,13 @@ function injectStyles() {
 
     @media (max-height: 680px) {
       .mzm-search-select-backdrop { align-items: flex-end; padding: .65rem; }
+      .mzm-search-select-backdrop.is-keyboard-open { align-items: flex-start; padding: .45rem .55rem; }
       .mzm-search-select-panel { max-height: calc(100dvh - 1.3rem); border-radius: 1.8rem; }
+      .mzm-search-select-backdrop.is-keyboard-open .mzm-search-select-panel { max-height: calc(100% - .9rem); }
+      .mzm-search-select-head { padding: .82rem .82rem .62rem; }
+      .mzm-search-select-top { margin-bottom: .62rem; }
+      .mzm-search-select-title { font-size: 1.25rem; }
+      .mzm-search-select-input, .mzm-search-select-input-icon { height: 2.85rem; }
     }
   `;
   document.head.appendChild(style);
@@ -246,15 +269,17 @@ function getOptions(select: HTMLSelectElement): OptionItem[] {
 }
 
 function getTitle(select: HTMLSelectElement) {
-  const label = select.closest("label")?.textContent || "";
-  const parentLabel = select.parentElement?.querySelector<HTMLElement>("label, .mzm-label, .mzm-onboarding-label")?.textContent || "";
+  const wrapper = select.closest(".mzm-onboarding-field, .mzm-field, div");
+  const parentLabel = wrapper?.querySelector<HTMLElement>("label, .mzm-label, .mzm-onboarding-label")?.textContent || "";
   const aria = select.getAttribute("aria-label") || "";
-  const first = normalize(label || parentLabel || aria);
-  if (first) return label || parentLabel || aria;
   const selected = select.selectedOptions[0]?.textContent || "";
-  if (selected.includes("район")) return "Избери район";
-  if (selected.includes("набор")) return "Избери набор / група";
-  return "Избери от списъка";
+  const candidate = parentLabel || aria || selected;
+  const clean = normalize(candidate);
+  if (clean.includes("район")) return "Район";
+  if (clean.includes("набор") || clean.includes("група")) return "Набор / група";
+  if (clean.includes("сегашна")) return "Сегашна градина";
+  if (clean.includes("желана")) return "Желана градина";
+  return candidate || "Избери от списъка";
 }
 
 function matches(option: OptionItem, query: string) {
@@ -275,6 +300,20 @@ function chooseOption(select: HTMLSelectElement, item: OptionItem) {
   select.dispatchEvent(new Event("change", { bubbles: true }));
   closePicker();
   window.setTimeout(() => select.blur(), 0);
+}
+
+function updateViewport(modal: HTMLElement) {
+  const viewport = window.visualViewport;
+  if (!viewport) return;
+
+  const keyboardOpen = viewport.height < window.innerHeight - 90;
+  modal.classList.toggle("is-keyboard-open", keyboardOpen);
+  modal.style.top = `${viewport.offsetTop}px`;
+  modal.style.left = `${viewport.offsetLeft}px`;
+  modal.style.width = `${viewport.width}px`;
+  modal.style.height = `${viewport.height}px`;
+  modal.style.right = "auto";
+  modal.style.bottom = "auto";
 }
 
 function openPicker(select: HTMLSelectElement) {
@@ -319,7 +358,7 @@ function openPicker(select: HTMLSelectElement) {
     const filtered = options.filter((item) => matches(item, query)).slice(0, 120);
     count.textContent = query.trim()
       ? `${filtered.length} намерени резултата`
-      : `${options.length} опции · започни да пишеш за по-бързо търсене`;
+      : `${options.length} опции · можеш да скролнеш или да търсиш`;
 
     if (!filtered.length) {
       list.innerHTML = `<div class="mzm-search-select-empty">Няма резултат. Пробвай с номер, част от името или първите букви.</div>`;
@@ -339,11 +378,24 @@ function openPicker(select: HTMLSelectElement) {
     });
   };
 
+  const onViewportChange = () => updateViewport(modal);
+
   modal.addEventListener("click", (event) => {
     if (event.target === modal) closePicker();
   });
   modal.querySelector<HTMLButtonElement>(".mzm-search-select-close")?.addEventListener("click", closePicker);
-  input?.addEventListener("input", render);
+  input?.addEventListener("focus", () => {
+    modal.classList.add("is-keyboard-open");
+    window.setTimeout(onViewportChange, 60);
+    window.setTimeout(onViewportChange, 260);
+  });
+  input?.addEventListener("blur", () => {
+    window.setTimeout(onViewportChange, 160);
+  });
+  input?.addEventListener("input", () => {
+    render();
+    window.setTimeout(onViewportChange, 0);
+  });
   input?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closePicker();
     if (event.key === "Enter") {
@@ -352,9 +404,20 @@ function openPicker(select: HTMLSelectElement) {
     }
   });
 
+  window.visualViewport?.addEventListener("resize", onViewportChange);
+  window.visualViewport?.addEventListener("scroll", onViewportChange);
+  const cleanupObserver = new MutationObserver(() => {
+    if (!document.body.contains(modal)) {
+      window.visualViewport?.removeEventListener("resize", onViewportChange);
+      window.visualViewport?.removeEventListener("scroll", onViewportChange);
+      cleanupObserver.disconnect();
+    }
+  });
+  cleanupObserver.observe(document.body, { childList: true });
+
   document.body.appendChild(modal);
   render();
-  window.setTimeout(() => input?.focus({ preventScroll: true }), 80);
+  updateViewport(modal);
 }
 
 function isEligibleSelect(select: HTMLSelectElement) {
