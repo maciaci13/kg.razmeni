@@ -19,6 +19,8 @@ function injectStyles() {
       align-items: center !important;
       gap: .55rem !important;
       width: 100% !important;
+      min-width: 0 !important;
+      overflow: hidden !important;
     }
 
     .mzm-hero-actions-final > *:not(.mzm-hero-radar-real):not(.mzm-hero-request-real) {
@@ -63,6 +65,7 @@ function injectStyles() {
       box-shadow: 0 16px 34px rgba(249,94,8,.28), inset 0 0 0 1px rgba(255,255,255,.18) !important;
       -webkit-tap-highlight-color: transparent !important;
       cursor: pointer !important;
+      box-sizing: border-box !important;
     }
 
     .mzm-hero-radar-real .mzm-hero-radar-target {
@@ -90,6 +93,7 @@ function injectStyles() {
       justify-content: center !important;
       text-align: center !important;
       white-space: normal !important;
+      box-sizing: border-box !important;
     }
 
     .mzm-hero-request-real span,
@@ -162,8 +166,8 @@ function polishHeroActions() {
   const row = findActionsRow(hero, requestButton);
   if (!row) return;
 
-  const existingRadar = row.querySelector<HTMLButtonElement>("[data-mzm-real-radar-button='true']");
-  const radarButton = existingRadar || makeRadarButton();
+  let radarButton = row.querySelector<HTMLButtonElement>("[data-mzm-real-radar-button='true']");
+  if (!radarButton) radarButton = makeRadarButton();
 
   radarButton.type = "button";
   radarButton.dataset.mzmRealRadarButton = "true";
@@ -179,23 +183,10 @@ function polishHeroActions() {
   requestButton.removeAttribute("aria-hidden");
   requestButton.tabIndex = 0;
 
-  row.classList.add("mzm-hero-actions-final", "mzm-hero-search-row");
-
-  const children = Array.from(row.children);
-  children.forEach((child) => {
-    if (child === radarButton || child === requestButton) return;
-    child.remove();
-  });
-
-  if (row.firstElementChild !== radarButton) row.insertBefore(radarButton, row.firstElementChild);
-  if (radarButton.nextElementSibling !== requestButton) row.insertBefore(requestButton, radarButton.nextSibling);
-
-  Array.from(row.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
-    if (button === radarButton || button === requestButton) return;
-    button.classList.add("mzm-hero-action-hidden-force");
-    button.setAttribute("aria-hidden", "true");
-    button.tabIndex = -1;
-  });
+  const nextRow = document.createElement("div");
+  nextRow.className = "mzm-hero-actions-final mzm-hero-search-row";
+  nextRow.append(radarButton, requestButton);
+  row.replaceWith(nextRow);
 }
 
 function bindGlobalRadarFallback() {
@@ -227,7 +218,7 @@ export default function HomeHeroActionButtonsFinal() {
     schedule();
     const observer = new MutationObserver(schedule);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-    const interval = window.setInterval(schedule, 250);
+    const interval = window.setInterval(schedule, 180);
 
     return () => {
       observer.disconnect();
