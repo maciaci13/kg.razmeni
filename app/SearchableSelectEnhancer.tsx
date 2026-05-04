@@ -358,7 +358,7 @@ function openPicker(select: HTMLSelectElement) {
     const filtered = options.filter((item) => matches(item, query)).slice(0, 120);
     count.textContent = query.trim()
       ? `${filtered.length} намерени резултата`
-      : `${options.length} опции · можеш да скролнеш или да търсиш`;
+      : "Започни да пишеш за по-лесно намиране.";
 
     if (!filtered.length) {
       list.innerHTML = `<div class="mzm-search-select-empty">Няма резултат. Пробвай с номер, част от името или първите букви.</div>`;
