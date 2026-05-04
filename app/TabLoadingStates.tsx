@@ -24,77 +24,41 @@ function injectStyles() {
     .mzm-tab-loader-inner {
       border-radius: 1.8rem;
       background: #f7f5ef;
-      padding: 1.2rem;
-      min-height: 16rem;
+      min-height: 14rem;
       display: grid;
-      align-content: center;
-      gap: 1rem;
-    }
-
-    .mzm-tab-loader-kicker {
-      margin: 0;
-      font-size: .64rem;
-      font-weight: 900;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      color: rgba(28,27,25,.42);
-    }
-
-    .mzm-tab-loader-title {
-      margin: 0;
-      font-size: 1.28rem;
-      line-height: 1.06;
-      font-weight: 900;
-      letter-spacing: -.045em;
-      color: #1c1b19;
-    }
-
-    .mzm-tab-loader-text {
-      margin: 0;
-      font-size: .86rem;
-      line-height: 1.45;
-      font-weight: 700;
-      color: rgba(28,27,25,.58);
-    }
-
-    .mzm-tab-loader-pulse {
-      display: grid;
-      gap: .7rem;
-      margin-top: .4rem;
-    }
-
-    .mzm-tab-loader-line,
-    .mzm-tab-loader-card {
-      position: relative;
+      place-items: center;
+      padding: 1.5rem;
       overflow: hidden;
-      background: rgba(255,255,255,.72);
     }
 
-    .mzm-tab-loader-line::after,
-    .mzm-tab-loader-card::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      transform: translateX(-100%);
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.78), transparent);
-      animation: mzmLoaderSweep 1.25s infinite;
+    .mzm-loading-word {
+      margin: 0;
+      font-size: clamp(2.1rem, 9.5vw, 3.65rem);
+      line-height: .95;
+      font-weight: 900;
+      letter-spacing: .035em;
+      text-transform: uppercase;
+      color: rgba(28,27,25,.16);
+      background:
+        linear-gradient(100deg,
+          rgba(28,27,25,.22) 0%,
+          rgba(28,27,25,.22) 34%,
+          rgba(255,255,255,.96) 45%,
+          rgba(249,94,8,.9) 50%,
+          rgba(255,255,255,.96) 55%,
+          rgba(28,27,25,.22) 66%,
+          rgba(28,27,25,.22) 100%);
+      background-size: 260% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: mzmLoadingWordSweep 1.65s cubic-bezier(.4,0,.2,1) infinite;
+      filter: drop-shadow(0 12px 24px rgba(40,34,20,.05));
     }
 
-    .mzm-tab-loader-line {
-      height: .88rem;
-      border-radius: 999px;
-    }
-
-    .mzm-tab-loader-line.short { width: 58%; }
-    .mzm-tab-loader-line.mid { width: 78%; }
-
-    .mzm-tab-loader-card {
-      height: 4.8rem;
-      border-radius: 1.35rem;
-    }
-
-    @keyframes mzmLoaderSweep {
-      100% { transform: translateX(100%); }
+    @keyframes mzmLoadingWordSweep {
+      0% { background-position: 140% 0; }
+      100% { background-position: -140% 0; }
     }
   `;
 
@@ -139,34 +103,27 @@ function hasMatchUi() {
   return Boolean(root && root.getBoundingClientRect().height > 40 && normalize(root.textContent).length > 20);
 }
 
-function makeLoader(id: string, title: string, text: string) {
+function makeLoader(id: string) {
   const loader = document.createElement("section");
   loader.id = id;
   loader.className = "mzm-tab-loader";
   loader.setAttribute("aria-live", "polite");
   loader.innerHTML = `
     <div class="mzm-tab-loader-inner">
-      <p class="mzm-tab-loader-kicker">Зареждане</p>
-      <h2 class="mzm-tab-loader-title">${title}</h2>
-      <p class="mzm-tab-loader-text">${text}</p>
-      <div class="mzm-tab-loader-pulse" aria-hidden="true">
-        <div class="mzm-tab-loader-line mid"></div>
-        <div class="mzm-tab-loader-card"></div>
-        <div class="mzm-tab-loader-line short"></div>
-      </div>
+      <h2 class="mzm-loading-word">Зареждане</h2>
     </div>
   `;
   return loader;
 }
 
-function ensureLoader(id: string, title: string, text: string) {
+function ensureLoader(id: string) {
   const existing = document.getElementById(id);
   if (existing) return;
 
   const titleBlock = currentTitleBlock();
   if (!titleBlock) return;
 
-  titleBlock.insertAdjacentElement("afterend", makeLoader(id, title, text));
+  titleBlock.insertAdjacentElement("afterend", makeLoader(id));
 }
 
 function removeLoader(id: string) {
@@ -178,14 +135,14 @@ function updateLoaders() {
 
   if (isRequestTab()) {
     if (hasRequestUi()) removeLoader(REQUEST_LOADER_ID);
-    else ensureLoader(REQUEST_LOADER_ID, "Подготвяме заявката", "Зареждаме районите, градините и активните ти заявки.");
+    else ensureLoader(REQUEST_LOADER_ID);
   } else {
     removeLoader(REQUEST_LOADER_ID);
   }
 
   if (isMatchTab()) {
     if (hasMatchUi()) removeLoader(MATCH_LOADER_ID);
-    else ensureLoader(MATCH_LOADER_ID, "Проверяваме цикъла", "Зареждаме веригата, статусите и данните за координация.");
+    else ensureLoader(MATCH_LOADER_ID);
   } else {
     removeLoader(MATCH_LOADER_ID);
   }
@@ -208,7 +165,7 @@ export default function TabLoadingStates() {
     const observer = new MutationObserver(schedule);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 
-    const interval = window.setInterval(updateLoaders, 500);
+    const interval = window.setInterval(updateLoaders, 320);
 
     return () => {
       observer.disconnect();
