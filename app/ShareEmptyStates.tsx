@@ -69,7 +69,8 @@ function injectStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     .mzm-empty-share-cta {
-      width: 100%;
+      width: calc(100% - 2rem);
+      max-width: 30rem;
       display: grid;
       grid-template-columns: 3.15rem 1fr auto;
       align-items: center;
@@ -77,7 +78,7 @@ function injectStyles() {
       border: 0;
       border-radius: 1.65rem;
       padding: .92rem 1rem;
-      margin-top: .85rem;
+      margin: .85rem auto 0;
       background: linear-gradient(145deg, rgba(236,237,199,.98), rgba(255,255,255,.86));
       color: #1c1b19;
       text-align: left;
@@ -95,11 +96,7 @@ function injectStyles() {
       font-weight: 900;
       box-shadow: 0 10px 20px rgba(249,94,8,.18);
     }
-    .mzm-empty-share-cta__content {
-      min-width: 0;
-      display: grid;
-      gap: .15rem;
-    }
+    .mzm-empty-share-cta__content { min-width: 0; display: grid; gap: .15rem; }
     .mzm-empty-share-cta__content small {
       font-size: .62rem;
       line-height: 1;
@@ -164,24 +161,27 @@ function addShareToRadarEmpty() {
   });
 }
 
+function findMatchEmptyShell() {
+  const heading = Array.from(document.querySelectorAll<HTMLElement>("h1")).find((item) => normalize(item.textContent).includes("Още няма съвпадение") || normalize(item.textContent).includes("Още няма цикъл"));
+  if (!heading) return null;
+  return (heading.closest(".mx-auto.max-w-md") || heading.closest("main") || heading.parentElement) as HTMLElement | null;
+}
+
 function addShareToEmptyMatches() {
-  const headings = Array.from(document.querySelectorAll<HTMLElement>("h1")).filter((heading) => normalize(heading.textContent).includes("Още няма цикъл"));
-  headings.forEach((heading) => {
-    const shell = heading.closest(".mx-auto.max-w-md") as HTMLElement | null;
-    if (!shell || shell.querySelector("[data-mzm-empty-share-cta='true']")) return;
+  const shell = findMatchEmptyShell();
+  if (!shell || shell.querySelector("[data-mzm-empty-share-cta='true']")) return;
 
-    const emptyCard = Array.from(shell.querySelectorAll<HTMLElement>("section")).find((section) => {
-      const text = normalize(section.textContent);
-      return text.includes("Няма match") || text.includes("Няма съвпадение") || text.includes("Още няма цикъл");
-    });
+  const heading = Array.from(shell.querySelectorAll<HTMLElement>("h1")).find((item) => normalize(item.textContent).includes("Още няма съвпадение") || normalize(item.textContent).includes("Още няма цикъл"));
+  const description = heading?.nextElementSibling as HTMLElement | null;
+  const button = makeShareButton();
 
-    const button = makeShareButton();
-    if (emptyCard) {
-      emptyCard.insertAdjacentElement("afterend", button);
-    } else {
-      shell.appendChild(button);
-    }
-  });
+  if (description && normalize(description.textContent).includes("При съвпадение")) {
+    description.insertAdjacentElement("afterend", button);
+  } else if (heading) {
+    heading.insertAdjacentElement("afterend", button);
+  } else {
+    shell.appendChild(button);
+  }
 }
 
 function run() {
