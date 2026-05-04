@@ -6,6 +6,7 @@ import HomeHeroAndRadarFix from "./HomeHeroAndRadarFix";
 import HomeHeroCopyPolish from "./HomeHeroCopyPolish";
 import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
+import MatchEmptyCopyPolish from "./MatchEmptyCopyPolish";
 import MatchFlashGuard from "./MatchFlashGuard";
 import MatchSimulatorBridge from "./MatchSimulatorBridge";
 import MobileChromePolish from "./MobileChromePolish";
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <TabLoadingStates />
         <MatchFlashGuard />
         <MatchSimulatorBridge />
+        <MatchEmptyCopyPolish />
         <MobileChromePolish />
         <RequestFormHardReset />
         <RequestProfileDefaultsSync />
