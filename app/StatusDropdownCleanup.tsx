@@ -2,18 +2,25 @@
 
 import { useEffect } from "react";
 
-function cleanupDuplicateStatusOption() {
-  document.querySelectorAll<HTMLSelectElement>(".mzm-match-status-select").forEach((select) => {
-    const duplicateOption = Array.from(select.options).find((option) => option.value === "cannot_continue");
-    if (!duplicateOption) return;
+const HIDDEN_STATUS_VALUES = new Set(["cannot_continue", "dropped_out"]);
 
-    if (select.value === "cannot_continue") {
-      select.value = select.dataset.currentStatus && select.dataset.currentStatus !== "cannot_continue"
-        ? select.dataset.currentStatus
-        : "not_started";
+function safeFallbackValue(select: HTMLSelectElement) {
+  const currentStatus = select.dataset.currentStatus || "";
+  if (currentStatus && !HIDDEN_STATUS_VALUES.has(currentStatus)) return currentStatus;
+  return "not_started";
+}
+
+function cleanupDestructiveStatusOptions() {
+  document.querySelectorAll<HTMLSelectElement>(".mzm-match-status-select").forEach((select) => {
+    if (HIDDEN_STATUS_VALUES.has(select.value)) {
+      select.value = safeFallbackValue(select);
     }
 
-    duplicateOption.remove();
+    Array.from(select.options).forEach((option) => {
+      if (HIDDEN_STATUS_VALUES.has(option.value)) {
+        option.remove();
+      }
+    });
   });
 }
 
@@ -26,7 +33,7 @@ export default function StatusDropdownCleanup() {
       scheduled = true;
       window.requestAnimationFrame(() => {
         scheduled = false;
-        cleanupDuplicateStatusOption();
+        cleanupDestructiveStatusOptions();
       });
     };
 
