@@ -11,6 +11,7 @@ import RequestFormHardReset from "./RequestFormHardReset";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
 import StatusDropdownCleanup from "./StatusDropdownCleanup";
+import TabLoadingStates from "./TabLoadingStates";
 import TextCopyNormalizer from "./TextCopyNormalizer";
 import "./globals.css";
 
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <HomeGuidanceEnhancer />
         <HomeStatLinks />
         <HomeStatsCleanup />
+        <TabLoadingStates />
         <MatchFlashGuard />
         <MatchSimulatorBridge />
         <MobileChromePolish />
