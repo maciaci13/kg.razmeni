@@ -26,12 +26,13 @@ function normalize(value: string) {
 }
 
 function clickNav(targetTab: "requests" | "matches") {
+  if (targetTab === "matches") {
+    window.dispatchEvent(new CustomEvent("mzm:open-radar"));
+    return;
+  }
+
   const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button"));
-  const target = buttons.find((button) => {
-    const text = normalize(button.textContent || "");
-    if (targetTab === "requests") return text.includes("заявка");
-    return text.includes("match") || text.includes("съвпадение") || text.includes("съвпад");
-  });
+  const target = buttons.find((button) => normalize(button.textContent || "").includes("заявка"));
   target?.click();
 }
 
@@ -65,7 +66,13 @@ function makeHomeStatsClickable() {
       bindClick(card, "requests");
     }
 
-    if (text === "потенциални маршрута" || text === "потенциални маршрути" || text.includes("потенциални маршрут")) {
+    if (
+      text === "потенциални маршрута" ||
+      text === "потенциални маршрути" ||
+      text === "съвпадения" ||
+      text.includes("потенциални маршрут") ||
+      text.includes("съвпад")
+    ) {
       bindClick(card, "matches");
     }
   });
@@ -73,7 +80,7 @@ function makeHomeStatsClickable() {
   Array.from(document.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
     const text = normalize(button.textContent || "");
     if (text.includes("пусни заявка")) bindClick(button, "requests");
-    if (text.includes("виж всички")) bindClick(button, "matches");
+    if (text.includes("виж всички") || text.includes("радар") || text.includes("съвпад")) bindClick(button, "matches");
   });
 }
 
