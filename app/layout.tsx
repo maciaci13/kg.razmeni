@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
-import HomeChanceRadar from "./HomeChanceRadar";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
 import HomeHeroActionButtonsFinal from "./HomeHeroActionButtonsFinal";
 import HomeHeroAndRadarFix from "./HomeHeroAndRadarFix";
@@ -19,6 +18,7 @@ import RequestFormHardReset from "./RequestFormHardReset";
 import RequestProfileCheckboxFix from "./RequestProfileCheckboxFix";
 import RequestProfileDefaultsSync from "./RequestProfileDefaultsSync";
 import RequestVisualPolish from "./RequestVisualPolish";
+import ShareEmptyStates from "./ShareEmptyStates";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
 import StatusDropdownCleanup from "./StatusDropdownCleanup";
 import TabLoadingStates from "./TabLoadingStates";
@@ -43,7 +43,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={sofiaSans.className}>
         {children}
         <ProfileOnboarding />
-        <HomeChanceRadar />
         <HomeHeroCopyPolish />
         <HomeHeroAndRadarFix />
         <HomeHeroActionButtonsFinal />
@@ -62,6 +61,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <RequestProfileCheckboxFix />
         <RequestVisualPolish />
         <ShareRequestEnhancer />
+        <ShareEmptyStates />
         <StatusDropdownCleanup />
         <TextCopyNormalizer />
         <NavEmergencyFix />
