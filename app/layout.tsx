@@ -11,6 +11,7 @@ import MobileChromePolish from "./MobileChromePolish";
 import NavEmergencyFix from "./NavEmergencyFix";
 import PlaygroundRandomToolsSafe from "./PlaygroundRandomToolsSafe";
 import ProfileOnboarding from "./ProfileOnboarding";
+import RadarProfileDefaultsFix from "./RadarProfileDefaultsFix";
 import RadarUiPolish from "./RadarUiPolish";
 import RequestFormHardReset from "./RequestFormHardReset";
 import RequestProfileDefaultsSync from "./RequestProfileDefaultsSync";
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <HomeChanceRadar />
         <HomeHeroCopyPolish />
         <RadarUiPolish />
+        <RadarProfileDefaultsFix />
         <HomeGuidanceEnhancer />
         <HomeStatLinks />
         <HomeStatsCleanup />
