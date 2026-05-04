@@ -3,6 +3,7 @@ import { Sofia_Sans } from "next/font/google";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
 import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
+import MatchFlashGuard from "./MatchFlashGuard";
 import MatchSimulatorBridge from "./MatchSimulatorBridge";
 import MobileChromePolish from "./MobileChromePolish";
 import NavEmergencyFix from "./NavEmergencyFix";
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <HomeGuidanceEnhancer />
         <HomeStatLinks />
         <HomeStatsCleanup />
+        <MatchFlashGuard />
         <MatchSimulatorBridge />
         <MobileChromePolish />
         <RequestFormHardReset />
