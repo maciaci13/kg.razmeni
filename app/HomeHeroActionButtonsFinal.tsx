@@ -14,12 +14,13 @@ function injectStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     .mzm-hero-actions-final {
-      display: flex !important;
+      display: grid !important;
+      grid-template-columns: minmax(9.8rem, .95fr) minmax(7.2rem, .85fr) !important;
       align-items: center !important;
       gap: .55rem !important;
     }
 
-    .mzm-hero-actions-final .mzm-hero-map-action-hidden {
+    .mzm-hero-action-hidden-force {
       display: none !important;
       width: 0 !important;
       min-width: 0 !important;
@@ -32,22 +33,24 @@ function injectStyles() {
       opacity: 0 !important;
       pointer-events: none !important;
       overflow: hidden !important;
+      position: absolute !important;
+      left: -9999px !important;
     }
 
-    .mzm-hero-radar-final {
+    .mzm-hero-radar-real {
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
       gap: .5rem !important;
-      width: auto !important;
-      min-width: 10.8rem !important;
-      height: 3.15rem !important;
-      padding: 0 1.05rem !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      height: 3.25rem !important;
+      padding: 0 .9rem !important;
       border: 0 !important;
       border-radius: 999px !important;
       background: var(--study-orange,#f95e08) !important;
       color: #fff !important;
-      font-size: .82rem !important;
+      font-size: .78rem !important;
       font-weight: 900 !important;
       letter-spacing: -.015em !important;
       line-height: 1 !important;
@@ -55,27 +58,29 @@ function injectStyles() {
       box-shadow: 0 14px 30px rgba(249,94,8,.24), inset 0 0 0 1px rgba(255,255,255,.16) !important;
     }
 
-    .mzm-hero-radar-final .mzm-hero-radar-target {
+    .mzm-hero-radar-real .mzm-hero-radar-target {
       display: grid !important;
       place-items: center !important;
       width: 1.75rem !important;
       height: 1.75rem !important;
       border-radius: 999px !important;
-      background: rgba(255,255,255,.18) !important;
+      background: rgba(255,255,255,.2) !important;
       color: #fff !important;
       flex: 0 0 auto !important;
     }
 
-    .mzm-hero-radar-final svg {
+    .mzm-hero-radar-real svg {
       display: block !important;
       width: 1.05rem !important;
       height: 1.05rem !important;
       stroke: currentColor !important;
     }
 
-    .mzm-hero-radar-final + button {
-      flex: 1 1 auto !important;
+    .mzm-hero-actions-final > button:not(.mzm-hero-radar-real):not(.mzm-hero-action-hidden-force) {
+      width: 100% !important;
       min-width: 0 !important;
+      justify-content: center !important;
+      text-align: center !important;
     }
   `;
   document.head.appendChild(style);
@@ -100,6 +105,21 @@ function targetIconSvg() {
     </span>`;
 }
 
+function makeRadarButton() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "mzm-hero-radar-real";
+  button.dataset.mzmRealRadarButton = "true";
+  button.setAttribute("aria-label", "Отвори радар за шанс");
+  button.innerHTML = `${targetIconSvg()}<span>Радар за шанс</span>`;
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent("mzm:open-radar"));
+  });
+  return button;
+}
+
 function polishHeroActions() {
   injectStyles();
   const hero = findHeroSection();
@@ -112,32 +132,25 @@ function polishHeroActions() {
   if (!row) return;
   row.classList.add("mzm-hero-actions-final", "mzm-hero-search-row");
 
-  const buttons = Array.from(row.querySelectorAll<HTMLButtonElement>("button"));
-  const radarButton = buttons.find((button) => {
-    const text = normalize(button.textContent);
-    return button !== requestButton && (text === "⌕" || text.includes("Радар за шанс") || button.getAttribute("aria-label") === "Отвори радар за шанс" || button.classList.contains("mzm-radar-hero-button"));
-  }) || buttons.find((button) => button !== requestButton);
+  let radarButton = row.querySelector<HTMLButtonElement>("[data-mzm-real-radar-button='true']");
+  if (!radarButton) {
+    radarButton = makeRadarButton();
+    row.insertBefore(radarButton, requestButton);
+  }
 
-  if (!radarButton) return;
-
-  buttons.forEach((button) => {
-    if (button !== requestButton && button !== radarButton) {
-      button.classList.add("mzm-hero-map-action-hidden");
+  Array.from(row.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
+    if (button !== radarButton && button !== requestButton) {
+      button.classList.add("mzm-hero-action-hidden-force");
       button.setAttribute("aria-hidden", "true");
       button.tabIndex = -1;
     }
   });
 
-  radarButton.classList.add("mzm-hero-radar-final", "mzm-radar-hero-button");
-  radarButton.classList.remove("mzm-hero-map-action-hidden");
+  radarButton.classList.remove("mzm-hero-action-hidden-force");
   radarButton.removeAttribute("aria-hidden");
   radarButton.tabIndex = 0;
-  radarButton.setAttribute("aria-label", "Отвори радар за шанс");
-  radarButton.setAttribute("title", "Радар за шанс");
-
-  const expected = "Радар за шанс";
-  if (!normalize(radarButton.textContent).includes(expected) || !radarButton.querySelector(".mzm-hero-radar-target")) {
-    radarButton.innerHTML = `${targetIconSvg()}<span>${expected}</span>`;
+  if (!radarButton.querySelector(".mzm-hero-radar-target")) {
+    radarButton.innerHTML = `${targetIconSvg()}<span>Радар за шанс</span>`;
   }
 }
 
