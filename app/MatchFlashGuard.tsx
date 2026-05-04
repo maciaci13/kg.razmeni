@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 const NATIVE_HIDDEN_ATTR = "data-mzm-native-match-hidden";
 const BRIDGE_ROOT_ID = "mzm-match-simulator-bridge-root";
+const MATCH_LOADER_ID = "mzm-match-tab-loader";
 
 function isMatchTitle(text: string) {
   return text.includes("Има потенциален цикъл")
@@ -42,11 +43,12 @@ function hideNativeMatchSection() {
   document.documentElement.classList.add("mzm-match-guard-active");
 
   const bridgeRoot = document.getElementById(BRIDGE_ROOT_ID);
-  const start = bridgeRoot || titleBlock;
+  const loaderRoot = document.getElementById(MATCH_LOADER_ID);
+  const start = bridgeRoot || loaderRoot || titleBlock;
   let next = start.nextElementSibling as HTMLElement | null;
 
   while (next) {
-    if (next.id === BRIDGE_ROOT_ID) {
+    if (next.id === BRIDGE_ROOT_ID || next.id === MATCH_LOADER_ID) {
       next = next.nextElementSibling as HTMLElement | null;
       continue;
     }
@@ -79,7 +81,7 @@ export default function MatchFlashGuard() {
     const observer = new MutationObserver(schedule);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 
-    const interval = window.setInterval(hideNativeMatchSection, 500);
+    const interval = window.setInterval(hideNativeMatchSection, 320);
 
     return () => {
       observer.disconnect();
