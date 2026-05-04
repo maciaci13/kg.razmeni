@@ -29,8 +29,12 @@ function injectStyles() {
   style.textContent = `
     select.mzm-select-native-hidden { display: none !important; }
 
+    .mzm-select-wrap-has-proxy:after { display: none !important; }
+
     .mzm-select-proxy {
       width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
       border: 0 !important;
       outline: 0 !important;
       border-radius: 1.2rem !important;
@@ -81,7 +85,7 @@ function injectStyles() {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: .45rem;
       background: rgba(28,27,25,.34);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
@@ -92,7 +96,7 @@ function injectStyles() {
 
     .mzm-search-select-panel {
       width: min(100%, 30rem);
-      max-height: calc(100dvh - 2rem);
+      max-height: calc(100dvh - .9rem);
       display: flex;
       flex-direction: column;
       border-radius: 2.15rem;
@@ -102,7 +106,7 @@ function injectStyles() {
       box-shadow: 0 28px 90px rgba(28,27,25,.24);
     }
 
-    .mzm-search-select-panel.is-simple { max-height: min(78dvh, 32rem); }
+    .mzm-search-select-panel.is-simple { max-height: calc(100dvh - .9rem); }
     .mzm-search-select-backdrop.is-keyboard-open .mzm-search-select-panel { max-height: calc(100% - 1.1rem); border-radius: 1.8rem; }
 
     .mzm-search-select-head {
@@ -211,7 +215,7 @@ function injectStyles() {
       -webkit-overflow-scrolling: touch;
     }
 
-    .mzm-search-select-panel.is-simple .mzm-search-select-list { padding: .75rem 1rem 1rem; overflow: auto; }
+    .mzm-search-select-panel.is-simple .mzm-search-select-list { padding: .72rem 1rem 1rem; overflow: auto; gap: .42rem; }
 
     .mzm-search-select-option {
       width: 100%;
@@ -230,12 +234,12 @@ function injectStyles() {
     }
 
     .mzm-search-select-panel.is-simple .mzm-search-select-option {
-      min-height: 3.55rem;
+      min-height: 3.28rem;
       display: flex;
       align-items: center;
       font-size: 1rem;
-      border-radius: 1.35rem;
-      padding: 1rem 1.05rem;
+      border-radius: 1.28rem;
+      padding: .92rem 1.05rem;
     }
 
     .mzm-search-select-option.is-selected { background: rgba(249,94,8,.11); box-shadow: inset 0 0 0 2px rgba(249,94,8,.34); }
@@ -261,14 +265,15 @@ function injectStyles() {
     }
 
     @media (max-height: 680px) {
-      .mzm-search-select-backdrop { align-items: flex-end; padding: .65rem; }
+      .mzm-search-select-backdrop { align-items: center; padding: .35rem; }
       .mzm-search-select-backdrop.is-keyboard-open { align-items: flex-start; padding: .45rem .55rem; }
-      .mzm-search-select-panel { max-height: calc(100dvh - 1.3rem); border-radius: 1.8rem; }
-      .mzm-search-select-panel.is-simple { max-height: min(82dvh, 31rem); }
+      .mzm-search-select-panel { max-height: calc(100dvh - .7rem); border-radius: 1.8rem; }
+      .mzm-search-select-panel.is-simple { max-height: calc(100dvh - .7rem); }
       .mzm-search-select-backdrop.is-keyboard-open .mzm-search-select-panel { max-height: calc(100% - .9rem); }
       .mzm-search-select-head { padding: .82rem .82rem .62rem; }
       .mzm-search-select-title { font-size: 1.25rem; }
       .mzm-search-select-input, .mzm-search-select-input-icon { height: 2.85rem; }
+      .mzm-search-select-panel.is-simple .mzm-search-select-option { min-height: 3.05rem; padding: .78rem .95rem; }
     }
   `;
   document.head.appendChild(style);
@@ -314,7 +319,7 @@ function getOptions(select: HTMLSelectElement): OptionItem[] {
 
 function getTitle(select: HTMLSelectElement) {
   const wrapper = select.closest(".mzm-onboarding-field, .mzm-field, div");
-  const parentLabel = wrapper?.querySelector<HTMLElement>("label, .mzm-label, .mzm-onboarding-label")?.textContent || "";
+  const parentLabel = wrapper?.querySelector<HTMLElement>("label, .mzm-label, .mzm-onboarding-label, .mzm-form-label")?.textContent || "";
   const aria = select.getAttribute("aria-label") || "";
   const selected = select.selectedOptions[0]?.textContent || "";
   const candidate = parentLabel || aria || selected;
@@ -489,6 +494,8 @@ function isEligibleSelect(select: HTMLSelectElement) {
 }
 
 function ensureProxy(select: HTMLSelectElement) {
+  const wrap = select.parentElement;
+  if (wrap) wrap.classList.add("mzm-select-wrap-has-proxy");
   if (select.dataset.mzmProxyReady === "true") {
     updateProxy(select);
     return;
