@@ -27,9 +27,7 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    select.mzm-select-native-hidden {
-      display: none !important;
-    }
+    select.mzm-select-native-hidden { display: none !important; }
 
     .mzm-select-proxy {
       width: 100% !important;
@@ -37,7 +35,7 @@ function injectStyles() {
       outline: 0 !important;
       border-radius: 1.2rem !important;
       background: #fff !important;
-      padding: 1rem 1.45rem 1rem 1rem !important;
+      padding: 1rem 1.55rem 1rem 1rem !important;
       color: #1c1b19 !important;
       font: inherit !important;
       font-size: .92rem !important;
@@ -54,6 +52,7 @@ function injectStyles() {
       touch-action: pan-y !important;
       -webkit-tap-highlight-color: transparent !important;
       user-select: none !important;
+      cursor: pointer !important;
     }
 
     .mzm-select-proxy__label {
@@ -71,7 +70,7 @@ function injectStyles() {
       opacity: .72;
       font-size: 1.05rem;
       line-height: 1;
-      margin-right: .2rem;
+      margin-right: .28rem;
       pointer-events: none;
     }
 
@@ -89,10 +88,7 @@ function injectStyles() {
       overflow: hidden;
     }
 
-    .mzm-search-select-backdrop.is-keyboard-open {
-      align-items: flex-start;
-      padding: .55rem .65rem;
-    }
+    .mzm-search-select-backdrop.is-keyboard-open { align-items: flex-start; padding: .55rem .65rem; }
 
     .mzm-search-select-panel {
       width: min(100%, 30rem);
@@ -106,14 +102,8 @@ function injectStyles() {
       box-shadow: 0 28px 90px rgba(28,27,25,.24);
     }
 
-    .mzm-search-select-panel.is-simple {
-      max-height: min(78dvh, 32rem);
-    }
-
-    .mzm-search-select-backdrop.is-keyboard-open .mzm-search-select-panel {
-      max-height: calc(100% - 1.1rem);
-      border-radius: 1.8rem;
-    }
+    .mzm-search-select-panel.is-simple { max-height: min(78dvh, 32rem); }
+    .mzm-search-select-backdrop.is-keyboard-open .mzm-search-select-panel { max-height: calc(100% - 1.1rem); border-radius: 1.8rem; }
 
     .mzm-search-select-head {
       flex: 0 0 auto;
@@ -221,10 +211,7 @@ function injectStyles() {
       -webkit-overflow-scrolling: touch;
     }
 
-    .mzm-search-select-panel.is-simple .mzm-search-select-list {
-      padding: .75rem 1rem 1rem;
-      overflow: visible;
-    }
+    .mzm-search-select-panel.is-simple .mzm-search-select-list { padding: .75rem 1rem 1rem; overflow: auto; }
 
     .mzm-search-select-option {
       width: 100%;
@@ -251,10 +238,7 @@ function injectStyles() {
       padding: 1rem 1.05rem;
     }
 
-    .mzm-search-select-option.is-selected {
-      background: rgba(249,94,8,.11);
-      box-shadow: inset 0 0 0 2px rgba(249,94,8,.34);
-    }
+    .mzm-search-select-option.is-selected { background: rgba(249,94,8,.11); box-shadow: inset 0 0 0 2px rgba(249,94,8,.34); }
 
     .mzm-search-select-option small {
       display: block;
@@ -336,7 +320,7 @@ function getTitle(select: HTMLSelectElement) {
   const candidate = parentLabel || aria || selected;
   const clean = normalize(candidate);
   if (select.hasAttribute("data-district") || clean.includes("район")) return "Район";
-  if (select.hasAttribute("data-year") || clean.includes("набор") || clean.includes("група")) return "Набор / група";
+  if (select.hasAttribute("data-year") || clean.includes("набор") || clean.includes("група")) return "Избери набор";
   if (select.hasAttribute("data-place-type") || clean.includes("тип място")) return "Тип място";
   if (select.hasAttribute("data-from") || clean.includes("сегашна")) return "Сегашна градина";
   if (select.hasAttribute("data-wanted") || clean.includes("желана")) return "Желана градина";
@@ -391,6 +375,10 @@ function updateViewport(modal: HTMLElement) {
   modal.style.bottom = "auto";
 }
 
+function displayOptions(select: HTMLSelectElement) {
+  return getOptions(select).filter((item) => !item.disabled && item.value !== "");
+}
+
 function renderOptionButtons(list: HTMLElement, select: HTMLSelectElement, items: OptionItem[]) {
   if (!items.length) {
     list.innerHTML = `<div class="mzm-search-select-empty">Няма резултат. Пробвай с номер, част от името или първите букви.</div>`;
@@ -409,7 +397,7 @@ function renderOptionButtons(list: HTMLElement, select: HTMLSelectElement, items
 
 function openPicker(select: HTMLSelectElement) {
   if (select.disabled || select.dataset.mzmNoSearchPicker === "true") return;
-  const options = getOptions(select).filter((item) => !item.disabled);
+  const options = displayOptions(select);
   if (!options.length) return;
 
   injectStyles();
@@ -494,7 +482,7 @@ function isEligibleSelect(select: HTMLSelectElement) {
   if (select.disabled || select.multiple) return false;
   if (select.dataset.mzmNoSearchPicker === "true") return false;
   if (select.closest("[data-mzm-searchable-select-modal='true']")) return false;
-  const options = Array.from(select.options).filter((option) => !option.disabled);
+  const options = displayOptions(select);
   if (!options.length) return false;
   if (select.classList.contains("mzm-onboarding-select") || select.classList.contains("mzm-select")) return true;
   return options.length > 8;
@@ -516,47 +504,42 @@ function ensureProxy(select: HTMLSelectElement) {
   let startX = 0;
   let startY = 0;
   let startScrollY = 0;
-  let isPointerDown = false;
-  let hasMoved = false;
+  let moved = false;
+  let lastPointerEligible = true;
 
   proxy.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    isPointerDown = true;
-    hasMoved = false;
+    moved = false;
+    lastPointerEligible = true;
     startX = event.clientX;
     startY = event.clientY;
     startScrollY = window.scrollY;
   });
 
   proxy.addEventListener("pointermove", (event) => {
-    if (!isPointerDown) return;
     const deltaX = Math.abs(event.clientX - startX);
     const deltaY = Math.abs(event.clientY - startY);
     const scrollDelta = Math.abs(window.scrollY - startScrollY);
-    if (deltaX > 8 || deltaY > 8 || scrollDelta > 3) hasMoved = true;
+    if (deltaX > 14 || deltaY > 14 || scrollDelta > 8) moved = true;
   });
 
   proxy.addEventListener("pointercancel", () => {
-    isPointerDown = false;
-    hasMoved = true;
+    moved = true;
+    lastPointerEligible = false;
   });
 
   proxy.addEventListener("pointerup", (event) => {
-    if (!isPointerDown) return;
     const deltaX = Math.abs(event.clientX - startX);
     const deltaY = Math.abs(event.clientY - startY);
     const scrollDelta = Math.abs(window.scrollY - startScrollY);
-    const isTap = !hasMoved && deltaX <= 8 && deltaY <= 8 && scrollDelta <= 3;
-    isPointerDown = false;
-    if (!isTap) return;
-    event.preventDefault();
-    event.stopPropagation();
-    openPicker(select);
+    lastPointerEligible = !moved && deltaX <= 14 && deltaY <= 14 && scrollDelta <= 8;
   });
 
   proxy.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (!lastPointerEligible) return;
+    openPicker(select);
   });
 
   proxy.addEventListener("keydown", (event) => {
