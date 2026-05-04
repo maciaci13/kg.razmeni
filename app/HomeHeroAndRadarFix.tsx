@@ -7,7 +7,7 @@ type ApiError = { error: string };
 type Kg = { id: string; name: string; district?: string | null; address?: string | null };
 type Catalog = { institutions?: Kg[]; districts?: string[] };
 type RadarItem = { id: string; name: string; district: string; address?: string | null; wantedBy: number; offeredBy: number; score: number; isNearMe: boolean; activeForMyYear: number };
-type Prefs = { district?: string; year?: string; placeType?: string; from?: string; wanted?: string };
+type Prefs = { district?: string; year?: string; placeType?: string; from?: string; wanted?: string; openRequest?: boolean };
 
 const STYLE_ID = "mzm-home-hero-and-radar-fix-style";
 const MODAL_ID = "mzm-radar-fixed-modal";
@@ -93,10 +93,24 @@ function openShell() {
   shell.addEventListener("click", (e) => { if (e.target === shell) shell.remove(); }); shell.querySelector(".mzm-radar-fixed-close")?.addEventListener("click", () => shell.remove()); document.body.appendChild(shell); return shell;
 }
 function renderCards(items: RadarItem[]) { if (!items.length) return `<div class="mzm-radar-fixed-empty"><h3>Още няма достатъчно движение</h3><p>Пусни заявка и сподели платформата. Радарът става по-точен, когато повече родители се включат.</p></div>`; return items.slice(0, 8).map((item) => `<article class="mzm-radar-fixed-card"><h3>${escapeHtml(item.name)}</h3><p class="mzm-radar-fixed-meta">${escapeHtml(item.district)}${item.address ? ` · ${escapeHtml(item.address)}` : ""}</p><div class="mzm-radar-fixed-stats"><div class="mzm-radar-fixed-stat"><strong>${item.wantedBy}</strong><span>родители я търсят</span></div><div class="mzm-radar-fixed-stat"><strong>${item.offeredBy}</strong><span>може да я освободят</span></div><div class="mzm-radar-fixed-stat"><strong>${String(item.activeForMyYear).padStart(2, "0")}</strong><span>Активни за твоя набор</span></div></div><button type="button" class="mzm-radar-fixed-action" data-use="${escapeHtml(item.id)}">Заяви размяна</button></article>`).join(""); }
-function renderRadar(shell: HTMLElement, radar: ReturnType<typeof buildRadar>) { let mode: "near" | "balanced" | "all" = radar.near.length ? "near" : radar.balanced.length ? "balanced" : "all"; const body = shell.querySelector<HTMLElement>(".mzm-radar-fixed-body"); if (!body) return; const paint = () => { const items = mode === "near" ? radar.near : mode === "balanced" ? radar.balanced : radar.all; body.innerHTML = `<div class="mzm-radar-fixed-filters"><button type="button" class="mzm-radar-fixed-filter ${mode === "near" ? "is-active" : ""}" data-mode="near">Около мен</button><button type="button" class="mzm-radar-fixed-filter ${mode === "balanced" ? "is-active" : ""}" data-mode="balanced">Най-голям шанс</button><button type="button" class="mzm-radar-fixed-filter ${mode === "all" ? "is-active" : ""}" data-mode="all">Всички</button></div><div class="mzm-radar-fixed-list">${renderCards(items)}</div>`; body.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) => b.addEventListener("click", () => { mode = (b.dataset.mode as typeof mode) || "all"; paint(); })); body.querySelectorAll<HTMLButtonElement>("[data-use]").forEach((b) => b.addEventListener("click", () => { savePrefs({ wanted: b.dataset.use || "" }); shell.remove(); Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button")).find((nav) => normalize(nav.textContent).includes("Заявка"))?.click(); })); }; paint(); }
+function openRequestTabAndForm() {
+  const navButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button, a")).find((nav) => normalize(nav.textContent).includes("Заявка"));
+  navButton?.click();
+  window.setTimeout(() => {
+    const formSection = Array.from(document.querySelectorAll<HTMLElement>("section, div")).find((node) => normalize(node.textContent).includes("Активирай заявка") && normalize(node.textContent).includes("Желана градина"));
+    formSection?.classList.remove("is-collapsed");
+    formSection?.querySelector<HTMLButtonElement>(".mzm-toggle-open, [class*='toggle']")?.click();
+    formSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 220);
+  window.setTimeout(() => window.dispatchEvent(new CustomEvent("mzm:open-request-form")), 80);
+  window.setTimeout(() => window.dispatchEvent(new CustomEvent("mzm:open-request-form")), 450);
+}
+function renderRadar(shell: HTMLElement, radar: ReturnType<typeof buildRadar>) { let mode: "near" | "balanced" | "all" = radar.near.length ? "near" : radar.balanced.length ? "balanced" : "all"; const body = shell.querySelector<HTMLElement>(".mzm-radar-fixed-body"); if (!body) return; const paint = () => { const items = mode === "near" ? radar.near : mode === "balanced" ? radar.balanced : radar.all; body.innerHTML = `<div class="mzm-radar-fixed-filters"><button type="button" class="mzm-radar-fixed-filter ${mode === "near" ? "is-active" : ""}" data-mode="near">Около мен</button><button type="button" class="mzm-radar-fixed-filter ${mode === "balanced" ? "is-active" : ""}" data-mode="balanced">Най-голям шанс</button><button type="button" class="mzm-radar-fixed-filter ${mode === "all" ? "is-active" : ""}" data-mode="all">Всички</button></div><div class="mzm-radar-fixed-list">${renderCards(items)}</div>`; body.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) => b.addEventListener("click", () => { mode = (b.dataset.mode as typeof mode) || "all"; paint(); })); body.querySelectorAll<HTMLButtonElement>("[data-use]").forEach((b) => b.addEventListener("click", () => { savePrefs({ wanted: b.dataset.use || "", openRequest: true }); shell.remove(); openRequestTabAndForm(); })); }; paint(); }
 async function openRadar() { const shell = openShell(); const [snapshot, catalog] = await Promise.all([getJson<PlaygroundSnapshot | ApiError>("/api/playground"), getJson<Catalog>("/api/catalog")]); if (!snapshot || "error" in snapshot) return; renderRadar(shell, buildRadar(snapshot, catalog?.institutions || [])); }
 
 function bindRadarEvents() {
+  if (document.documentElement.dataset.mzmOpenRadarBound === "true") return;
+  document.documentElement.dataset.mzmOpenRadarBound = "true";
   window.addEventListener("mzm:open-radar", () => { void openRadar(); });
 }
 
