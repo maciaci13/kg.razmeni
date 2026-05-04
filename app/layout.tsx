@@ -9,7 +9,10 @@ import MatchSimulatorBridge from "./MatchSimulatorBridge";
 import MobileChromePolish from "./MobileChromePolish";
 import NavEmergencyFix from "./NavEmergencyFix";
 import PlaygroundRandomToolsSafe from "./PlaygroundRandomToolsSafe";
+import ProfileOnboarding from "./ProfileOnboarding";
+import RadarUiPolish from "./RadarUiPolish";
 import RequestFormHardReset from "./RequestFormHardReset";
+import RequestProfileDefaultsSync from "./RequestProfileDefaultsSync";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
 import StatusDropdownCleanup from "./StatusDropdownCleanup";
@@ -34,7 +37,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="bg">
       <body className={sofiaSans.className}>
         {children}
+        <ProfileOnboarding />
         <HomeChanceRadar />
+        <RadarUiPolish />
         <HomeGuidanceEnhancer />
         <HomeStatLinks />
         <HomeStatsCleanup />
@@ -44,6 +49,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <MatchSimulatorBridge />
         <MobileChromePolish />
         <RequestFormHardReset />
+        <RequestProfileDefaultsSync />
         <RequestVisualPolish />
         <ShareRequestEnhancer />
         <StatusDropdownCleanup />
