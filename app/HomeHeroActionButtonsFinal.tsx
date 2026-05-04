@@ -37,11 +37,12 @@ function injectStyles() {
       left: -9999px !important;
     }
 
-    .mzm-hero-radar-real {
+    .mzm-hero-radar-real,
+    .mzm-hero-radar-real.mzm-radar-hero-button {
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
-      gap: .5rem !important;
+      gap: .52rem !important;
       width: 100% !important;
       min-width: 0 !important;
       height: 3.25rem !important;
@@ -56,13 +57,14 @@ function injectStyles() {
       line-height: 1 !important;
       white-space: nowrap !important;
       box-shadow: 0 14px 30px rgba(249,94,8,.24), inset 0 0 0 1px rgba(255,255,255,.16) !important;
+      -webkit-tap-highlight-color: transparent !important;
     }
 
     .mzm-hero-radar-real .mzm-hero-radar-target {
       display: grid !important;
       place-items: center !important;
-      width: 1.75rem !important;
-      height: 1.75rem !important;
+      width: 1.7rem !important;
+      height: 1.7rem !important;
       border-radius: 999px !important;
       background: rgba(255,255,255,.2) !important;
       color: #fff !important;
@@ -71,8 +73,8 @@ function injectStyles() {
 
     .mzm-hero-radar-real svg {
       display: block !important;
-      width: 1.05rem !important;
-      height: 1.05rem !important;
+      width: 1.03rem !important;
+      height: 1.03rem !important;
       stroke: currentColor !important;
     }
 
@@ -105,6 +107,12 @@ function targetIconSvg() {
     </span>`;
 }
 
+function openRadar(event?: Event) {
+  event?.preventDefault();
+  event?.stopPropagation();
+  window.dispatchEvent(new CustomEvent("mzm:open-radar"));
+}
+
 function makeRadarButton() {
   const button = document.createElement("button");
   button.type = "button";
@@ -112,12 +120,12 @@ function makeRadarButton() {
   button.dataset.mzmRealRadarButton = "true";
   button.setAttribute("aria-label", "Отвори радар за шанс");
   button.innerHTML = `${targetIconSvg()}<span>Радар за шанс</span>`;
-  button.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    window.dispatchEvent(new CustomEvent("mzm:open-radar"));
-  });
+  button.addEventListener("click", openRadar);
   return button;
+}
+
+function isRequestButton(button: HTMLButtonElement) {
+  return normalize(button.textContent).includes("Пусни заявка");
 }
 
 function polishHeroActions() {
@@ -125,7 +133,7 @@ function polishHeroActions() {
   const hero = findHeroSection();
   if (!hero) return;
 
-  const requestButton = Array.from(hero.querySelectorAll<HTMLButtonElement>("button")).find((button) => normalize(button.textContent).includes("Пусни заявка"));
+  const requestButton = Array.from(hero.querySelectorAll<HTMLButtonElement>("button")).find(isRequestButton);
   if (!requestButton) return;
 
   const row = requestButton.parentElement as HTMLElement | null;
@@ -134,9 +142,26 @@ function polishHeroActions() {
 
   let radarButton = row.querySelector<HTMLButtonElement>("[data-mzm-real-radar-button='true']");
   if (!radarButton) {
-    radarButton = makeRadarButton();
-    row.insertBefore(radarButton, requestButton);
+    const oldRadar = Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((button) => normalize(button.textContent).includes("Радар за шанс") || normalize(button.textContent) === "⌕");
+    radarButton = oldRadar || makeRadarButton();
+    if (!oldRadar) row.insertBefore(radarButton, requestButton);
   }
+
+  radarButton.type = "button";
+  radarButton.dataset.mzmRealRadarButton = "true";
+  radarButton.classList.add("mzm-hero-radar-real");
+  radarButton.classList.remove("mzm-hero-action-hidden-force");
+  radarButton.removeAttribute("aria-hidden");
+  radarButton.tabIndex = 0;
+  radarButton.setAttribute("aria-label", "Отвори радар за шанс");
+  radarButton.onclick = (event) => openRadar(event);
+  radarButton.innerHTML = `${targetIconSvg()}<span>Радар за шанс</span>`;
+
+  Array.from(row.children).forEach((child) => {
+    if (child === radarButton || child === requestButton) return;
+    (child as HTMLElement).classList.add("mzm-hero-action-hidden-force");
+    (child as HTMLElement).setAttribute("aria-hidden", "true");
+  });
 
   Array.from(row.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
     if (button !== radarButton && button !== requestButton) {
@@ -145,13 +170,6 @@ function polishHeroActions() {
       button.tabIndex = -1;
     }
   });
-
-  radarButton.classList.remove("mzm-hero-action-hidden-force");
-  radarButton.removeAttribute("aria-hidden");
-  radarButton.tabIndex = 0;
-  if (!radarButton.querySelector(".mzm-hero-radar-target")) {
-    radarButton.innerHTML = `${targetIconSvg()}<span>Радар за шанс</span>`;
-  }
 }
 
 export default function HomeHeroActionButtonsFinal() {
