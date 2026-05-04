@@ -8,7 +8,7 @@ import MatchFlashGuard from "./MatchFlashGuard";
 import MatchSimulatorBridge from "./MatchSimulatorBridge";
 import MobileChromePolish from "./MobileChromePolish";
 import NavEmergencyFix from "./NavEmergencyFix";
-import PlaygroundRandomTools from "./PlaygroundRandomTools";
+import PlaygroundRandomToolsSafe from "./PlaygroundRandomToolsSafe";
 import RequestFormHardReset from "./RequestFormHardReset";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <HomeGuidanceEnhancer />
         <HomeStatLinks />
         <HomeStatsCleanup />
-        <PlaygroundRandomTools />
+        <PlaygroundRandomToolsSafe />
         <TabLoadingStates />
         <MatchFlashGuard />
         <MatchSimulatorBridge />
