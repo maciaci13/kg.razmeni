@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
+import HomeChanceRadar from "./HomeChanceRadar";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
 import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="bg">
       <body className={sofiaSans.className}>
         {children}
+        <HomeChanceRadar />
         <HomeGuidanceEnhancer />
         <HomeStatLinks />
         <HomeStatsCleanup />
