@@ -79,9 +79,14 @@ function getOrCreateCarouselShell(myRequestsSection: HTMLElement) {
   shell.innerHTML = `<div class="mzm-request-carousel" aria-label="Активни заявки"></div><div class="mzm-carousel-dots" aria-label="Навигация по заявки"></div>`;
   myRequestsSection.querySelector("h2")?.insertAdjacentElement("afterend", shell);
   const stage = shell.querySelector<HTMLElement>(".mzm-request-carousel");
-  let startX = 0; let startY = 0;
+  let startX = 0;
+  let startY = 0;
   stage?.addEventListener("pointerdown", (event) => { startX = event.clientX; startY = event.clientY; }, { passive: true });
-  stage?.addEventListener("pointerup", (event) => { const dx = event.clientX - startX; const dy = event.clientY - startY; if (Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy)) moveStack(shell as HTMLElement, dx < 0 ? 1 : -1); }, { passive: true });
+  stage?.addEventListener("pointerup", (event) => {
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if (Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy)) moveStack(shell as HTMLElement, dx < 0 ? 1 : -1);
+  }, { passive: true });
   return shell;
 }
 
@@ -109,7 +114,14 @@ function updateCarouselState(shell: HTMLElement) {
     card.classList.toggle("is-hidden-card", forward > 2 && backward > 1);
   });
   dots.innerHTML = "";
-  cards.forEach((_card, index) => { const dot = document.createElement("button"); dot.type = "button"; dot.className = index === activeIndex ? "is-active" : ""; dot.setAttribute("aria-label", `Заявка ${index + 1}`); dot.addEventListener("click", () => setActiveIndex(shell, index)); dots.appendChild(dot); });
+  cards.forEach((_card, index) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = index === activeIndex ? "is-active" : "";
+    dot.setAttribute("aria-label", `Заявка ${index + 1}`);
+    dot.addEventListener("click", () => setActiveIndex(shell, index));
+    dots.appendChild(dot);
+  });
   shell.classList.toggle("has-multiple", cards.length > 1);
 }
 
@@ -136,8 +148,23 @@ function createRequestCard(data: CardData) {
   const deactivate = card.querySelector<HTMLButtonElement>("[data-action='deactivate']");
   const remove = card.querySelector<HTMLButtonElement>("[data-action='delete']");
   const menu = card.querySelector<HTMLDetailsElement>(".mzm-card-menu");
-  deactivate?.addEventListener("click", async () => { if (!data.requestId) return; deactivate.disabled = true; await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "deactivateRequest", requestId: data.requestId }) }); menu?.removeAttribute("open"); card.classList.add("is-inactive"); });
-  remove?.addEventListener("click", async () => { if (!data.requestId) return; remove.disabled = true; await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "deleteRequest", requestId: data.requestId }) }); const shell = card.closest<HTMLElement>(".mzm-carousel-shell"); card.remove(); if (shell) updateCarouselState(shell); const form = document.querySelector<HTMLElement>(".mzm-request-form-card"); if (form) setFormMode(form, "expanded"); });
+  deactivate?.addEventListener("click", async () => {
+    if (!data.requestId) return;
+    deactivate.disabled = true;
+    await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "deactivateRequest", requestId: data.requestId }) });
+    menu?.removeAttribute("open");
+    card.classList.add("is-inactive");
+  });
+  remove?.addEventListener("click", async () => {
+    if (!data.requestId) return;
+    remove.disabled = true;
+    await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "deleteRequest", requestId: data.requestId }) });
+    const shell = card.closest<HTMLElement>(".mzm-carousel-shell");
+    card.remove();
+    if (shell) updateCarouselState(shell);
+    const form = document.querySelector<HTMLElement>(".mzm-request-form-card");
+    if (form) setFormMode(form, "expanded");
+  });
   return card;
 }
 
@@ -152,10 +179,18 @@ function upsertCard(data: CardData) {
   const card = createRequestCard(data);
   stage.appendChild(card);
   placeShareAfterCarousel();
-  requestAnimationFrame(() => { const cards = Array.from(stage.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']")); setActiveIndex(shell, Math.max(0, cards.length - 1)); });
+  requestAnimationFrame(() => {
+    const cards = Array.from(stage.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
+    setActiveIndex(shell, Math.max(0, cards.length - 1));
+  });
 }
 
-function addInstitutionToMap(map: Map<string, CatalogInstitution>, kg: CatalogInstitution) { map.set(kg.id, kg); map.set(rawId(kg.id), kg); map.set(valueOf(kg), kg); map.set(`catalog:${rawId(kg.id)}`, kg); }
+function addInstitutionToMap(map: Map<string, CatalogInstitution>, kg: CatalogInstitution) {
+  map.set(kg.id, kg);
+  map.set(rawId(kg.id), kg);
+  map.set(valueOf(kg), kg);
+  map.set(`catalog:${rawId(kg.id)}`, kg);
+}
 function findInstitution(map: Map<string, CatalogInstitution>, id: string) { return map.get(id) || map.get(rawId(id)) || map.get(`catalog:${rawId(id)}`); }
 
 function hydrateExistingCards(snapshot: Snapshot | null, placeType: string, catalogInstitutions: CatalogInstitution[]) {
@@ -201,16 +236,17 @@ async function mount() {
   injectStyles();
   const section = findRequestFormSection();
   if (!section || section.dataset.mzmRequestPolished === "true") return;
+  const formSection: HTMLElement = section;
   const [catalog, snapshot] = await Promise.all([getJson<Catalog>("/api/catalog"), getJson<Snapshot>("/api/playground")]);
   const prefs = getPrefs();
   const institutions = sortItems(catalog?.institutions?.length ? catalog.institutions : snapshot?.kindergartens || []);
   const districts = catalog?.districts?.length ? catalog.districts : Array.from(new Set(institutions.map((i) => i.district).filter(Boolean) as string[]));
   const years = catalog?.years?.length ? catalog.years : currentYearOptions();
-  section.dataset.mzmRequestPolished = "true";
-  section.innerHTML = "";
-  section.className = "mzm-request-form-card";
+  formSection.dataset.mzmRequestPolished = "true";
+  formSection.innerHTML = "";
+  formSection.className = "mzm-request-form-card";
   const root = document.createElement("div"); root.id = ROOT_ID;
-  const closeToggle = document.createElement("button"); closeToggle.type = "button"; closeToggle.className = "mzm-form-close"; closeToggle.innerHTML = `Активирай заявка <span>⌃</span>`; closeToggle.addEventListener("click", () => setFormMode(section, "collapsed"));
+  const closeToggle = document.createElement("button"); closeToggle.type = "button"; closeToggle.className = "mzm-form-close"; closeToggle.innerHTML = `Активирай заявка <span>⌃</span>`; closeToggle.addEventListener("click", () => setFormMode(formSection, "collapsed"));
   const inner = document.createElement("div"); inner.className = "mzm-form-inner";
   const [districtWrap, districtSelect] = select("Избери район"); districts.forEach((d) => districtSelect.appendChild(option(d, d))); if (prefs.district && districts.includes(prefs.district)) districtSelect.value = prefs.district;
   const [yearWrap, yearSelect] = select("Избери набор / група"); years.forEach((y) => yearSelect.appendChild(option(y, y))); if (prefs.year && years.includes(prefs.year)) yearSelect.value = prefs.year;
@@ -238,15 +274,15 @@ async function mount() {
     rebuild(next.from || fromSelect.value, next.wanted || wantedSelect.value);
     fromSelect.dispatchEvent(new Event("change", { bubbles: true }));
     wantedSelect.dispatchEvent(new Event("change", { bubbles: true }));
-    if (open || next.openRequest) forceOpenForm(section);
+    if (open || next.openRequest) forceOpenForm(formSection);
   }
   inner.append(label("Район"), districtWrap, label("Набор / група"), yearWrap, label("Тип място"), typeGrid, saveRow, label("Сегашна градина"), fromWrap, label("Желана градина"), wantedWrap, status);
   const submit = document.createElement("button"); submit.type = "button"; submit.className = "mzm-submit"; submit.textContent = "Активирай заявка";
   const note = document.createElement("p"); note.className = "mzm-note"; note.textContent = "Заявката ще се скрие автоматично при потенциален цикъл.";
-  const collapsed = document.createElement("div"); collapsed.className = "mzm-collapsed"; collapsed.innerHTML = `<button type="button" class="mzm-toggle-open"><div><p>Нова заявка</p><h3>Активирай заявка</h3></div><span>⌄</span></button>`; collapsed.querySelector("button")?.addEventListener("click", () => setFormMode(section, "expanded"));
+  const collapsed = document.createElement("div"); collapsed.className = "mzm-collapsed"; collapsed.innerHTML = `<button type="button" class="mzm-toggle-open"><div><p>Нова заявка</p><h3>Активирай заявка</h3></div><span>⌄</span></button>`; collapsed.querySelector("button")?.addEventListener("click", () => setFormMode(formSection, "expanded"));
   districtSelect.onchange = () => rebuild(); yearSelect.onchange = () => { maybeSave(); updateSubmit(); }; fromSelect.onchange = () => { maybeSave(); updateSubmit(); }; wantedSelect.onchange = () => { maybeSave(); updateSubmit(); }; save.onchange = maybeSave;
   window.addEventListener("mzm:prefs-updated", ((event: Event) => { applyPrefs((event as CustomEvent<Prefs>).detail || getPrefs(), Boolean((event as CustomEvent<Prefs>).detail?.openRequest)); }) as EventListener);
-  window.addEventListener("mzm:open-request-form", () => forceOpenForm(section));
+  window.addEventListener("mzm:open-request-form", () => forceOpenForm(formSection));
   submit.onclick = async () => {
     updateSubmit(); if (submit.disabled) return;
     const userId = getSelectedUserId(snapshot); if (!userId) return;
@@ -260,10 +296,10 @@ async function mount() {
     const created = data.requests?.find((request) => request.user_id === userId && request.child_group_year_or_age_group === ageGroup);
     savePrefs({ district: districtSelect.value, year: ageGroup, placeType: selectedType, from: fromSelect.value, wanted: wantedSelect.value, openRequest: false });
     upsertCard({ requestId: created?.id, fromText, wantedText, ageGroup, placeType: selectedType, locked: created?.is_locked });
-    setFormMode(section, "collapsed"); submit.textContent = "Активирай заявка";
+    setFormMode(formSection, "collapsed"); submit.textContent = "Активирай заявка";
   };
-  root.append(closeToggle, inner, submit, note, collapsed); section.appendChild(root); rebuild(prefs.from, prefs.wanted);
-  const hasExisting = hydrateExistingCards(snapshot, selectedType, institutions); setFormMode(section, hasExisting ? "collapsed" : "expanded"); if (prefs.openRequest) forceOpenForm(section); placeShareAfterCarousel();
+  root.append(closeToggle, inner, submit, note, collapsed); formSection.appendChild(root); rebuild(prefs.from, prefs.wanted);
+  const hasExisting = hydrateExistingCards(snapshot, selectedType, institutions); setFormMode(formSection, hasExisting ? "collapsed" : "expanded"); if (prefs.openRequest) forceOpenForm(formSection); placeShareAfterCarousel();
 }
 function run() { void mount(); }
 export default function RequestFormHardReset() { useEffect(() => { run(); const observer = new MutationObserver(run); observer.observe(document.documentElement, { childList: true, subtree: true }); return () => observer.disconnect(); }, []); return null; }
