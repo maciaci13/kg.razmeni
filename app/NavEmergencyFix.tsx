@@ -11,11 +11,42 @@ function injectStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     /* Final bottom navigation reset. This file must be mounted last. */
+    html,
+    body {
+      min-height: 100% !important;
+      height: auto !important;
+      overflow-y: auto !important;
+      overscroll-behavior-y: contain !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    main:has(nav.fixed.bottom-4) {
+      min-height: 100dvh !important;
+      overflow: visible !important;
+      padding-bottom: calc(8.75rem + env(safe-area-inset-bottom, 0px)) !important;
+      scroll-padding-bottom: calc(9rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    main:has(nav.fixed.bottom-4) > div {
+      padding-bottom: calc(8.75rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    main:has(nav.fixed.bottom-4) .mzm-request-form-card,
+    main:has(nav.fixed.bottom-4) section:has(#mzm-request-polish-root) {
+      margin-bottom: calc(7.75rem + env(safe-area-inset-bottom, 0px)) !important;
+      scroll-margin-top: 1rem !important;
+      scroll-margin-bottom: calc(9rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    main:has(nav.fixed.bottom-4) .mzm-submit {
+      margin-bottom: 1.25rem !important;
+    }
+
     main nav.fixed.bottom-4 {
       position: fixed !important;
       left: 1rem !important;
       right: 1rem !important;
-      bottom: 1rem !important;
+      bottom: calc(.85rem + env(safe-area-inset-bottom, 0px)) !important;
       z-index: 80 !important;
       width: auto !important;
       min-width: 0 !important;
@@ -134,14 +165,38 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
+function disableRequestFormAutoScroll() {
+  const proto = Element.prototype as ElementPrototypeWithMzmPatch;
+  if (proto.__mzmOriginalScrollIntoView) return;
+
+  proto.__mzmOriginalScrollIntoView = proto.scrollIntoView;
+  proto.scrollIntoView = function patchedScrollIntoView(this: Element, arg?: boolean | ScrollIntoViewOptions) {
+    if (this instanceof HTMLElement && this.classList.contains("mzm-form-inner")) return;
+    return proto.__mzmOriginalScrollIntoView?.call(this, arg);
+  };
+}
+
+function restoreRequestFormAutoScroll() {
+  const proto = Element.prototype as ElementPrototypeWithMzmPatch;
+  if (!proto.__mzmOriginalScrollIntoView) return;
+  proto.scrollIntoView = proto.__mzmOriginalScrollIntoView;
+  delete proto.__mzmOriginalScrollIntoView;
+}
+
+type ElementPrototypeWithMzmPatch = typeof Element.prototype & {
+  __mzmOriginalScrollIntoView?: Element["scrollIntoView"];
+};
+
 export default function NavEmergencyFix() {
   useEffect(() => {
     injectStyles();
+    disableRequestFormAutoScroll();
     const t1 = window.setTimeout(injectStyles, 120);
     const t2 = window.setTimeout(injectStyles, 600);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
+      restoreRequestFormAutoScroll();
     };
   }, []);
 
