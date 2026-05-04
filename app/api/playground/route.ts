@@ -23,6 +23,7 @@ type PlaygroundAction =
 
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 type CatalogOption = { id: string; name: string; district: string | null; address?: string | null; phone?: string | null; email?: string | null; website?: string | null; source?: string; sourceUrl?: string };
+type DbKindergarten = { id: string; name: string; district: string | null; address: string | null };
 
 const ALL_DISTRICTS = "__all__";
 const DEMO_YEARS = ["2025", "2024", "2023", "2022", "2021", "2020", "2019"];
@@ -62,6 +63,15 @@ function clampCount(value: number | undefined, fallback: number, min: number, ma
   const parsed = Number(value ?? fallback);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(min, Math.min(max, Math.round(parsed)));
+}
+
+function asCatalogId(id: string) {
+  if (!id) return id;
+  return id.startsWith("catalog:") ? id : `catalog:${id}`;
+}
+
+function byOfficialKey(value: { name: string; district?: string | null }) {
+  return `${normalizeName(value.name)}::${value.district || ""}`;
 }
 
 async function getCatalog() {
@@ -295,7 +305,14 @@ async function leaveMatchDirectly(supabase: SupabaseAdmin, matchId: string, user
 
 async function getSnapshot(): Promise<PlaygroundSnapshot> {
   const supabase = createSupabaseAdminClient();
-  const pdfKindergartens = await getPdfKindergartenOptions();
+  const catalog = await getCatalog();
+  const pdfKindergartens = catalog.institutions.map((institution) => ({
+    id: `catalog:${institution.id}`,
+    name: institution.name,
+    district: institution.district ?? null,
+    address: institution.address ?? null
+  }));
+  const officialByKey = new Map(catalog.institutions.map((institution) => [byOfficialKey(institution), `catalog:${institution.id}`]));
 
   const users = await supabase.from("app_users").select("id, display_name, email").eq("is_playground", true).order("display_name");
   if (users.error) throw new Error(users.error.message);
@@ -385,18 +402,47 @@ async function getSnapshot(): Promise<PlaygroundSnapshot> {
     : { data: [], error: null };
   if (dbKindergartens.error) throw new Error(dbKindergartens.error.message);
 
+  const officialIdByDbId = new Map<string, string>();
+  (dbKindergartens.data ?? []).forEach((item: DbKindergarten) => {
+    const officialId = officialByKey.get(byOfficialKey(item));
+    if (officialId) officialIdByDbId.set(item.id, officialId);
+  });
+
+  const mapId = (id: string | null | undefined) => {
+    if (!id) return id;
+    if (id.startsWith("catalog:")) return id;
+    return officialIdByDbId.get(id) || null;
+  };
+
+  const mappedRequests = (requests.data ?? [])
+    .map((request) => ({ ...request, from_kindergarten_id: mapId(request.from_kindergarten_id) }))
+    .filter((request) => Boolean(request.from_kindergarten_id));
+  const validRequestIds = new Set(mappedRequests.map((request) => request.id));
+
+  const mappedWantedKindergartens = (wantedKindergartens.data ?? [])
+    .map((wanted) => ({ ...wanted, wanted_kindergarten_id: mapId(wanted.wanted_kindergarten_id) }))
+    .filter((wanted) => validRequestIds.has(wanted.request_id) && Boolean(wanted.wanted_kindergarten_id));
+
+  const mappedParticipants = participantsData
+    .map((participant) => ({
+      ...participant,
+      from_kindergarten_id: mapId(participant.from_kindergarten_id),
+      wants_kindergarten_id: mapId(participant.wants_kindergarten_id)
+    }))
+    .filter((participant) => Boolean(participant.from_kindergarten_id) && Boolean(participant.wants_kindergarten_id));
+  const validMatchIds = new Set(mappedParticipants.map((participant) => participant.match_id));
+  const mappedMatches = matchesData.filter((match) => validMatchIds.has(match.id));
+
   const normalizedChats = (chats.data ?? []).map((chat) => ({ direct_user_1_id: null, direct_user_2_id: null, ...chat }));
-  const kindergartens = [...(dbKindergartens.data ?? []), ...pdfKindergartens]
-    .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index);
 
   return {
     users: users.data ?? [],
-    kindergartens,
-    requests: requests.data ?? [],
-    wantedKindergartens: wantedKindergartens.data ?? [],
-    matches: matchesData,
-    participants: participantsData,
-    chats: normalizedChats,
+    kindergartens: pdfKindergartens,
+    requests: mappedRequests,
+    wantedKindergartens: mappedWantedKindergartens,
+    matches: mappedMatches,
+    participants: mappedParticipants,
+    chats: normalizedChats.filter((chat) => validMatchIds.has(chat.match_id)),
     messages: messages.data ?? []
   } as PlaygroundSnapshot;
 }
@@ -427,8 +473,7 @@ export async function POST(request: Request) {
       return NextResponse.json(await getSnapshot());
     }
     if (body.action === "seed") {
-      const { error } = await supabase.rpc("seed_playground_cycle", { p_cycle_size: body.cycleSize });
-      if (error) throw new Error(error.message);
+      await seedRandomCycle(supabase, { cycleSize: body.cycleSize, resetFirst: true, cycleCount: 1 });
       return NextResponse.json(await getSnapshot());
     }
     if (body.action === "seedRandomCycle") {
