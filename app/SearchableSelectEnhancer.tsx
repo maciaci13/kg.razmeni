@@ -15,11 +15,7 @@ function normalize(value: string | null | undefined) {
 }
 
 function firstLetters(value: string) {
-  return normalize(value)
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0])
-    .join("");
+  return normalize(value).split(" ").filter(Boolean).map((word) => word[0]).join("");
 }
 
 function escapeHtml(value: string) {
@@ -31,6 +27,48 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
+    select.mzm-select-native-hidden {
+      display: none !important;
+    }
+
+    .mzm-select-proxy {
+      width: 100% !important;
+      border: 0 !important;
+      outline: 0 !important;
+      border-radius: 1.2rem !important;
+      background: #fff !important;
+      padding: 1rem !important;
+      color: #1c1b19 !important;
+      font: inherit !important;
+      font-size: .92rem !important;
+      font-weight: 850 !important;
+      letter-spacing: -.025em !important;
+      line-height: 1.25 !important;
+      box-shadow: inset 0 0 0 1px rgba(28,27,25,.025) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: .85rem !important;
+      text-align: left !important;
+      min-height: 3.45rem !important;
+    }
+
+    .mzm-select-proxy__label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mzm-select-proxy__chev {
+      flex: 0 0 auto;
+      width: 1rem;
+      height: 1rem;
+      opacity: .72;
+      font-size: 1.05rem;
+      line-height: 1;
+    }
+
     .mzm-search-select-backdrop {
       position: fixed;
       inset: 0;
@@ -47,7 +85,6 @@ function injectStyles() {
 
     .mzm-search-select-backdrop.is-keyboard-open {
       align-items: flex-start;
-      justify-content: center;
       padding: .55rem .65rem;
     }
 
@@ -63,6 +100,10 @@ function injectStyles() {
       box-shadow: 0 28px 90px rgba(28,27,25,.24);
     }
 
+    .mzm-search-select-panel.is-simple {
+      max-height: min(78dvh, 32rem);
+    }
+
     .mzm-search-select-backdrop.is-keyboard-open .mzm-search-select-panel {
       max-height: calc(100% - 1.1rem);
       border-radius: 1.8rem;
@@ -74,6 +115,8 @@ function injectStyles() {
       background: linear-gradient(145deg, rgba(255,240,227,.98), rgba(255,255,255,.94));
     }
 
+    .mzm-search-select-panel.is-simple .mzm-search-select-head { padding: 1rem; }
+
     .mzm-search-select-top {
       display: flex;
       align-items: flex-start;
@@ -81,6 +124,8 @@ function injectStyles() {
       gap: .85rem;
       margin-bottom: .85rem;
     }
+
+    .mzm-search-select-panel.is-simple .mzm-search-select-top { margin-bottom: 0; }
 
     .mzm-search-select-kicker {
       margin: 0 0 .28rem;
@@ -114,7 +159,6 @@ function injectStyles() {
     }
 
     .mzm-search-select-input-wrap {
-      position: relative;
       display: flex;
       align-items: center;
       border-radius: 1.3rem;
@@ -149,10 +193,7 @@ function injectStyles() {
       padding: 0 1rem 0 0;
     }
 
-    .mzm-search-select-input::placeholder {
-      color: rgba(28,27,25,.36);
-      opacity: 1;
-    }
+    .mzm-search-select-input::placeholder { color: rgba(28,27,25,.36); opacity: 1; }
 
     .mzm-search-select-count {
       margin: .55rem 0 0;
@@ -174,6 +215,11 @@ function injectStyles() {
       -webkit-overflow-scrolling: touch;
     }
 
+    .mzm-search-select-panel.is-simple .mzm-search-select-list {
+      padding: .75rem 1rem 1rem;
+      overflow: visible;
+    }
+
     .mzm-search-select-option {
       width: 100%;
       border: 0;
@@ -188,6 +234,15 @@ function injectStyles() {
       font-weight: 850;
       letter-spacing: -.025em;
       box-shadow: inset 0 0 0 1px rgba(28,27,25,.025);
+    }
+
+    .mzm-search-select-panel.is-simple .mzm-search-select-option {
+      min-height: 3.55rem;
+      display: flex;
+      align-items: center;
+      font-size: 1rem;
+      border-radius: 1.35rem;
+      padding: 1rem 1.05rem;
     }
 
     .mzm-search-select-option.is-selected {
@@ -219,9 +274,9 @@ function injectStyles() {
       .mzm-search-select-backdrop { align-items: flex-end; padding: .65rem; }
       .mzm-search-select-backdrop.is-keyboard-open { align-items: flex-start; padding: .45rem .55rem; }
       .mzm-search-select-panel { max-height: calc(100dvh - 1.3rem); border-radius: 1.8rem; }
+      .mzm-search-select-panel.is-simple { max-height: min(82dvh, 31rem); }
       .mzm-search-select-backdrop.is-keyboard-open .mzm-search-select-panel { max-height: calc(100% - .9rem); }
       .mzm-search-select-head { padding: .82rem .82rem .62rem; }
-      .mzm-search-select-top { margin-bottom: .62rem; }
       .mzm-search-select-title { font-size: 1.25rem; }
       .mzm-search-select-input, .mzm-search-select-input-icon { height: 2.85rem; }
     }
@@ -242,8 +297,7 @@ type OptionItem = {
 function optionMeta(option: HTMLOptionElement) {
   const text = option.textContent || "";
   const parts = text.split(" · ").map((part) => part.trim()).filter(Boolean);
-  if (parts.length <= 1) return "";
-  return parts.slice(1).join(" · ");
+  return parts.length <= 1 ? "" : parts.slice(1).join(" · ");
 }
 
 function optionLabel(option: HTMLOptionElement) {
@@ -275,11 +329,17 @@ function getTitle(select: HTMLSelectElement) {
   const selected = select.selectedOptions[0]?.textContent || "";
   const candidate = parentLabel || aria || selected;
   const clean = normalize(candidate);
-  if (clean.includes("район")) return "Район";
-  if (clean.includes("набор") || clean.includes("група")) return "Набор / група";
-  if (clean.includes("сегашна")) return "Сегашна градина";
-  if (clean.includes("желана")) return "Желана градина";
+  if (select.hasAttribute("data-district") || clean.includes("район")) return "Район";
+  if (select.hasAttribute("data-year") || clean.includes("набор") || clean.includes("група")) return "Набор / група";
+  if (select.hasAttribute("data-place-type") || clean.includes("тип място")) return "Тип място";
+  if (select.hasAttribute("data-from") || clean.includes("сегашна")) return "Сегашна градина";
+  if (select.hasAttribute("data-wanted") || clean.includes("желана")) return "Желана градина";
   return candidate || "Избери от списъка";
+}
+
+function isSimplePicker(select: HTMLSelectElement) {
+  const title = normalize(getTitle(select));
+  return select.hasAttribute("data-year") || select.hasAttribute("data-place-type") || title.includes("набор") || title.includes("група") || title.includes("тип място");
 }
 
 function matches(option: OptionItem, query: string) {
@@ -293,19 +353,28 @@ function closePicker() {
   document.body.style.removeProperty("overflow");
 }
 
+function updateProxy(select: HTMLSelectElement) {
+  const proxy = select.nextElementSibling as HTMLButtonElement | null;
+  if (!proxy?.classList.contains("mzm-select-proxy")) return;
+  const selected = select.selectedOptions[0];
+  const label = selected ? optionLabel(selected) : "Избери";
+  const span = proxy.querySelector<HTMLElement>(".mzm-select-proxy__label");
+  if (span) span.textContent = label || "Избери";
+  proxy.dataset.value = select.value;
+}
+
 function chooseOption(select: HTMLSelectElement, item: OptionItem) {
   if (item.disabled) return;
   select.value = item.value;
   select.dispatchEvent(new Event("input", { bubbles: true }));
   select.dispatchEvent(new Event("change", { bubbles: true }));
+  updateProxy(select);
   closePicker();
-  window.setTimeout(() => select.blur(), 0);
 }
 
 function updateViewport(modal: HTMLElement) {
   const viewport = window.visualViewport;
   if (!viewport) return;
-
   const keyboardOpen = viewport.height < window.innerHeight - 90;
   modal.classList.toggle("is-keyboard-open", keyboardOpen);
   modal.style.top = `${viewport.offsetTop}px`;
@@ -316,33 +385,53 @@ function updateViewport(modal: HTMLElement) {
   modal.style.bottom = "auto";
 }
 
+function renderOptionButtons(list: HTMLElement, select: HTMLSelectElement, items: OptionItem[]) {
+  if (!items.length) {
+    list.innerHTML = `<div class="mzm-search-select-empty">Няма резултат. Пробвай с номер, част от името или първите букви.</div>`;
+    return;
+  }
+  list.innerHTML = items.map((item, index) => `
+    <button type="button" class="mzm-search-select-option ${item.selected ? "is-selected" : ""}" data-index="${index}">
+      ${escapeHtml(item.label)}${item.meta ? `<small>${escapeHtml(item.meta)}</small>` : ""}
+    </button>
+  `).join("");
+  Array.from(list.querySelectorAll<HTMLButtonElement>(".mzm-search-select-option")).forEach((button) => {
+    const item = items[Number(button.dataset.index || 0)];
+    button.addEventListener("click", () => chooseOption(select, item));
+  });
+}
+
 function openPicker(select: HTMLSelectElement) {
   if (select.disabled || select.dataset.mzmNoSearchPicker === "true") return;
   const options = getOptions(select).filter((item) => !item.disabled);
-  if (options.length <= 4) return;
+  if (!options.length) return;
 
   injectStyles();
   closePicker();
   document.body.style.overflow = "hidden";
 
+  const simple = isSimplePicker(select);
+  const title = getTitle(select);
   const modal = document.createElement("div");
   modal.className = "mzm-search-select-backdrop";
   modal.setAttribute(MODAL_ATTR, "true");
   modal.innerHTML = `
-    <div class="mzm-search-select-panel" role="dialog" aria-modal="true">
+    <div class="mzm-search-select-panel ${simple ? "is-simple" : ""}" role="dialog" aria-modal="true">
       <div class="mzm-search-select-head">
         <div class="mzm-search-select-top">
           <div>
             <p class="mzm-search-select-kicker">Бърз избор</p>
-            <h3 class="mzm-search-select-title">${escapeHtml(getTitle(select))}</h3>
+            <h3 class="mzm-search-select-title">${escapeHtml(title)}</h3>
           </div>
           <button type="button" class="mzm-search-select-close" aria-label="Затвори">×</button>
         </div>
-        <div class="mzm-search-select-input-wrap">
-          <span class="mzm-search-select-input-icon">⌕</span>
-          <input class="mzm-search-select-input" type="search" placeholder="Търси по име, номер или първи букви…" autocomplete="off" />
-        </div>
-        <p class="mzm-search-select-count"></p>
+        ${simple ? "" : `
+          <div class="mzm-search-select-input-wrap">
+            <span class="mzm-search-select-input-icon">⌕</span>
+            <input class="mzm-search-select-input" type="search" placeholder="Търси по име, номер или първи букви…" autocomplete="off" />
+          </div>
+          <p class="mzm-search-select-count"></p>
+        `}
       </div>
       <div class="mzm-search-select-list"></div>
     </div>
@@ -353,49 +442,24 @@ function openPicker(select: HTMLSelectElement) {
   const count = modal.querySelector<HTMLElement>(".mzm-search-select-count");
 
   const render = () => {
-    if (!input || !list || !count) return;
-    const query = input.value;
-    const filtered = options.filter((item) => matches(item, query)).slice(0, 120);
-    count.textContent = query.trim()
-      ? `${filtered.length} намерени резултата`
-      : "Започни да пишеш за по-лесно намиране.";
-
-    if (!filtered.length) {
-      list.innerHTML = `<div class="mzm-search-select-empty">Няма резултат. Пробвай с номер, част от името или първите букви.</div>`;
+    if (!list) return;
+    if (simple) {
+      renderOptionButtons(list, select, options);
       return;
     }
-
-    list.innerHTML = filtered.map((item, index) => `
-      <button type="button" class="mzm-search-select-option ${item.selected ? "is-selected" : ""}" data-index="${index}">
-        ${escapeHtml(item.label)}
-        ${item.meta ? `<small>${escapeHtml(item.meta)}</small>` : ""}
-      </button>
-    `).join("");
-
-    Array.from(list.querySelectorAll<HTMLButtonElement>(".mzm-search-select-option")).forEach((button) => {
-      const item = filtered[Number(button.dataset.index || 0)];
-      button.addEventListener("click", () => chooseOption(select, item));
-    });
+    if (!input || !count) return;
+    const query = input.value;
+    const filtered = options.filter((item) => matches(item, query)).slice(0, 120);
+    count.textContent = query.trim() ? `${filtered.length} намерени резултата` : "Започни да пишеш за по-лесно намиране.";
+    renderOptionButtons(list, select, filtered);
   };
 
   const onViewportChange = () => updateViewport(modal);
-
-  modal.addEventListener("click", (event) => {
-    if (event.target === modal) closePicker();
-  });
+  modal.addEventListener("click", (event) => { if (event.target === modal) closePicker(); });
   modal.querySelector<HTMLButtonElement>(".mzm-search-select-close")?.addEventListener("click", closePicker);
-  input?.addEventListener("focus", () => {
-    modal.classList.add("is-keyboard-open");
-    window.setTimeout(onViewportChange, 60);
-    window.setTimeout(onViewportChange, 260);
-  });
-  input?.addEventListener("blur", () => {
-    window.setTimeout(onViewportChange, 160);
-  });
-  input?.addEventListener("input", () => {
-    render();
-    window.setTimeout(onViewportChange, 0);
-  });
+  input?.addEventListener("focus", () => { modal.classList.add("is-keyboard-open"); window.setTimeout(onViewportChange, 60); window.setTimeout(onViewportChange, 260); });
+  input?.addEventListener("blur", () => window.setTimeout(onViewportChange, 160));
+  input?.addEventListener("input", () => { render(); window.setTimeout(onViewportChange, 0); });
   input?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closePicker();
     if (event.key === "Enter") {
@@ -425,29 +489,45 @@ function isEligibleSelect(select: HTMLSelectElement) {
   if (select.dataset.mzmNoSearchPicker === "true") return false;
   if (select.closest("[data-mzm-searchable-select-modal='true']")) return false;
   const options = Array.from(select.options).filter((option) => !option.disabled);
-  if (options.length <= 4) return false;
-  return select.classList.contains("mzm-select") || select.classList.contains("mzm-onboarding-select") || options.length > 12;
+  if (!options.length) return false;
+  if (select.classList.contains("mzm-onboarding-select") || select.classList.contains("mzm-select")) return true;
+  return options.length > 8;
+}
+
+function ensureProxy(select: HTMLSelectElement) {
+  if (select.dataset.mzmProxyReady === "true") {
+    updateProxy(select);
+    return;
+  }
+  select.dataset.mzmProxyReady = "true";
+  select.classList.add("mzm-select-native-hidden");
+
+  const proxy = document.createElement("button");
+  proxy.type = "button";
+  proxy.className = "mzm-select-proxy";
+  proxy.innerHTML = `<span class="mzm-select-proxy__label"></span><span class="mzm-select-proxy__chev">⌄</span>`;
+  proxy.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openPicker(select);
+  });
+  proxy.addEventListener("keydown", (event) => {
+    if (["Enter", " ", "ArrowDown"].includes(event.key)) {
+      event.preventDefault();
+      openPicker(select);
+    }
+  });
+
+  select.insertAdjacentElement("afterend", proxy);
+  select.addEventListener("change", () => updateProxy(select));
+  select.addEventListener("input", () => updateProxy(select));
+  updateProxy(select);
 }
 
 function bindSelects() {
   document.querySelectorAll<HTMLSelectElement>("select").forEach((select) => {
-    if (!isEligibleSelect(select) || select.dataset.mzmSearchPickerBound === "true") return;
-    select.dataset.mzmSearchPickerBound = "true";
-
-    const open = (event: Event) => {
-      if (!isEligibleSelect(select)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      openPicker(select);
-    };
-
-    select.addEventListener("pointerdown", open, true);
-    select.addEventListener("mousedown", open, true);
-    select.addEventListener("touchstart", open, true);
-    select.addEventListener("click", open, true);
-    select.addEventListener("keydown", (event) => {
-      if (["Enter", " ", "ArrowDown"].includes(event.key)) open(event);
-    }, true);
+    if (!isEligibleSelect(select)) return;
+    ensureProxy(select);
   });
 }
 
@@ -466,8 +546,8 @@ export default function SearchableSelectEnhancer() {
 
     schedule();
     const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-    const interval = window.setInterval(schedule, 800);
+    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    const interval = window.setInterval(schedule, 500);
 
     return () => {
       observer.disconnect();
