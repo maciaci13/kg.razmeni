@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
 import HomeChanceRadar from "./HomeChanceRadar";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
+import HomeHeroCopyPolish from "./HomeHeroCopyPolish";
 import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
 import MatchFlashGuard from "./MatchFlashGuard";
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {children}
         <ProfileOnboarding />
         <HomeChanceRadar />
+        <HomeHeroCopyPolish />
         <RadarUiPolish />
         <HomeGuidanceEnhancer />
         <HomeStatLinks />
