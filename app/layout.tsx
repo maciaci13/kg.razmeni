@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
 import HomeChanceRadar from "./HomeChanceRadar";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
+import HomeHeroAndRadarFix from "./HomeHeroAndRadarFix";
 import HomeHeroCopyPolish from "./HomeHeroCopyPolish";
 import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
@@ -14,6 +15,7 @@ import ProfileOnboarding from "./ProfileOnboarding";
 import RadarProfileDefaultsFix from "./RadarProfileDefaultsFix";
 import RadarUiPolish from "./RadarUiPolish";
 import RequestFormHardReset from "./RequestFormHardReset";
+import RequestProfileCheckboxFix from "./RequestProfileCheckboxFix";
 import RequestProfileDefaultsSync from "./RequestProfileDefaultsSync";
 import RequestVisualPolish from "./RequestVisualPolish";
 import ShareRequestEnhancer from "./ShareRequestEnhancer";
@@ -42,6 +44,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ProfileOnboarding />
         <HomeChanceRadar />
         <HomeHeroCopyPolish />
+        <HomeHeroAndRadarFix />
         <RadarUiPolish />
         <RadarProfileDefaultsFix />
         <HomeGuidanceEnhancer />
@@ -54,6 +57,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <MobileChromePolish />
         <RequestFormHardReset />
         <RequestProfileDefaultsSync />
+        <RequestProfileCheckboxFix />
         <RequestVisualPolish />
         <ShareRequestEnhancer />
         <StatusDropdownCleanup />
