@@ -16,13 +16,13 @@ type Snapshot = {
   wantedKindergartens?: Array<{ id: string; request_id: string; wanted_kindergarten_id: string; priority_order: number }>;
 };
 type ApiSnapshot = Snapshot & { error?: string };
-type Prefs = { district?: string; year?: string; placeType?: string; from?: string; wanted?: string };
+type Prefs = { district?: string; year?: string; placeType?: string; from?: string; wanted?: string; openRequest?: boolean };
 type CardData = { requestId?: string; fromText: string; wantedText: string; ageGroup: string; placeType: string; locked?: boolean };
 
 function getPrefs(): Prefs {
   try { return JSON.parse(localStorage.getItem(PREF_KEY) || "{}"); } catch { return {}; }
 }
-function savePrefs(prefs: Prefs) { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); }
+function savePrefs(prefs: Prefs) { localStorage.setItem(PREF_KEY, JSON.stringify({ ...getPrefs(), ...prefs })); }
 function option(value: string, labelText: string) { const o = document.createElement("option"); o.value = value; o.textContent = labelText; return o; }
 function label(text: string) { const el = document.createElement("label"); el.className = "mzm-form-label"; el.textContent = text; return el; }
 function select(placeholder: string) { const wrap = document.createElement("div"); wrap.className = "mzm-select-wrap"; const sel = document.createElement("select"); sel.className = "mzm-select"; sel.appendChild(option("", placeholder)); wrap.appendChild(sel); return [wrap, sel] as const; }
@@ -60,48 +60,28 @@ function removeOldRequestUi(myRequestsSection: HTMLElement) {
   });
 }
 
-function getActiveIndex(shell: HTMLElement) {
-  const index = Number(shell.dataset.activeIndex || "0");
-  return Number.isFinite(index) ? index : 0;
-}
+function getActiveIndex(shell: HTMLElement) { const index = Number(shell.dataset.activeIndex || "0"); return Number.isFinite(index) ? index : 0; }
 function setActiveIndex(shell: HTMLElement, index: number) {
   const cards = Array.from(shell.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
-  if (!cards.length) {
-    shell.dataset.activeIndex = "0";
-    updateCarouselState(shell);
-    return;
-  }
+  if (!cards.length) { shell.dataset.activeIndex = "0"; updateCarouselState(shell); return; }
   const next = ((index % cards.length) + cards.length) % cards.length;
   shell.dataset.activeIndex = String(next);
   updateCarouselState(shell);
 }
-function moveStack(shell: HTMLElement, direction: number) {
-  setActiveIndex(shell, getActiveIndex(shell) + direction);
-}
+function moveStack(shell: HTMLElement, direction: number) { setActiveIndex(shell, getActiveIndex(shell) + direction); }
 
 function getOrCreateCarouselShell(myRequestsSection: HTMLElement) {
   let shell = myRequestsSection.querySelector<HTMLElement>(".mzm-carousel-shell");
   if (shell) return shell;
-
   shell = document.createElement("div");
   shell.className = "mzm-carousel-shell";
   shell.dataset.activeIndex = "0";
   shell.innerHTML = `<div class="mzm-request-carousel" aria-label="Активни заявки"></div><div class="mzm-carousel-dots" aria-label="Навигация по заявки"></div>`;
   myRequestsSection.querySelector("h2")?.insertAdjacentElement("afterend", shell);
-
   const stage = shell.querySelector<HTMLElement>(".mzm-request-carousel");
-  let startX = 0;
-  let startY = 0;
-  stage?.addEventListener("pointerdown", (event) => {
-    startX = event.clientX;
-    startY = event.clientY;
-  }, { passive: true });
-  stage?.addEventListener("pointerup", (event) => {
-    const dx = event.clientX - startX;
-    const dy = event.clientY - startY;
-    if (Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy)) moveStack(shell as HTMLElement, dx < 0 ? 1 : -1);
-  }, { passive: true });
-
+  let startX = 0; let startY = 0;
+  stage?.addEventListener("pointerdown", (event) => { startX = event.clientX; startY = event.clientY; }, { passive: true });
+  stage?.addEventListener("pointerup", (event) => { const dx = event.clientX - startX; const dy = event.clientY - startY; if (Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy)) moveStack(shell as HTMLElement, dx < 0 ? 1 : -1); }, { passive: true });
   return shell;
 }
 
@@ -116,11 +96,9 @@ function placeShareAfterCarousel() {
 function updateCarouselState(shell: HTMLElement) {
   const dots = shell.querySelector<HTMLElement>(".mzm-carousel-dots");
   if (!dots) return;
-
   const cards = Array.from(shell.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
   const activeIndex = cards.length ? ((getActiveIndex(shell) % cards.length) + cards.length) % cards.length : 0;
   shell.dataset.activeIndex = String(activeIndex);
-
   cards.forEach((card, index) => {
     const forward = (index - activeIndex + cards.length) % cards.length;
     const backward = (activeIndex - index + cards.length) % cards.length;
@@ -130,17 +108,8 @@ function updateCarouselState(shell: HTMLElement) {
     card.classList.toggle("is-prev-card", backward === 1);
     card.classList.toggle("is-hidden-card", forward > 2 && backward > 1);
   });
-
   dots.innerHTML = "";
-  cards.forEach((_card, index) => {
-    const dot = document.createElement("button");
-    dot.type = "button";
-    dot.className = index === activeIndex ? "is-active" : "";
-    dot.setAttribute("aria-label", `Заявка ${index + 1}`);
-    dot.addEventListener("click", () => setActiveIndex(shell, index));
-    dots.appendChild(dot);
-  });
-
+  cards.forEach((_card, index) => { const dot = document.createElement("button"); dot.type = "button"; dot.className = index === activeIndex ? "is-active" : ""; dot.setAttribute("aria-label", `Заявка ${index + 1}`); dot.addEventListener("click", () => setActiveIndex(shell, index)); dots.appendChild(dot); });
   shell.classList.toggle("has-multiple", cards.length > 1);
 }
 
@@ -151,51 +120,24 @@ function setFormMode(section: HTMLElement, mode: "expanded" | "collapsed") {
   if (!hasActive) section.classList.remove("is-collapsed");
   else section.classList.toggle("is-collapsed", mode === "collapsed");
 }
+function forceOpenForm(section: HTMLElement) {
+  section.classList.remove("is-collapsed");
+  section.classList.add("has-active-requests");
+  const inner = section.querySelector<HTMLElement>(".mzm-form-inner");
+  inner?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 function createRequestCard(data: CardData) {
   const card = document.createElement("article");
   card.className = "mzm-request-card";
   card.dataset.mzmActiveRequestCard = "true";
   if (data.requestId) card.dataset.requestId = data.requestId;
-  card.innerHTML = `
-    <details class="mzm-card-menu">
-      <summary aria-label="Опции за заявката">•••</summary>
-      <div class="mzm-card-menu-popover">
-        <button type="button" data-action="deactivate">Деактивирай</button>
-        <button type="button" data-action="delete">Изтрий</button>
-      </div>
-    </details>
-    <div class="mzm-request-card-content">
-      <p>Активна · ${escapeHtml(data.placeType)}</p>
-      <h3><span>${escapeHtml(data.fromText)}</span><b>→</b><span>${escapeHtml(data.wantedText)}</span></h3>
-      <em>Набор ${escapeHtml(data.ageGroup)}</em>
-      ${data.locked ? `<mark>MATCH</mark>` : ``}
-    </div>
-  `;
-
+  card.innerHTML = `<details class="mzm-card-menu"><summary aria-label="Опции за заявката">•••</summary><div class="mzm-card-menu-popover"><button type="button" data-action="deactivate">Деактивирай</button><button type="button" data-action="delete">Изтрий</button></div></details><div class="mzm-request-card-content"><p>Активна · ${escapeHtml(data.placeType)}</p><h3><span>${escapeHtml(data.fromText)}</span><b>→</b><span>${escapeHtml(data.wantedText)}</span></h3><em>Набор ${escapeHtml(data.ageGroup)}</em>${data.locked ? `<mark>MATCH</mark>` : ``}</div>`;
   const deactivate = card.querySelector<HTMLButtonElement>("[data-action='deactivate']");
   const remove = card.querySelector<HTMLButtonElement>("[data-action='delete']");
   const menu = card.querySelector<HTMLDetailsElement>(".mzm-card-menu");
-
-  deactivate?.addEventListener("click", async () => {
-    if (!data.requestId) return;
-    deactivate.disabled = true;
-    await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "deactivateRequest", requestId: data.requestId }) });
-    menu?.removeAttribute("open");
-    card.classList.add("is-inactive");
-  });
-
-  remove?.addEventListener("click", async () => {
-    if (!data.requestId) return;
-    remove.disabled = true;
-    await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "deleteRequest", requestId: data.requestId }) });
-    const shell = card.closest<HTMLElement>(".mzm-carousel-shell");
-    card.remove();
-    if (shell) updateCarouselState(shell);
-    const form = document.querySelector<HTMLElement>(".mzm-request-form-card");
-    if (form) setFormMode(form, "expanded");
-  });
-
+  deactivate?.addEventListener("click", async () => { if (!data.requestId) return; deactivate.disabled = true; await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "deactivateRequest", requestId: data.requestId }) }); menu?.removeAttribute("open"); card.classList.add("is-inactive"); });
+  remove?.addEventListener("click", async () => { if (!data.requestId) return; remove.disabled = true; await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "deleteRequest", requestId: data.requestId }) }); const shell = card.closest<HTMLElement>(".mzm-carousel-shell"); card.remove(); if (shell) updateCarouselState(shell); const form = document.querySelector<HTMLElement>(".mzm-request-form-card"); if (form) setFormMode(form, "expanded"); });
   return card;
 }
 
@@ -206,52 +148,29 @@ function upsertCard(data: CardData) {
   const shell = getOrCreateCarouselShell(myRequestsSection);
   const stage = shell.querySelector<HTMLElement>(".mzm-request-carousel");
   if (!stage) return;
-
-  if (data.requestId) {
-    Array.from(stage.querySelectorAll<HTMLElement>("[data-request-id]")).find((card) => card.dataset.requestId === data.requestId)?.remove();
-  }
-
+  if (data.requestId) Array.from(stage.querySelectorAll<HTMLElement>("[data-request-id]")).find((card) => card.dataset.requestId === data.requestId)?.remove();
   const card = createRequestCard(data);
   stage.appendChild(card);
   placeShareAfterCarousel();
-  requestAnimationFrame(() => {
-    const cards = Array.from(stage.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
-    setActiveIndex(shell, Math.max(0, cards.length - 1));
-  });
+  requestAnimationFrame(() => { const cards = Array.from(stage.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']")); setActiveIndex(shell, Math.max(0, cards.length - 1)); });
 }
 
-function addInstitutionToMap(map: Map<string, CatalogInstitution>, kg: CatalogInstitution) {
-  map.set(kg.id, kg);
-  map.set(rawId(kg.id), kg);
-  map.set(valueOf(kg), kg);
-  map.set(`catalog:${rawId(kg.id)}`, kg);
-}
-function findInstitution(map: Map<string, CatalogInstitution>, id: string) {
-  return map.get(id) || map.get(rawId(id)) || map.get(`catalog:${rawId(id)}`);
-}
+function addInstitutionToMap(map: Map<string, CatalogInstitution>, kg: CatalogInstitution) { map.set(kg.id, kg); map.set(rawId(kg.id), kg); map.set(valueOf(kg), kg); map.set(`catalog:${rawId(kg.id)}`, kg); }
+function findInstitution(map: Map<string, CatalogInstitution>, id: string) { return map.get(id) || map.get(rawId(id)) || map.get(`catalog:${rawId(id)}`); }
 
 function hydrateExistingCards(snapshot: Snapshot | null, placeType: string, catalogInstitutions: CatalogInstitution[]) {
   const userId = getSelectedUserId(snapshot);
   const requests = (snapshot?.requests || []).filter((request) => request.user_id === userId && request.is_active);
   if (!requests.length) return false;
-
   const kgById = new Map<string, CatalogInstitution>();
   catalogInstitutions.forEach((kg) => addInstitutionToMap(kgById, kg));
   (snapshot?.kindergartens || []).forEach((kg) => addInstitutionToMap(kgById, kg));
   const wantedByRequest = new Map((snapshot?.wantedKindergartens || []).map((wanted) => [wanted.request_id, wanted]));
-
   requests.forEach((request) => {
     const wanted = wantedByRequest.get(request.id);
     const from = findInstitution(kgById, request.from_kindergarten_id);
     const wantedKg = wanted ? findInstitution(kgById, wanted.wanted_kindergarten_id) : undefined;
-    upsertCard({
-      requestId: request.id,
-      fromText: from?.name || "Избрана градина",
-      wantedText: wantedKg?.name || "Желана градина",
-      ageGroup: request.child_group_year_or_age_group || "—",
-      placeType,
-      locked: request.is_locked
-    });
+    upsertCard({ requestId: request.id, fromText: from?.name || "Избрана градина", wantedText: wantedKg?.name || "Желана градина", ageGroup: request.child_group_year_or_age_group || "—", placeType, locked: request.is_locked });
   });
   return true;
 }
@@ -261,10 +180,10 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    #${ROOT_ID}{display:block}.mzm-request-form-card{border-radius:2.2rem;background:rgba(255,255,255,.92);padding:1rem;box-shadow:0 18px 48px rgba(40,34,20,.08);backdrop-filter:blur(10px)}
+    #${ROOT_ID}{display:block}.mzm-request-form-card{border-radius:2.2rem;background:rgba(255,255,255,.92);padding:1rem;box-shadow:0 18px 48px rgba(40,34,20,.08);backdrop-filter:blur(10px);overflow:hidden}.mzm-request-form-card *{box-sizing:border-box}
     .mzm-form-close{display:none;width:100%;border:0;border-radius:1.35rem;background:#fff;margin-bottom:.75rem;padding:.85rem 1rem;text-align:left;align-items:center;justify-content:space-between;gap:1rem;font-size:.78rem;font-weight:900;color:#1c1b19;box-shadow:0 10px 22px rgba(33,28,17,.04)}.mzm-form-close span{display:grid;place-items:center;width:1.9rem;height:1.9rem;border-radius:999px;background:#f7f5ef}.mzm-request-form-card.has-active-requests:not(.is-collapsed) .mzm-form-close{display:flex}
-    .mzm-form-inner{display:grid;gap:.72rem;border-radius:1.8rem;background:#f7f5ef;padding:1rem}.mzm-form-label{margin-top:.35rem;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:rgba(28,27,25,.42)}
-    .mzm-select-wrap{position:relative}.mzm-select{width:100%;appearance:none;border:0;outline:0;border-radius:1.35rem;background:rgba(255,255,255,.86);padding:1rem 3rem 1rem 1rem;font-size:.88rem;font-weight:800;color:#1c1b19}.mzm-select-wrap:after{content:'⌄';position:absolute;right:1.15rem;top:50%;transform:translateY(-54%);font-weight:900;color:rgba(28,27,25,.58);pointer-events:none}
+    .mzm-form-inner{display:grid;gap:.72rem;border-radius:1.8rem;background:#f7f5ef;padding:1rem;overflow:hidden}.mzm-form-label{margin-top:.35rem;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:rgba(28,27,25,.42)}
+    .mzm-select-wrap{position:relative;width:100%;min-width:0;overflow:hidden}.mzm-select{width:100%;appearance:none;border:0;outline:0;border-radius:1.35rem;background:rgba(255,255,255,.86);padding:1rem 3rem 1rem 1rem;font-size:.88rem;font-weight:800;color:#1c1b19}.mzm-select-wrap:after{content:'⌄';position:absolute;right:1.15rem;top:50%;transform:translateY(-54%);font-weight:900;color:rgba(28,27,25,.58);pointer-events:none}
     .mzm-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}.mzm-type-grid button{border:0;border-radius:1.05rem;padding:.85rem .75rem;background:rgba(255,255,255,.76);color:#1c1b19;text-align:left;font-weight:900;font-size:.75rem}.mzm-type-grid button.is-active{background:var(--study-orange,#ff5a14);color:white}
     .mzm-save-row{display:flex;gap:.65rem;align-items:center;border-radius:1.25rem;background:rgba(255,255,255,.66);padding:.85rem .9rem;color:rgba(28,27,25,.65);font-size:.76rem;font-weight:800}.mzm-save-row input{width:1rem;height:1rem;accent-color:var(--study-orange,#ff5a14)}
     .mzm-submit{margin-top:1rem;width:100%;border:0;border-radius:999px;background:var(--study-orange,#ff5a14);padding:1rem 1.25rem;color:white;font-weight:900;font-size:.9rem;box-shadow:0 16px 34px rgba(255,90,20,.24)}.mzm-submit:disabled{opacity:.42;background:#ffc0aa}.mzm-note{margin-top:.75rem;text-align:center;color:rgba(28,27,25,.45);font-size:.78rem;font-weight:700;line-height:1.45}.mzm-status{display:none!important}
@@ -282,50 +201,52 @@ async function mount() {
   injectStyles();
   const section = findRequestFormSection();
   if (!section || section.dataset.mzmRequestPolished === "true") return;
-
   const [catalog, snapshot] = await Promise.all([getJson<Catalog>("/api/catalog"), getJson<Snapshot>("/api/playground")]);
   const prefs = getPrefs();
   const institutions = sortItems(catalog?.institutions?.length ? catalog.institutions : snapshot?.kindergartens || []);
   const districts = catalog?.districts?.length ? catalog.districts : Array.from(new Set(institutions.map((i) => i.district).filter(Boolean) as string[]));
   const years = catalog?.years?.length ? catalog.years : currentYearOptions();
-
   section.dataset.mzmRequestPolished = "true";
   section.innerHTML = "";
   section.className = "mzm-request-form-card";
-
   const root = document.createElement("div"); root.id = ROOT_ID;
   const closeToggle = document.createElement("button"); closeToggle.type = "button"; closeToggle.className = "mzm-form-close"; closeToggle.innerHTML = `Активирай заявка <span>⌃</span>`; closeToggle.addEventListener("click", () => setFormMode(section, "collapsed"));
   const inner = document.createElement("div"); inner.className = "mzm-form-inner";
-
   const [districtWrap, districtSelect] = select("Избери район"); districts.forEach((d) => districtSelect.appendChild(option(d, d))); if (prefs.district && districts.includes(prefs.district)) districtSelect.value = prefs.district;
   const [yearWrap, yearSelect] = select("Избери набор / група"); years.forEach((y) => yearSelect.appendChild(option(y, y))); if (prefs.year && years.includes(prefs.year)) yearSelect.value = prefs.year;
-
   const typeGrid = document.createElement("div"); typeGrid.className = "mzm-type-grid"; let selectedType = prefs.placeType || PLACE_TYPES[0];
   function paintTypes() { typeGrid.querySelectorAll<HTMLButtonElement>("button").forEach((b) => b.classList.toggle("is-active", b.dataset.value === selectedType)); }
   PLACE_TYPES.forEach((type) => { const btn = document.createElement("button"); btn.type = "button"; btn.dataset.value = type; btn.textContent = type; btn.onclick = () => { selectedType = type; paintTypes(); maybeSave(); }; typeGrid.appendChild(btn); }); paintTypes();
-
   const saveRow = document.createElement("label"); saveRow.className = "mzm-save-row"; const save = document.createElement("input"); save.type = "checkbox"; save.checked = true; const saveText = document.createElement("span"); saveText.textContent = "Запази тези данни в профила ми"; saveRow.append(save, saveText);
   const [fromWrap, fromSelect] = select("Избери сегашна градина");
   const [wantedWrap, wantedSelect] = select("Избери желана градина");
   const status = document.createElement("div"); status.className = "mzm-status";
-
   function filtered() { return institutions.filter((item) => !districtSelect.value || item.district === districtSelect.value); }
   function fillSelect(target: HTMLSelectElement, placeholder: string, preferred?: string) {
-    target.innerHTML = ""; target.appendChild(option("", placeholder)); filtered().forEach((item) => target.appendChild(option(valueOf(item), labelOf(item))));
+    target.innerHTML = ""; target.appendChild(option("", placeholder));
+    const pool = target === wantedSelect && preferred ? institutions : filtered();
+    pool.forEach((item) => target.appendChild(option(valueOf(item), labelOf(item))));
     if (preferred && Array.from(target.options).some((o) => o.value === preferred)) target.value = preferred;
   }
   function rebuild(preferredFrom?: string, preferredWanted?: string) { fillSelect(fromSelect, "Избери сегашна градина", preferredFrom ?? fromSelect.value); fillSelect(wantedSelect, "Избери желана градина", preferredWanted ?? wantedSelect.value); maybeSave(); updateSubmit(); }
   function maybeSave() { if (save.checked) savePrefs({ district: districtSelect.value, year: yearSelect.value, placeType: selectedType, from: fromSelect.value, wanted: wantedSelect.value }); }
   function updateSubmit() { submit.disabled = !districtSelect.value || !yearSelect.value || !fromSelect.value || !wantedSelect.value || fromSelect.value === wantedSelect.value; }
-
+  function applyPrefs(next: Prefs, open = false) {
+    if (next.district && districts.includes(next.district)) districtSelect.value = next.district;
+    if (next.year && years.includes(next.year)) yearSelect.value = next.year;
+    if (next.placeType) { selectedType = next.placeType; paintTypes(); }
+    rebuild(next.from || fromSelect.value, next.wanted || wantedSelect.value);
+    fromSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    wantedSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    if (open || next.openRequest) forceOpenForm(section);
+  }
   inner.append(label("Район"), districtWrap, label("Набор / група"), yearWrap, label("Тип място"), typeGrid, saveRow, label("Сегашна градина"), fromWrap, label("Желана градина"), wantedWrap, status);
-
   const submit = document.createElement("button"); submit.type = "button"; submit.className = "mzm-submit"; submit.textContent = "Активирай заявка";
   const note = document.createElement("p"); note.className = "mzm-note"; note.textContent = "Заявката ще се скрие автоматично при потенциален цикъл.";
   const collapsed = document.createElement("div"); collapsed.className = "mzm-collapsed"; collapsed.innerHTML = `<button type="button" class="mzm-toggle-open"><div><p>Нова заявка</p><h3>Активирай заявка</h3></div><span>⌄</span></button>`; collapsed.querySelector("button")?.addEventListener("click", () => setFormMode(section, "expanded"));
-
   districtSelect.onchange = () => rebuild(); yearSelect.onchange = () => { maybeSave(); updateSubmit(); }; fromSelect.onchange = () => { maybeSave(); updateSubmit(); }; wantedSelect.onchange = () => { maybeSave(); updateSubmit(); }; save.onchange = maybeSave;
-
+  window.addEventListener("mzm:prefs-updated", ((event: Event) => { applyPrefs((event as CustomEvent<Prefs>).detail || getPrefs(), Boolean((event as CustomEvent<Prefs>).detail?.openRequest)); }) as EventListener);
+  window.addEventListener("mzm:open-request-form", () => forceOpenForm(section));
   submit.onclick = async () => {
     updateSubmit(); if (submit.disabled) return;
     const userId = getSelectedUserId(snapshot); if (!userId) return;
@@ -337,23 +258,12 @@ async function mount() {
     const data = await response.json().catch(() => null) as ApiSnapshot | null;
     if (!response.ok || !data || data.error) { submit.textContent = "Активирай заявка"; updateSubmit(); return; }
     const created = data.requests?.find((request) => request.user_id === userId && request.child_group_year_or_age_group === ageGroup);
-    savePrefs({ district: districtSelect.value, year: ageGroup, placeType: selectedType, from: fromSelect.value, wanted: wantedSelect.value });
+    savePrefs({ district: districtSelect.value, year: ageGroup, placeType: selectedType, from: fromSelect.value, wanted: wantedSelect.value, openRequest: false });
     upsertCard({ requestId: created?.id, fromText, wantedText, ageGroup, placeType: selectedType, locked: created?.is_locked });
     setFormMode(section, "collapsed"); submit.textContent = "Активирай заявка";
   };
-
   root.append(closeToggle, inner, submit, note, collapsed); section.appendChild(root); rebuild(prefs.from, prefs.wanted);
-  const hasExisting = hydrateExistingCards(snapshot, selectedType, institutions); setFormMode(section, hasExisting ? "collapsed" : "expanded"); placeShareAfterCarousel();
+  const hasExisting = hydrateExistingCards(snapshot, selectedType, institutions); setFormMode(section, hasExisting ? "collapsed" : "expanded"); if (prefs.openRequest) forceOpenForm(section); placeShareAfterCarousel();
 }
-
 function run() { void mount(); }
-
-export default function RequestFormHardReset() {
-  useEffect(() => {
-    run();
-    const observer = new MutationObserver(run);
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
-  return null;
-}
+export default function RequestFormHardReset() { useEffect(() => { run(); const observer = new MutationObserver(run); observer.observe(document.documentElement, { childList: true, subtree: true }); return () => observer.disconnect(); }, []); return null; }
