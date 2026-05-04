@@ -21,10 +21,35 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-function clickNav(label: string) {
+function normalize(value: string) {
+  return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function clickNav(targetTab: "requests" | "matches") {
   const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button"));
-  const target = buttons.find((button) => (button.textContent || "").includes(label));
+  const target = buttons.find((button) => {
+    const text = normalize(button.textContent || "");
+    if (targetTab === "requests") return text.includes("заявка");
+    return text.includes("match") || text.includes("съвпадение") || text.includes("съвпад");
+  });
   target?.click();
+}
+
+function bindClick(el: HTMLElement, target: "requests" | "matches") {
+  el.classList.add("mzm-stat-clickable");
+  el.setAttribute("role", "button");
+  el.setAttribute("tabindex", "0");
+  el.dataset.mzmStatTarget = target;
+  if (el.dataset.mzmClickBound === "true") return;
+  el.dataset.mzmClickBound = "true";
+  const handler = () => clickNav(target);
+  el.addEventListener("click", handler);
+  el.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handler();
+    }
+  });
 }
 
 function makeHomeStatsClickable() {
@@ -32,36 +57,23 @@ function makeHomeStatsClickable() {
   const headings = Array.from(document.querySelectorAll<HTMLElement>("h3"));
 
   headings.forEach((heading) => {
-    const text = (heading.textContent || "").replace(/\s+/g, " ").trim();
+    const text = normalize(heading.textContent || "");
     const card = heading.closest("div");
     if (!card || !(card instanceof HTMLElement)) return;
 
-    if (text === "Активна заявка" || text === "Активни заявки") {
-      card.classList.add("mzm-stat-clickable");
-      card.setAttribute("role", "button");
-      card.setAttribute("tabindex", "0");
-      card.dataset.mzmStatTarget = "requests";
+    if (text === "активна заявка" || text === "активни заявки" || text.includes("активна заявка")) {
+      bindClick(card, "requests");
     }
 
-    if (text === "Потенциални маршрута" || text === "Потенциални маршрути") {
-      card.classList.add("mzm-stat-clickable");
-      card.setAttribute("role", "button");
-      card.setAttribute("tabindex", "0");
-      card.dataset.mzmStatTarget = "matches";
+    if (text === "потенциални маршрута" || text === "потенциални маршрути" || text.includes("потенциални маршрут")) {
+      bindClick(card, "matches");
     }
   });
 
-  document.querySelectorAll<HTMLElement>("[data-mzm-stat-target]").forEach((card) => {
-    if (card.dataset.mzmClickBound === "true") return;
-    card.dataset.mzmClickBound = "true";
-    const handler = () => clickNav(card.dataset.mzmStatTarget === "matches" ? "Съвпадение" : "Заявка");
-    card.addEventListener("click", handler);
-    card.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        handler();
-      }
-    });
+  Array.from(document.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
+    const text = normalize(button.textContent || "");
+    if (text.includes("пусни заявка")) bindClick(button, "requests");
+    if (text.includes("виж всички")) bindClick(button, "matches");
   });
 }
 
