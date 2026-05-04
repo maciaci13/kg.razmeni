@@ -183,6 +183,25 @@ function restoreRequestFormAutoScroll() {
   delete proto.__mzmOriginalScrollIntoView;
 }
 
+function removeGlobalSafetyNotes() {
+  const needles = [
+    "Независима платформа за потенциални съвпадения",
+    "Не е официална услуга",
+    "не гарантира прием"
+  ];
+
+  Array.from(document.querySelectorAll<HTMLElement>("section, article, div")).forEach((node) => {
+    if (node.dataset.mzmSafetyRemoved === "true") return;
+    const text = (node.textContent || "").replace(/\s+/g, " ").trim();
+    if (!text || text.length > 260) return;
+    if (needles.some((needle) => text.includes(needle))) {
+      node.dataset.mzmSafetyRemoved = "true";
+      node.style.display = "none";
+      node.setAttribute("aria-hidden", "true");
+    }
+  });
+}
+
 type ElementPrototypeWithMzmPatch = typeof Element.prototype & {
   __mzmOriginalScrollIntoView?: Element["scrollIntoView"];
 };
@@ -191,11 +210,17 @@ export default function NavEmergencyFix() {
   useEffect(() => {
     injectStyles();
     disableRequestFormAutoScroll();
-    const t1 = window.setTimeout(injectStyles, 120);
-    const t2 = window.setTimeout(injectStyles, 600);
+    removeGlobalSafetyNotes();
+
+    const observer = new MutationObserver(removeGlobalSafetyNotes);
+    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+
+    const t1 = window.setTimeout(() => { injectStyles(); removeGlobalSafetyNotes(); }, 120);
+    const t2 = window.setTimeout(() => { injectStyles(); removeGlobalSafetyNotes(); }, 600);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
+      observer.disconnect();
       restoreRequestFormAutoScroll();
     };
   }, []);
