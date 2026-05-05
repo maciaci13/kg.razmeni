@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 const STYLE_ID = "mzm-final-mobile-ui-patch-style";
-const DESIRED_TOP_GAP = 18;
+const DESIRED_TOP_GAP = 16;
 
 function normalize(value: string | null | undefined) {
   return (value || "").replace(/\s+/g, " ").trim();
@@ -20,16 +20,22 @@ function injectStyles() {
   style.textContent = `
     main:has(nav.fixed.bottom-4) {
       padding-top: 10px !important;
-      padding-bottom: calc(5.35rem + env(safe-area-inset-bottom, 0px)) !important;
+      padding-bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     main:has(nav.fixed.bottom-4) > div {
       padding-top: 0 !important;
-      padding-bottom: calc(5.35rem + env(safe-area-inset-bottom, 0px)) !important;
+      padding-bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
-    .mzm-final-tab-shell {
+    .mzm-final-tab-shell,
+    .mzm-final-chat-shell {
       transition: margin-top .12s ease !important;
+      width: 100% !important;
+    }
+
+    .mzm-final-chat-shell {
+      display: block !important;
     }
 
     .mzm-final-chat-locked-hero {
@@ -198,11 +204,20 @@ function findTopBar() {
   }) || null;
 }
 
+function isActiveTab(label: string) {
+  return Boolean(Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button")).find((button) => {
+    const text = normalize(button.textContent);
+    const isActive = button.className.includes("bg-orange") || button.getAttribute("aria-current") === "page" || button.dataset.active === "true";
+    return isActive && text.includes(label);
+  }));
+}
+
 function findVisibleContentShell(topBar: HTMLElement) {
   const candidates = Array.from(document.querySelectorAll<HTMLElement>(".mx-auto.max-w-md, section, div"));
   const topBarBottom = topBar.getBoundingClientRect().bottom;
   return candidates.find((node) => {
     if (node === topBar || topBar.contains(node) || node.closest("nav.fixed.bottom-4")) return false;
+    if (node.classList.contains("mzm-final-chat-shell")) return true;
     const rect = node.getBoundingClientRect();
     if (rect.width < 220 || rect.height < 40) return false;
     if (rect.bottom <= topBarBottom) return false;
@@ -220,16 +235,37 @@ function findVisibleContentShell(topBar: HTMLElement) {
   }) || null;
 }
 
+function createChatShellAfterTopBar(topBar: HTMLElement) {
+  let shell = document.querySelector<HTMLElement>(".mzm-final-chat-shell");
+  if (shell) return shell;
+  shell = document.createElement("div");
+  shell.className = "mzm-final-chat-shell mx-auto max-w-md";
+  topBar.insertAdjacentElement("afterend", shell);
+  return shell;
+}
+
+function alignShell(topBar: HTMLElement, shell: HTMLElement) {
+  shell.classList.add("mzm-final-tab-shell");
+  setImportant(shell, "margin-top", "0px");
+  window.requestAnimationFrame(() => {
+    const currentTop = shell.getBoundingClientRect().top;
+    const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
+    const delta = Math.round(desiredTop - currentTop);
+    const clamped = Math.max(-340, Math.min(20, delta));
+    setImportant(shell, "margin-top", `${clamped}px`);
+  });
+}
+
 function alignContentBelowTopBar() {
   const main = getMain();
   if (!main) return;
   setImportant(main, "padding-top", "10px");
-  setImportant(main, "padding-bottom", "calc(5.35rem + env(safe-area-inset-bottom, 0px))");
+  setImportant(main, "padding-bottom", "calc(4.85rem + env(safe-area-inset-bottom, 0px))");
 
   const direct = main.firstElementChild;
   if (direct instanceof HTMLElement) {
     setImportant(direct, "padding-top", "0");
-    setImportant(direct, "padding-bottom", "calc(5.35rem + env(safe-area-inset-bottom, 0px))");
+    setImportant(direct, "padding-bottom", "calc(4.85rem + env(safe-area-inset-bottom, 0px))");
   }
 
   const topBar = findTopBar();
@@ -237,19 +273,9 @@ function alignContentBelowTopBar() {
   setImportant(topBar, "margin-bottom", "0");
   setImportant(topBar, "padding-top", "0");
 
-  const shell = findVisibleContentShell(topBar);
+  const shell = isActiveTab("Чат") ? createChatShellAfterTopBar(topBar) : findVisibleContentShell(topBar);
   if (!shell) return;
-
-  shell.classList.add("mzm-final-tab-shell");
-  setImportant(shell, "margin-top", "0px");
-
-  window.requestAnimationFrame(() => {
-    const currentTop = shell.getBoundingClientRect().top;
-    const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
-    const delta = Math.round(desiredTop - currentTop);
-    const clamped = Math.max(-180, Math.min(20, delta));
-    setImportant(shell, "margin-top", `${clamped}px`);
-  });
+  alignShell(topBar, shell);
 }
 
 function findHeroSection() {
@@ -322,23 +348,16 @@ function patchHeroActions() {
 }
 
 function patchChatLockedHero() {
-  const activeChat = Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button")).find((button) => {
-    const text = normalize(button.textContent);
-    const isActive = button.className.includes("bg-orange") || button.getAttribute("aria-current") === "page" || button.dataset.active === "true";
-    return isActive && text.includes("Чат");
-  });
-  if (!activeChat) return;
+  if (!isActiveTab("Чат")) return;
 
   const existingUnlocked = Array.from(document.querySelectorAll<HTMLElement>("textarea, [data-chat-active='true']")).length > 0;
   if (existingUnlocked) return;
 
-  const already = document.querySelector<HTMLElement>(".mzm-final-chat-locked-hero");
-  if (already) return;
-
   const topBar = findTopBar();
-  const shell = topBar ? findVisibleContentShell(topBar) : null;
-  if (!shell) return;
+  if (!topBar) return;
+  const shell = createChatShellAfterTopBar(topBar);
 
+  if (shell.querySelector(".mzm-final-chat-locked-hero")) return;
   shell.innerHTML = `
     <section class="mzm-final-chat-locked-hero">
       <p class="mzm-final-chat-kicker">Чатове</p>
@@ -348,6 +367,7 @@ function patchChatLockedHero() {
     </section>
   `;
   shell.querySelector<HTMLButtonElement>(".mzm-final-chat-share-button")?.addEventListener("click", openMatches);
+  alignShell(topBar, shell);
 }
 
 function patchMatchesEmptyOrder() {
