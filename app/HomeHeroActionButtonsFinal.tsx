@@ -3,13 +3,18 @@
 import { useEffect } from "react";
 
 const STYLE_ID = "mzm-home-hero-action-buttons-final-style";
+const ORANGE = "var(--study-orange,#f95e08)";
 
 function normalize(value: string | null | undefined) {
   return (value || "").replace(/\s+/g, " ").trim();
 }
 
+function important(el: HTMLElement, prop: string, value: string) {
+  el.style.setProperty(prop, value, "important");
+}
+
 function injectStyles() {
-  if (document.getElementById(STYLE_ID)) return;
+  document.getElementById(STYLE_ID)?.remove();
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
@@ -94,6 +99,8 @@ function injectStyles() {
       text-align: center !important;
       white-space: normal !important;
       box-sizing: border-box !important;
+      color: rgba(28,27,25,.76) !important;
+      font-weight: 900 !important;
     }
 
     .mzm-hero-request-real span,
@@ -129,13 +136,54 @@ function openRadar(event?: Event) {
   window.dispatchEvent(new CustomEvent("mzm:open-radar"));
 }
 
-function makeRadarButton() {
-  const button = document.createElement("button");
+function forceRadarButtonStyle(button: HTMLButtonElement) {
   button.type = "button";
   button.className = "mzm-hero-radar-real";
   button.dataset.mzmRealRadarButton = "true";
   button.setAttribute("aria-label", "Отвори радар за шанс");
+  button.tabIndex = 0;
+  button.onclick = (event) => openRadar(event);
   button.innerHTML = `${targetIconSvg()}<span>Радар за шанс</span>`;
+
+  important(button, "display", "inline-flex");
+  important(button, "align-items", "center");
+  important(button, "justify-content", "center");
+  important(button, "gap", ".56rem");
+  important(button, "width", "100%");
+  important(button, "height", "3.35rem");
+  important(button, "padding", "0 .95rem");
+  important(button, "border", "0");
+  important(button, "border-radius", "999px");
+  important(button, "background", ORANGE);
+  important(button, "color", "#fff");
+  important(button, "font-weight", "900");
+  important(button, "box-shadow", "0 16px 34px rgba(249,94,8,.28), inset 0 0 0 1px rgba(255,255,255,.18)");
+
+  button.querySelectorAll<HTMLElement>("*").forEach((child) => {
+    important(child, "color", "#fff");
+    important(child, "stroke", "#fff");
+  });
+}
+
+function forceRequestButtonStyle(button: HTMLButtonElement) {
+  button.classList.add("mzm-hero-request-real");
+  button.classList.remove("mzm-hero-action-hidden-force");
+  button.removeAttribute("aria-hidden");
+  button.tabIndex = 0;
+  important(button, "color", "rgba(28,27,25,.76)");
+  important(button, "font-weight", "900");
+  important(button, "height", "3.35rem");
+  important(button, "justify-content", "center");
+  important(button, "text-align", "center");
+  button.querySelectorAll<HTMLElement>("span, strong").forEach((child) => {
+    if (normalize(child.textContent) === "›") important(child, "color", ORANGE);
+    else important(child, "color", "rgba(28,27,25,.76)");
+  });
+}
+
+function makeRadarButton() {
+  const button = document.createElement("button");
+  forceRadarButtonStyle(button);
   button.addEventListener("click", openRadar);
   return button;
 }
@@ -149,16 +197,40 @@ function findActionsRow(hero: HTMLElement, requestButton: HTMLButtonElement) {
   while (node && node !== hero) {
     const text = normalize(node.textContent);
     const buttons = Array.from(node.querySelectorAll<HTMLButtonElement>("button"));
-    if (text.includes("Пусни заявка") && buttons.length >= 2) return node;
+    if (text.includes("Пусни заявка") && buttons.length >= 1) return node;
     node = node.parentElement;
   }
   return requestButton.parentElement as HTMLElement | null;
+}
+
+function hideMapButtons(hero: HTMLElement) {
+  Array.from(hero.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
+    const text = normalize(button.textContent);
+    if (text === "⌖" || text.includes("карта")) {
+      button.className = "mzm-hero-action-hidden-force";
+      button.setAttribute("aria-hidden", "true");
+      button.tabIndex = -1;
+      important(button, "display", "none");
+    }
+  });
+}
+
+function polishExistingRadarButtons(hero: HTMLElement) {
+  Array.from(hero.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
+    const text = normalize(button.textContent);
+    if (button.dataset.mzmRealRadarButton === "true" || text.includes("Радар за шанс") || text === "⌕") {
+      forceRadarButtonStyle(button);
+    }
+  });
 }
 
 function polishHeroActions() {
   injectStyles();
   const hero = findHeroSection();
   if (!hero) return;
+
+  hideMapButtons(hero);
+  polishExistingRadarButtons(hero);
 
   const requestButton = Array.from(hero.querySelectorAll<HTMLButtonElement>("button")).find(isRequestButton);
   if (!requestButton) return;
@@ -167,21 +239,15 @@ function polishHeroActions() {
   if (!row) return;
 
   let radarButton = row.querySelector<HTMLButtonElement>("[data-mzm-real-radar-button='true']");
-  if (!radarButton) radarButton = makeRadarButton();
+  if (!radarButton) {
+    radarButton = Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((button) => {
+      const text = normalize(button.textContent);
+      return text.includes("Радар") || text === "⌕";
+    }) || makeRadarButton();
+  }
 
-  radarButton.type = "button";
-  radarButton.dataset.mzmRealRadarButton = "true";
-  radarButton.className = "mzm-hero-radar-real";
-  radarButton.removeAttribute("aria-hidden");
-  radarButton.tabIndex = 0;
-  radarButton.setAttribute("aria-label", "Отвори радар за шанс");
-  radarButton.onclick = (event) => openRadar(event);
-  radarButton.innerHTML = `${targetIconSvg()}<span>Радар за шанс</span>`;
-
-  requestButton.classList.add("mzm-hero-request-real");
-  requestButton.classList.remove("mzm-hero-action-hidden-force");
-  requestButton.removeAttribute("aria-hidden");
-  requestButton.tabIndex = 0;
+  forceRadarButtonStyle(radarButton);
+  forceRequestButtonStyle(requestButton);
 
   const nextRow = document.createElement("div");
   nextRow.className = "mzm-hero-actions-final mzm-hero-search-row";
@@ -219,10 +285,14 @@ export default function HomeHeroActionButtonsFinal() {
     const observer = new MutationObserver(schedule);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
     const interval = window.setInterval(schedule, 180);
+    const late1 = window.setTimeout(schedule, 900);
+    const late2 = window.setTimeout(schedule, 1800);
 
     return () => {
       observer.disconnect();
       window.clearInterval(interval);
+      window.clearTimeout(late1);
+      window.clearTimeout(late2);
     };
   }, []);
 
