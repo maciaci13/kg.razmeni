@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 
 const STYLE_ID = "mzm-home-stat-links-style";
-const RADAR_BUTTON_ID = "mzm-home-radar-button";
 
 function injectStyles() {
   if (document.getElementById(STYLE_ID)) return;
@@ -18,54 +17,18 @@ function injectStyles() {
     .mzm-stat-clickable:active {
       transform: scale(.985);
     }
-    #${RADAR_BUTTON_ID} {
-      width: 100%;
-      border: 0;
-      border-radius: 1.8rem;
-      background: linear-gradient(135deg, #1c1b19 0%, #2c2924 100%);
-      color: #fff;
-      padding: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: .9rem;
-      box-shadow: 0 18px 44px rgba(28,27,25,.16);
-      -webkit-tap-highlight-color: transparent;
+    .mzm-map-action-hidden {
+      display: none !important;
     }
-    #${RADAR_BUTTON_ID} .mzm-radar-copy {
-      min-width: 0;
-      text-align: left;
+    .mzm-home-radar-action {
+      background: var(--study-orange,#f95e08) !important;
+      color: #fff !important;
+      box-shadow: 0 14px 30px rgba(249,94,8,.28) !important;
     }
-    #${RADAR_BUTTON_ID} .mzm-radar-kicker {
-      display: block;
-      font-size: .62rem;
-      line-height: 1;
-      font-weight: 900;
-      letter-spacing: .22em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,.48);
-    }
-    #${RADAR_BUTTON_ID} .mzm-radar-title {
-      display: block;
-      margin-top: .42rem;
-      font-size: 1rem;
-      line-height: 1.08;
-      font-weight: 900;
-      letter-spacing: -.045em;
-      color: #fff;
-    }
-    #${RADAR_BUTTON_ID} .mzm-radar-icon {
-      flex: 0 0 auto;
-      width: 3.05rem;
-      height: 3.05rem;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      background: var(--study-orange,#f95e08);
-      color: #fff;
-      font-size: 1.35rem;
-      font-weight: 900;
-      box-shadow: 0 12px 26px rgba(249,94,8,.28);
+    .mzm-home-radar-action span,
+    .mzm-home-radar-action svg {
+      color: #fff !important;
+      stroke: #fff !important;
     }
   `;
   document.head.appendChild(style);
@@ -116,20 +79,41 @@ function findHomeHero() {
   return heading?.closest("section") as HTMLElement | null;
 }
 
-function injectRadarButton() {
+function polishHeroRadarActions() {
+  document.getElementById("mzm-home-radar-button")?.remove();
+
   const hero = findHomeHero();
-  if (!hero || document.getElementById(RADAR_BUTTON_ID)) return;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.id = RADAR_BUTTON_ID;
-  button.innerHTML = `<span class="mzm-radar-copy"><span class="mzm-radar-kicker">Радар за шанс</span><span class="mzm-radar-title">Виж къде има движение около теб</span></span><span class="mzm-radar-icon">✦</span>`;
-  button.addEventListener("click", openRadar);
-  hero.insertAdjacentElement("afterend", button);
+  if (!hero) return;
+
+  const heroButtons = Array.from(hero.querySelectorAll<HTMLButtonElement>("button"));
+  heroButtons.forEach((button) => {
+    const text = normalize(button.textContent || "");
+
+    if (text === "⌖" || text.includes("карта")) {
+      button.classList.add("mzm-map-action-hidden");
+      button.setAttribute("aria-hidden", "true");
+      button.tabIndex = -1;
+      return;
+    }
+
+    if (text === "⌕" || text.includes("радар")) {
+      button.classList.add("mzm-home-radar-action", "mzm-stat-clickable");
+      button.setAttribute("aria-label", "Радар за шанс");
+      if (button.dataset.mzmRadarClickBound !== "true") {
+        button.dataset.mzmRadarClickBound = "true";
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openRadar();
+        });
+      }
+    }
+  });
 }
 
 function makeHomeStatsClickable() {
   injectStyles();
-  injectRadarButton();
+  polishHeroRadarActions();
   const headings = Array.from(document.querySelectorAll<HTMLElement>("h3"));
 
   headings.forEach((heading) => {
@@ -153,8 +137,8 @@ function makeHomeStatsClickable() {
   });
 
   Array.from(document.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
+    if (button.closest("nav.fixed.bottom-4")) return;
     const text = normalize(button.textContent || "");
-    if (button.id === RADAR_BUTTON_ID) return;
     if (text.includes("пусни заявка")) bindClick(button, "requests");
     if (text.includes("виж всички") || text.includes("съвпад")) bindClick(button, "matches");
   });
