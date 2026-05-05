@@ -18,7 +18,7 @@ function injectStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     main:has(nav.fixed.bottom-4) {
-      padding-top: 0 !important;
+      padding-top: 30px !important;
     }
 
     main:has(nav.fixed.bottom-4) > div {
@@ -26,13 +26,7 @@ function injectStyles() {
     }
 
     .mzm-final-content-pulled-up {
-      margin-top: -6.75rem !important;
-    }
-
-    @media (max-height: 760px) {
-      .mzm-final-content-pulled-up {
-        margin-top: -5.75rem !important;
-      }
+      margin-top: 0 !important;
     }
 
     .mzm-final-hero-actions {
@@ -190,20 +184,20 @@ function findTopBar() {
 function reduceTopSpace() {
   const main = document.querySelector<HTMLElement>("main");
   if (!main) return;
-  setImportant(main, "padding-top", "0");
+  setImportant(main, "padding-top", "30px");
 
   const wrapper = main.firstElementChild;
   if (wrapper instanceof HTMLElement) setImportant(wrapper, "padding-top", "0");
 
   const topBar = findTopBar();
   if (!topBar) return;
-  setImportant(topBar, "margin-bottom", "0");
+  setImportant(topBar, "margin-bottom", ".75rem");
   setImportant(topBar, "padding-top", "0");
 
   const content = topBar.nextElementSibling;
   if (content instanceof HTMLElement) {
-    content.classList.add("mzm-final-content-pulled-up");
-    setImportant(content, "margin-top", "-6.75rem");
+    content.classList.remove("mzm-final-content-pulled-up");
+    setImportant(content, "margin-top", "0");
   }
 }
 
