@@ -280,8 +280,24 @@ function placeShareCards() {
   });
 }
 
+function bindShareOpeners() {
+  if (document.documentElement.dataset.mzmShareOpenersBound === "true") return;
+  document.documentElement.dataset.mzmShareOpenersBound = "true";
+
+  window.addEventListener("mzm:open-share-popup", openSharePopup);
+  document.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement | null;
+    const opener = target?.closest<HTMLElement>("[data-mzm-open-share]");
+    if (!opener) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openSharePopup();
+  });
+}
+
 export default function ShareRequestEnhancer() {
   useEffect(() => {
+    bindShareOpeners();
     let scheduled = false;
 
     const schedule = () => {
