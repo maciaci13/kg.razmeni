@@ -38,31 +38,17 @@ function injectStyles() {
       display: block !important;
     }
 
-    .mzm-final-chat-locked-hero {
-      position: relative !important;
-      overflow: hidden !important;
-      border-radius: 2rem !important;
-      background: linear-gradient(145deg, rgba(255,240,227,.98), rgba(255,255,255,.94)) !important;
-      padding: 1.35rem !important;
-      box-shadow: 0 18px 48px rgba(28,27,25,.08) !important;
+    .mzm-final-chat-locked-shell {
+      display: grid !important;
+      gap: 1rem !important;
     }
 
-    .mzm-final-chat-locked-hero::after {
-      content: "" !important;
-      position: absolute !important;
-      right: -2.7rem !important;
-      top: -2.5rem !important;
-      width: 9.6rem !important;
-      height: 9.6rem !important;
-      border-radius: 999px !important;
-      background: rgba(217,231,203,.82) !important;
-      pointer-events: none !important;
+    .mzm-final-chat-title {
+      margin: 0 !important;
     }
 
     .mzm-final-chat-kicker {
-      position: relative !important;
-      z-index: 1 !important;
-      margin: 0 0 .65rem !important;
+      margin: 0 0 .7rem !important;
       color: var(--study-orange,#f95e08) !important;
       font-size: .72rem !important;
       font-weight: 900 !important;
@@ -70,46 +56,21 @@ function injectStyles() {
       text-transform: uppercase !important;
     }
 
-    .mzm-final-chat-locked-hero h1 {
-      position: relative !important;
-      z-index: 1 !important;
+    .mzm-final-chat-title h1 {
       margin: 0 !important;
-      max-width: 19rem !important;
       color: #1c1b19 !important;
-      font-size: clamp(2.25rem, 10vw, 3.35rem) !important;
-      line-height: .93 !important;
+      font-size: clamp(2.55rem, 12vw, 3.8rem) !important;
+      line-height: .92 !important;
       font-weight: 900 !important;
-      letter-spacing: -.07em !important;
+      letter-spacing: -.075em !important;
     }
 
-    .mzm-final-chat-locked-hero p:not(.mzm-final-chat-kicker) {
-      position: relative !important;
-      z-index: 1 !important;
-      margin: .95rem 0 0 !important;
-      max-width: 21rem !important;
+    .mzm-final-chat-title p:not(.mzm-final-chat-kicker) {
+      margin: 1rem 0 0 !important;
       color: rgba(28,27,25,.58) !important;
-      font-size: .95rem !important;
-      line-height: 1.45 !important;
+      font-size: 1rem !important;
+      line-height: 1.48 !important;
       font-weight: 750 !important;
-    }
-
-    .mzm-final-chat-share-button {
-      position: relative !important;
-      z-index: 1 !important;
-      margin-top: 1rem !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: .5rem !important;
-      width: 100% !important;
-      min-height: 3.35rem !important;
-      border: 0 !important;
-      border-radius: 999px !important;
-      background: var(--study-orange,#f95e08) !important;
-      color: #fff !important;
-      font-size: .9rem !important;
-      font-weight: 900 !important;
-      box-shadow: 0 16px 34px rgba(249,94,8,.24) !important;
     }
 
     .mzm-final-hero-actions {
@@ -298,13 +259,6 @@ function openRequests(event?: Event) {
   navButton?.click();
 }
 
-function openMatches(event?: Event) {
-  event?.preventDefault();
-  event?.stopPropagation();
-  const navButton = Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button")).find((button) => normalize(button.textContent).includes("Съвпадение") || normalize(button.textContent).includes("Match"));
-  navButton?.click();
-}
-
 function makeRadarButton() {
   const button = document.createElement("button");
   button.type = "button";
@@ -357,16 +311,25 @@ function patchChatLockedHero() {
   if (!topBar) return;
   const shell = createChatShellAfterTopBar(topBar);
 
-  if (shell.querySelector(".mzm-final-chat-locked-hero")) return;
   shell.innerHTML = `
-    <section class="mzm-final-chat-locked-hero">
-      <p class="mzm-final-chat-kicker">Чатове</p>
-      <h1>Още са заключени</h1>
-      <p>Чатовете се отключват само когато всички родители в потенциалния цикъл потвърдят интерес.</p>
-      <button type="button" class="mzm-final-chat-share-button">Увеличи шанса за съвпадение <span>›</span></button>
-    </section>
+    <div class="mzm-final-chat-locked-shell">
+      <section class="mzm-final-chat-title">
+        <p class="mzm-final-chat-kicker">Чатове</p>
+        <h1>Още са заключени</h1>
+        <p>Чатовете се отключват само когато всички родители в потенциалния цикъл потвърдят интерес.</p>
+      </section>
+      <article class="mzm-safe-share-card" data-mzm-share-card="true">
+        <button type="button" class="mzm-safe-share-cta" data-mzm-open-share>
+          <span class="mzm-safe-share-cta__icon">↗</span>
+          <span class="mzm-safe-share-cta__content">
+            <small>По-бързо съвпадение</small>
+            <strong>Увеличи шанса за съвпадение</strong>
+          </span>
+          <span class="mzm-safe-share-cta__arrow">›</span>
+        </button>
+      </article>
+    </div>
   `;
-  shell.querySelector<HTMLButtonElement>(".mzm-final-chat-share-button")?.addEventListener("click", openMatches);
   alignShell(topBar, shell);
 }
 
