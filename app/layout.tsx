@@ -15,6 +15,7 @@ import MobileChromePolish from "./MobileChromePolish";
 import NavEmergencyFix from "./NavEmergencyFix";
 import PlaygroundRandomToolsSafe from "./PlaygroundRandomToolsSafe";
 import ProfileOnboarding from "./ProfileOnboarding";
+import ProfileSubscreensEnhancer from "./ProfileSubscreensEnhancer";
 import RadarProfileDefaultsFix from "./RadarProfileDefaultsFix";
 import RadarUiPolish from "./RadarUiPolish";
 import RequestFormHardReset from "./RequestFormHardReset";
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <TextCopyNormalizer />
         <NavEmergencyFix />
         <FinalMobileUiPatch />
+        <ProfileSubscreensEnhancer />
         <AppStabilityGuard />
       </body>
     </html>
