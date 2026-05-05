@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sofia_Sans } from "next/font/google";
+import FinalMobileUiPatch from "./FinalMobileUiPatch";
 import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
 import HomeHeroActionButtonsFinal from "./HomeHeroActionButtonsFinal";
 import HomeHeroAndRadarFix from "./HomeHeroAndRadarFix";
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <StatusDropdownCleanup />
         <TextCopyNormalizer />
         <NavEmergencyFix />
+        <FinalMobileUiPatch />
       </body>
     </html>
   );
