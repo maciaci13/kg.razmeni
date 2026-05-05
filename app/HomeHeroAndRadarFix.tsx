@@ -35,7 +35,11 @@ function injectStyles() {
     .mzm-hero-hidden-subcopy{display:none!important}
     .mzm-hero-map-action-hidden{display:none!important}
     .mzm-hero-radar-action{background:var(--study-orange,#f95e08)!important;color:#fff!important;box-shadow:0 14px 30px rgba(249,94,8,.28)!important}
-    .mzm-hero-radar-action *{color:#fff!important;stroke:#fff!important}
+    .mzm-hero-radar-action *{color:#fff!important;stroke:#fff!important;background:transparent!important}
+    .mzm-hero-radar-action span:first-child{background:rgba(255,255,255,.18)!important;color:#fff!important}
+    .mzm-hero-request-action{color:rgba(28,27,25,.72)!important;font-weight:900!important}
+    .mzm-hero-request-action *{color:rgba(28,27,25,.72)!important}
+    .mzm-hero-request-action span{color:var(--study-orange,#f95e08)!important}
     .mzm-radar-fixed-backdrop{position:fixed;inset:0;z-index:10020;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(28,27,25,.34);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.mzm-radar-fixed{width:min(100%,30rem);max-height:calc(100dvh - 2rem);overflow:auto;border-radius:2.2rem;background:#fffcfa;color:#1c1b19;box-shadow:0 28px 90px rgba(28,27,25,.24)}.mzm-radar-fixed-head{position:relative;overflow:hidden;padding:1.2rem;border-radius:2.2rem 2.2rem 0 0;background:linear-gradient(145deg,rgba(255,240,227,.98),rgba(255,255,255,.94))}.mzm-radar-fixed-head:after{content:"";position:absolute;right:-2.8rem;top:-2.6rem;width:10rem;height:10rem;border-radius:999px;background:rgba(217,231,203,.85);opacity:.8}.mzm-radar-fixed-top{position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.mzm-radar-fixed-k{margin:0 0 .45rem;font-size:.68rem;font-weight:900;letter-spacing:.22em;text-transform:uppercase;color:var(--study-orange,#f95e08)}.mzm-radar-fixed h2{margin:0;font-size:2rem;line-height:.95;font-weight:900;letter-spacing:-.065em}.mzm-radar-fixed-intro{position:relative;z-index:2;max-width:21rem;margin:.8rem 0 0;font-size:.88rem;line-height:1.45;font-weight:750;color:rgba(28,27,25,.58)}.mzm-radar-fixed-close{position:relative;z-index:3;display:grid;place-items:center;width:2.8rem;height:2.8rem;border:0;border-radius:999px;background:rgba(255,255,255,.86);color:#1c1b19;font-size:1.35rem;font-weight:900}.mzm-radar-fixed-body{padding:1rem;display:grid;gap:.85rem}.mzm-radar-fixed-loading{min-height:14rem;display:grid;place-items:center;border-radius:1.65rem;background:#f7f5ef}.mzm-radar-fixed-loading-word{margin:0;font-size:clamp(2rem,9vw,3.4rem);line-height:.95;font-weight:900;letter-spacing:.035em;text-transform:uppercase;background:linear-gradient(100deg,rgba(28,27,25,.22) 0%,rgba(28,27,25,.22) 34%,rgba(255,255,255,.96) 45%,rgba(249,94,8,.9) 50%,rgba(255,255,255,.96) 55%,rgba(28,27,25,.22) 66%,rgba(28,27,25,.22) 100%);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:mzmRadarFixedSweep 1.65s cubic-bezier(.4,0,.2,1) infinite}@keyframes mzmRadarFixedSweep{0%{background-position:140% 0}100%{background-position:-140% 0}}
     .mzm-radar-fixed-filters{display:flex;gap:.5rem;overflow-x:auto;padding-bottom:.1rem}.mzm-radar-fixed-filter{flex:0 0 auto;border:0;border-radius:999px;background:#f7f5ef;padding:.72rem .95rem;color:rgba(28,27,25,.58);font-size:.75rem;font-weight:900;white-space:nowrap}.mzm-radar-fixed-filter.is-active{background:var(--study-orange,#f95e08);color:#fff}
     .mzm-radar-fixed-search{display:flex;align-items:center;gap:.55rem;border-radius:1.35rem;background:#f7f5ef;padding:.72rem .86rem;box-shadow:inset 0 0 0 1px rgba(28,27,25,.025)}.mzm-radar-fixed-search span{flex:0 0 auto;color:rgba(28,27,25,.42);font-size:1rem;font-weight:900}.mzm-radar-fixed-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#1c1b19;font:inherit;font-size:.86rem;font-weight:850;letter-spacing:-.025em}.mzm-radar-fixed-search input::placeholder{color:rgba(28,27,25,.38);opacity:1}.mzm-radar-fixed-count{margin:-.35rem 0 0;font-size:.68rem;line-height:1.25;font-weight:800;color:rgba(28,27,25,.42)}
@@ -73,6 +77,10 @@ function polishHeroActions(hero: HTMLElement) {
           void openRadar();
         });
       }
+      return;
+    }
+    if (text.includes("пусни заявка")) {
+      button.classList.add("mzm-hero-request-action");
     }
   });
 }
