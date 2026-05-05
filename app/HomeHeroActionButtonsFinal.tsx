@@ -13,6 +13,17 @@ function important(el: HTMLElement, prop: string, value: string) {
   el.style.setProperty(prop, value, "important");
 }
 
+function isShareArea(el: HTMLElement | null) {
+  return Boolean(
+    el?.closest("[data-mzm-open-share]") ||
+    el?.closest("[data-mzm-share-card='true']") ||
+    el?.closest("[data-mzm-share-popup='true']") ||
+    el?.closest(".mzm-safe-share-card") ||
+    el?.closest(".mzm-safe-share-cta") ||
+    el?.closest(".mzm-share-popup")
+  );
+}
+
 function injectStyles() {
   document.getElementById(STYLE_ID)?.remove();
   const style = document.createElement("style");
@@ -131,6 +142,7 @@ function targetIconSvg() {
 }
 
 function openRadar(event?: Event) {
+  if (event?.target instanceof HTMLElement && isShareArea(event.target)) return;
   event?.preventDefault();
   event?.stopPropagation();
   window.dispatchEvent(new CustomEvent("mzm:open-radar"));
@@ -260,8 +272,9 @@ function bindGlobalRadarFallback() {
   document.documentElement.dataset.mzmRadarFallbackBound = "true";
   document.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
+    if (isShareArea(target)) return;
     const button = target?.closest<HTMLButtonElement>("button");
-    if (!button) return;
+    if (!button || isShareArea(button)) return;
     if (button.dataset.mzmRealRadarButton === "true" || normalize(button.textContent).includes("Радар за шанс")) {
       openRadar(event);
     }
