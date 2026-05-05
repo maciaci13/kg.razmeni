@@ -38,6 +38,17 @@ function normalize(value: string) {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+function isShareElement(el: HTMLElement) {
+  return Boolean(
+    el.closest("[data-mzm-open-share]") ||
+    el.closest("[data-mzm-share-card='true']") ||
+    el.closest("[data-mzm-share-popup='true']") ||
+    el.classList.contains("mzm-safe-share-cta") ||
+    el.classList.contains("mzm-share-popup__share") ||
+    el.classList.contains("mzm-final-chat-share-button")
+  );
+}
+
 function openRadar() {
   window.dispatchEvent(new CustomEvent("mzm:open-radar"));
 }
@@ -54,13 +65,17 @@ function clickNav(targetTab: "requests" | "matches") {
 }
 
 function bindClick(el: HTMLElement, target: "requests" | "matches") {
+  if (isShareElement(el)) return;
   el.classList.add("mzm-stat-clickable");
   el.setAttribute("role", "button");
   el.setAttribute("tabindex", "0");
   el.dataset.mzmStatTarget = target;
   if (el.dataset.mzmClickBound === "true") return;
   el.dataset.mzmClickBound = "true";
-  const handler = () => clickNav(target);
+  const handler = () => {
+    if (isShareElement(el)) return;
+    clickNav(target);
+  };
   el.addEventListener("click", handler);
   el.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -117,9 +132,10 @@ function makeHomeStatsClickable() {
   const headings = Array.from(document.querySelectorAll<HTMLElement>("h3"));
 
   headings.forEach((heading) => {
+    if (isShareElement(heading)) return;
     const text = normalize(heading.textContent || "");
     const card = heading.closest("div");
-    if (!card || !(card instanceof HTMLElement)) return;
+    if (!card || !(card instanceof HTMLElement) || isShareElement(card)) return;
 
     if (text === "активна заявка" || text === "активни заявки" || text.includes("активна заявка")) {
       bindClick(card, "requests");
@@ -138,9 +154,14 @@ function makeHomeStatsClickable() {
 
   Array.from(document.querySelectorAll<HTMLButtonElement>("button")).forEach((button) => {
     if (button.closest("nav.fixed.bottom-4")) return;
+    if (isShareElement(button)) {
+      button.classList.remove("mzm-stat-clickable");
+      delete button.dataset.mzmStatTarget;
+      return;
+    }
     const text = normalize(button.textContent || "");
     if (text.includes("пусни заявка")) bindClick(button, "requests");
-    if (text.includes("виж всички") || text.includes("съвпад")) bindClick(button, "matches");
+    if (text.includes("виж всички") || text === "съвпадения" || text === "съвпадение") bindClick(button, "matches");
   });
 }
 
