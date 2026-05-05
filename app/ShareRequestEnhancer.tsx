@@ -29,6 +29,7 @@ function closeSharePopup() {
 }
 
 function openSharePopup() {
+  document.querySelector("#mzm-radar-fixed-modal")?.remove();
   closeSharePopup();
 
   const overlay = document.createElement("div");
@@ -51,11 +52,18 @@ function openSharePopup() {
   `;
 
   overlay.addEventListener("click", (event) => {
+    event.stopPropagation();
     if (event.target === overlay) closeSharePopup();
-  });
+  }, true);
 
-  overlay.querySelector<HTMLButtonElement>(".mzm-share-popup__close")?.addEventListener("click", closeSharePopup);
-  overlay.querySelector<HTMLButtonElement>(".mzm-share-popup__share")?.addEventListener("click", () => {
+  overlay.querySelector<HTMLButtonElement>(".mzm-share-popup__close")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeSharePopup();
+  });
+  overlay.querySelector<HTMLButtonElement>(".mzm-share-popup__share")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     nativeShare().catch(() => undefined);
   });
 
@@ -79,7 +87,11 @@ function createShareCard() {
     </button>
   `;
 
-  card.querySelector<HTMLButtonElement>("[data-mzm-open-share]")?.addEventListener("click", openSharePopup);
+  card.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openSharePopup();
+  }, true);
 
   return card;
 }
@@ -155,7 +167,7 @@ function injectStyles() {
     .mzm-share-popup {
       position: fixed;
       inset: 0;
-      z-index: 9999;
+      z-index: 11000;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -287,12 +299,13 @@ function bindShareOpeners() {
   window.addEventListener("mzm:open-share-popup", openSharePopup);
   document.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
-    const opener = target?.closest<HTMLElement>("[data-mzm-open-share]");
+    const opener = target?.closest<HTMLElement>("[data-mzm-open-share], [data-mzm-share-card='true'], .mzm-safe-share-cta");
     if (!opener) return;
     event.preventDefault();
     event.stopPropagation();
+    event.stopImmediatePropagation();
     openSharePopup();
-  });
+  }, true);
 }
 
 export default function ShareRequestEnhancer() {
