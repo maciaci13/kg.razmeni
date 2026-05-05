@@ -18,7 +18,7 @@ function injectStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     main:has(nav.fixed.bottom-4) {
-      padding-top: 30px !important;
+      padding-top: 15px !important;
     }
 
     main:has(nav.fixed.bottom-4) > div {
@@ -184,7 +184,7 @@ function findTopBar() {
 function reduceTopSpace() {
   const main = document.querySelector<HTMLElement>("main");
   if (!main) return;
-  setImportant(main, "padding-top", "30px");
+  setImportant(main, "padding-top", "15px");
 
   const wrapper = main.firstElementChild;
   if (wrapper instanceof HTMLElement) setImportant(wrapper, "padding-top", "0");
