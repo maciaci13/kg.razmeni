@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 const STYLE_ID = "mzm-final-mobile-ui-patch-style";
+const DESIRED_TOP_GAP = 18;
 
 function normalize(value: string | null | undefined) {
   return (value || "").replace(/\s+/g, " ").trim();
@@ -19,14 +20,90 @@ function injectStyles() {
   style.textContent = `
     main:has(nav.fixed.bottom-4) {
       padding-top: 10px !important;
+      padding-bottom: calc(5.35rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     main:has(nav.fixed.bottom-4) > div {
       padding-top: 0 !important;
+      padding-bottom: calc(5.35rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
-    .mzm-final-content-pulled-up {
-      margin-top: 0 !important;
+    .mzm-final-tab-shell {
+      transition: margin-top .12s ease !important;
+    }
+
+    .mzm-final-chat-locked-hero {
+      position: relative !important;
+      overflow: hidden !important;
+      border-radius: 2rem !important;
+      background: linear-gradient(145deg, rgba(255,240,227,.98), rgba(255,255,255,.94)) !important;
+      padding: 1.35rem !important;
+      box-shadow: 0 18px 48px rgba(28,27,25,.08) !important;
+    }
+
+    .mzm-final-chat-locked-hero::after {
+      content: "" !important;
+      position: absolute !important;
+      right: -2.7rem !important;
+      top: -2.5rem !important;
+      width: 9.6rem !important;
+      height: 9.6rem !important;
+      border-radius: 999px !important;
+      background: rgba(217,231,203,.82) !important;
+      pointer-events: none !important;
+    }
+
+    .mzm-final-chat-kicker {
+      position: relative !important;
+      z-index: 1 !important;
+      margin: 0 0 .65rem !important;
+      color: var(--study-orange,#f95e08) !important;
+      font-size: .72rem !important;
+      font-weight: 900 !important;
+      letter-spacing: .23em !important;
+      text-transform: uppercase !important;
+    }
+
+    .mzm-final-chat-locked-hero h1 {
+      position: relative !important;
+      z-index: 1 !important;
+      margin: 0 !important;
+      max-width: 19rem !important;
+      color: #1c1b19 !important;
+      font-size: clamp(2.25rem, 10vw, 3.35rem) !important;
+      line-height: .93 !important;
+      font-weight: 900 !important;
+      letter-spacing: -.07em !important;
+    }
+
+    .mzm-final-chat-locked-hero p:not(.mzm-final-chat-kicker) {
+      position: relative !important;
+      z-index: 1 !important;
+      margin: .95rem 0 0 !important;
+      max-width: 21rem !important;
+      color: rgba(28,27,25,.58) !important;
+      font-size: .95rem !important;
+      line-height: 1.45 !important;
+      font-weight: 750 !important;
+    }
+
+    .mzm-final-chat-share-button {
+      position: relative !important;
+      z-index: 1 !important;
+      margin-top: 1rem !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: .5rem !important;
+      width: 100% !important;
+      min-height: 3.35rem !important;
+      border: 0 !important;
+      border-radius: 999px !important;
+      background: var(--study-orange,#f95e08) !important;
+      color: #fff !important;
+      font-size: .9rem !important;
+      font-weight: 900 !important;
+      box-shadow: 0 16px 34px rgba(249,94,8,.24) !important;
     }
 
     .mzm-final-hero-actions {
@@ -107,6 +184,74 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
+function getMain() {
+  return document.querySelector<HTMLElement>("main:has(nav.fixed.bottom-4)") || document.querySelector<HTMLElement>("main");
+}
+
+function findTopBar() {
+  return Array.from(document.querySelectorAll<HTMLElement>("div")).find((node) => {
+    const text = normalize(node.textContent).toUpperCase();
+    if (!text.includes("РОДИТЕЛ") && !text.includes("ПРОФИЛ")) return false;
+    const buttons = node.querySelectorAll("button");
+    const hasGridIcon = Boolean(node.querySelector("i"));
+    return buttons.length >= 2 && hasGridIcon;
+  }) || null;
+}
+
+function findVisibleContentShell(topBar: HTMLElement) {
+  const candidates = Array.from(document.querySelectorAll<HTMLElement>(".mx-auto.max-w-md, section, div"));
+  const topBarBottom = topBar.getBoundingClientRect().bottom;
+  return candidates.find((node) => {
+    if (node === topBar || topBar.contains(node) || node.closest("nav.fixed.bottom-4")) return false;
+    const rect = node.getBoundingClientRect();
+    if (rect.width < 220 || rect.height < 40) return false;
+    if (rect.bottom <= topBarBottom) return false;
+    const text = normalize(node.textContent);
+    return Boolean(text) && (
+      text.includes("Намери") ||
+      text.includes("Нова заявка") ||
+      text.includes("Моите заявки") ||
+      text.includes("Още няма") ||
+      text.includes("Още са заключени") ||
+      text.includes("Чатове") ||
+      text.includes("Профил") ||
+      text.includes("Статус")
+    );
+  }) || null;
+}
+
+function alignContentBelowTopBar() {
+  const main = getMain();
+  if (!main) return;
+  setImportant(main, "padding-top", "10px");
+  setImportant(main, "padding-bottom", "calc(5.35rem + env(safe-area-inset-bottom, 0px))");
+
+  const direct = main.firstElementChild;
+  if (direct instanceof HTMLElement) {
+    setImportant(direct, "padding-top", "0");
+    setImportant(direct, "padding-bottom", "calc(5.35rem + env(safe-area-inset-bottom, 0px))");
+  }
+
+  const topBar = findTopBar();
+  if (!topBar) return;
+  setImportant(topBar, "margin-bottom", "0");
+  setImportant(topBar, "padding-top", "0");
+
+  const shell = findVisibleContentShell(topBar);
+  if (!shell) return;
+
+  shell.classList.add("mzm-final-tab-shell");
+  setImportant(shell, "margin-top", "0px");
+
+  window.requestAnimationFrame(() => {
+    const currentTop = shell.getBoundingClientRect().top;
+    const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
+    const delta = Math.round(desiredTop - currentTop);
+    const clamped = Math.max(-180, Math.min(20, delta));
+    setImportant(shell, "margin-top", `${clamped}px`);
+  });
+}
+
 function findHeroSection() {
   return Array.from(document.querySelectorAll<HTMLElement>("section")).find((section) => {
     const text = normalize(section.textContent);
@@ -124,6 +269,13 @@ function openRequests(event?: Event) {
   event?.preventDefault();
   event?.stopPropagation();
   const navButton = Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button")).find((button) => normalize(button.textContent).includes("Заявка"));
+  navButton?.click();
+}
+
+function openMatches(event?: Event) {
+  event?.preventDefault();
+  event?.stopPropagation();
+  const navButton = Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button")).find((button) => normalize(button.textContent).includes("Съвпадение") || normalize(button.textContent).includes("Match"));
   navButton?.click();
 }
 
@@ -149,9 +301,7 @@ function makeRequestButton() {
 function patchHeroActions() {
   const hero = findHeroSection();
   if (!hero) return;
-
-  const existing = hero.querySelector<HTMLElement>(".mzm-final-hero-actions");
-  if (existing) return;
+  if (hero.querySelector<HTMLElement>(".mzm-final-hero-actions")) return;
 
   const requestButton = Array.from(hero.querySelectorAll<HTMLButtonElement>("button")).find((button) => normalize(button.textContent).includes("Пусни заявка"));
   if (!requestButton) return;
@@ -171,34 +321,33 @@ function patchHeroActions() {
   row.replaceWith(next);
 }
 
-function findTopBar() {
-  return Array.from(document.querySelectorAll<HTMLElement>("div")).find((node) => {
-    const text = normalize(node.textContent).toUpperCase();
-    if (!text.includes("РОДИТЕЛ") && !text.includes("ПРОФИЛ")) return false;
-    const buttons = node.querySelectorAll("button");
-    const hasGridIcon = Boolean(node.querySelector("i"));
-    return buttons.length >= 2 && hasGridIcon;
-  }) || null;
-}
+function patchChatLockedHero() {
+  const activeChat = Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button")).find((button) => {
+    const text = normalize(button.textContent);
+    const isActive = button.className.includes("bg-orange") || button.getAttribute("aria-current") === "page" || button.dataset.active === "true";
+    return isActive && text.includes("Чат");
+  });
+  if (!activeChat) return;
 
-function reduceTopSpace() {
-  const main = document.querySelector<HTMLElement>("main");
-  if (!main) return;
-  setImportant(main, "padding-top", "10px");
+  const existingUnlocked = Array.from(document.querySelectorAll<HTMLElement>("textarea, [data-chat-active='true']")).length > 0;
+  if (existingUnlocked) return;
 
-  const wrapper = main.firstElementChild;
-  if (wrapper instanceof HTMLElement) setImportant(wrapper, "padding-top", "0");
+  const already = document.querySelector<HTMLElement>(".mzm-final-chat-locked-hero");
+  if (already) return;
 
   const topBar = findTopBar();
-  if (!topBar) return;
-  setImportant(topBar, "margin-bottom", ".75rem");
-  setImportant(topBar, "padding-top", "0");
+  const shell = topBar ? findVisibleContentShell(topBar) : null;
+  if (!shell) return;
 
-  const content = topBar.nextElementSibling;
-  if (content instanceof HTMLElement) {
-    content.classList.remove("mzm-final-content-pulled-up");
-    setImportant(content, "margin-top", "0");
-  }
+  shell.innerHTML = `
+    <section class="mzm-final-chat-locked-hero">
+      <p class="mzm-final-chat-kicker">Чатове</p>
+      <h1>Още са заключени</h1>
+      <p>Чатовете се отключват само когато всички родители в потенциалния цикъл потвърдят интерес.</p>
+      <button type="button" class="mzm-final-chat-share-button">Увеличи шанса за съвпадение <span>›</span></button>
+    </section>
+  `;
+  shell.querySelector<HTMLButtonElement>(".mzm-final-chat-share-button")?.addEventListener("click", openMatches);
 }
 
 function patchMatchesEmptyOrder() {
@@ -226,8 +375,9 @@ function patchMatchesEmptyOrder() {
 
 function run() {
   injectStyles();
-  reduceTopSpace();
+  alignContentBelowTopBar();
   patchHeroActions();
+  patchChatLockedHero();
   patchMatchesEmptyOrder();
 }
 
