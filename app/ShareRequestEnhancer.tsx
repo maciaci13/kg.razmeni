@@ -52,18 +52,15 @@ function openSharePopup() {
   `;
 
   overlay.addEventListener("click", (event) => {
-    event.stopPropagation();
     if (event.target === overlay) closeSharePopup();
-  }, true);
+  });
 
   overlay.querySelector<HTMLButtonElement>(".mzm-share-popup__close")?.addEventListener("click", (event) => {
     event.preventDefault();
-    event.stopPropagation();
     closeSharePopup();
   });
   overlay.querySelector<HTMLButtonElement>(".mzm-share-popup__share")?.addEventListener("click", (event) => {
     event.preventDefault();
-    event.stopPropagation();
     nativeShare().catch(() => undefined);
   });
 
@@ -91,7 +88,7 @@ function createShareCard() {
     event.preventDefault();
     event.stopPropagation();
     openSharePopup();
-  }, true);
+  });
 
   return card;
 }
@@ -303,9 +300,8 @@ function bindShareOpeners() {
     if (!opener) return;
     event.preventDefault();
     event.stopPropagation();
-    event.stopImmediatePropagation();
     openSharePopup();
-  }, true);
+  });
 }
 
 export default function ShareRequestEnhancer() {
