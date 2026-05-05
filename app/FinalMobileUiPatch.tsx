@@ -25,8 +25,14 @@ function injectStyles() {
       padding-top: 0 !important;
     }
 
-    main:has(nav.fixed.bottom-4) > div > div:first-child {
-      margin-bottom: .75rem !important;
+    .mzm-final-content-pulled-up {
+      margin-top: -6.75rem !important;
+    }
+
+    @media (max-height: 760px) {
+      .mzm-final-content-pulled-up {
+        margin-top: -5.75rem !important;
+      }
     }
 
     .mzm-final-hero-actions {
@@ -171,12 +177,34 @@ function patchHeroActions() {
   row.replaceWith(next);
 }
 
+function findTopBar() {
+  return Array.from(document.querySelectorAll<HTMLElement>("div")).find((node) => {
+    const text = normalize(node.textContent).toUpperCase();
+    if (!text.includes("РОДИТЕЛ") && !text.includes("ПРОФИЛ")) return false;
+    const buttons = node.querySelectorAll("button");
+    const hasGridIcon = Boolean(node.querySelector("i"));
+    return buttons.length >= 2 && hasGridIcon;
+  }) || null;
+}
+
 function reduceTopSpace() {
   const main = document.querySelector<HTMLElement>("main");
   if (!main) return;
   setImportant(main, "padding-top", "0");
+
   const wrapper = main.firstElementChild;
   if (wrapper instanceof HTMLElement) setImportant(wrapper, "padding-top", "0");
+
+  const topBar = findTopBar();
+  if (!topBar) return;
+  setImportant(topBar, "margin-bottom", "0");
+  setImportant(topBar, "padding-top", "0");
+
+  const content = topBar.nextElementSibling;
+  if (content instanceof HTMLElement) {
+    content.classList.add("mzm-final-content-pulled-up");
+    setImportant(content, "margin-top", "-6.75rem");
+  }
 }
 
 function patchMatchesEmptyOrder() {
