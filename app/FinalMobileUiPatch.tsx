@@ -173,6 +173,11 @@ function isActiveTab(label: string) {
   }));
 }
 
+function removeChatShellIfInactive() {
+  if (isActiveTab("Чат")) return;
+  document.querySelectorAll<HTMLElement>(".mzm-final-chat-shell").forEach((shell) => shell.remove());
+}
+
 function findVisibleContentShell(topBar: HTMLElement) {
   const candidates = Array.from(document.querySelectorAll<HTMLElement>(".mx-auto.max-w-md, section, div"));
   const topBarBottom = topBar.getBoundingClientRect().bottom;
@@ -233,6 +238,8 @@ function alignContentBelowTopBar() {
   if (!topBar) return;
   setImportant(topBar, "margin-bottom", "0");
   setImportant(topBar, "padding-top", "0");
+
+  removeChatShellIfInactive();
 
   const shell = isActiveTab("Чат") ? createChatShellAfterTopBar(topBar) : findVisibleContentShell(topBar);
   if (!shell) return;
@@ -302,7 +309,10 @@ function patchHeroActions() {
 }
 
 function patchChatLockedHero() {
-  if (!isActiveTab("Чат")) return;
+  if (!isActiveTab("Чат")) {
+    removeChatShellIfInactive();
+    return;
+  }
 
   const existingUnlocked = Array.from(document.querySelectorAll<HTMLElement>("textarea, [data-chat-active='true']")).length > 0;
   if (existingUnlocked) return;
