@@ -23,12 +23,20 @@ function injectStyles() {
     main:has(nav.fixed.bottom-4) {
       min-height: 100dvh !important;
       overflow: visible !important;
+      padding-top: .25rem !important;
       padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)) !important;
       scroll-padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     main:has(nav.fixed.bottom-4) > div {
+      padding-top: .15rem !important;
       padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    main:has(nav.fixed.bottom-4) > div > div:first-child,
+    main:has(nav.fixed.bottom-4) > div > .mb-5:first-child,
+    main:has(nav.fixed.bottom-4) > div > .flex:first-child {
+      margin-bottom: .75rem !important;
     }
 
     main:has(nav.fixed.bottom-4) .mzm-request-form-card,
