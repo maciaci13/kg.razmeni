@@ -43,38 +43,13 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    html,
-    body {
-      min-height: 100% !important;
-      height: auto !important;
-      overflow-x: hidden !important;
-      overflow-y: auto !important;
-      touch-action: pan-y !important;
-      overscroll-behavior-y: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-    }
-
-    main:has(nav.fixed.bottom-4) {
-      min-height: 100dvh !important;
-      height: auto !important;
-      overflow: visible !important;
-      touch-action: pan-y !important;
-    }
-
-    main:has(nav.fixed.bottom-4) > div {
-      height: auto !important;
-      min-height: 100dvh !important;
-      overflow: visible !important;
-      touch-action: pan-y !important;
-    }
-
     body.mzm-modal-open {
       overflow: hidden !important;
     }
 
     body:not(.mzm-modal-open) {
       overflow-y: auto !important;
-      touch-action: pan-y !important;
+      touch-action: auto !important;
     }
 
     [data-mzm-share-popup='true'] {
