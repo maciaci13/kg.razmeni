@@ -26,18 +26,55 @@ function isActiveBottomTab(label: string) {
   }));
 }
 
+function unlockPageScroll() {
+  document.body.classList.remove("mzm-modal-open");
+  document.body.style.removeProperty("overflow");
+  document.body.style.removeProperty("touch-action");
+  document.body.style.removeProperty("position");
+  document.body.style.removeProperty("height");
+  document.documentElement.style.removeProperty("overflow");
+  document.documentElement.style.removeProperty("touch-action");
+  document.documentElement.style.removeProperty("position");
+  document.documentElement.style.removeProperty("height");
+}
+
 function injectStyles() {
   document.getElementById(STYLE_ID)?.remove();
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
+    html,
+    body {
+      min-height: 100% !important;
+      height: auto !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      touch-action: pan-y !important;
+      overscroll-behavior-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    main:has(nav.fixed.bottom-4) {
+      min-height: 100dvh !important;
+      height: auto !important;
+      overflow: visible !important;
+      touch-action: pan-y !important;
+    }
+
+    main:has(nav.fixed.bottom-4) > div {
+      height: auto !important;
+      min-height: 100dvh !important;
+      overflow: visible !important;
+      touch-action: pan-y !important;
+    }
+
     body.mzm-modal-open {
       overflow: hidden !important;
     }
 
     body:not(.mzm-modal-open) {
       overflow-y: auto !important;
-      touch-action: auto !important;
+      touch-action: pan-y !important;
     }
 
     [data-mzm-share-popup='true'] {
@@ -57,34 +94,31 @@ function cleanupModalState() {
   const sharePopups = Array.from(document.querySelectorAll<HTMLElement>("[data-mzm-share-popup='true']"));
   const radarModals = Array.from(document.querySelectorAll<HTMLElement>("#mzm-radar-fixed-modal"));
 
-  if (sharePopups.length > 1) {
-    sharePopups.slice(0, -1).forEach((node) => node.remove());
-  }
-
-  if (radarModals.length > 1) {
-    radarModals.slice(0, -1).forEach((node) => node.remove());
-  }
+  if (sharePopups.length > 1) sharePopups.slice(0, -1).forEach((node) => node.remove());
+  if (radarModals.length > 1) radarModals.slice(0, -1).forEach((node) => node.remove());
 
   const visibleShare = Array.from(document.querySelectorAll<HTMLElement>("[data-mzm-share-popup='true']")).find(isVisible);
-  if (visibleShare) {
-    document.querySelectorAll("#mzm-radar-fixed-modal").forEach((node) => node.remove());
-  }
+  if (visibleShare) document.querySelectorAll("#mzm-radar-fixed-modal").forEach((node) => node.remove());
 
   const hasVisibleModal = Boolean(
     Array.from(document.querySelectorAll<HTMLElement>("[data-mzm-share-popup='true'], #mzm-radar-fixed-modal")).find(isVisible)
   );
 
-  document.body.classList.toggle("mzm-modal-open", hasVisibleModal);
-  if (!hasVisibleModal) {
-    document.body.style.removeProperty("overflow");
-    document.body.style.removeProperty("touch-action");
-    document.documentElement.style.removeProperty("overflow");
-    document.documentElement.style.removeProperty("touch-action");
+  if (hasVisibleModal) {
+    document.body.classList.add("mzm-modal-open");
+  } else {
+    unlockPageScroll();
   }
 
   if (!isActiveBottomTab("Чат")) {
     document.querySelectorAll<HTMLElement>(".mzm-final-chat-shell").forEach((node) => node.remove());
   }
+}
+
+function delayedCleanup() {
+  window.setTimeout(cleanupModalState, 0);
+  window.setTimeout(cleanupModalState, 120);
+  window.setTimeout(cleanupModalState, 320);
 }
 
 function bindGlobalSafetyClicks() {
@@ -93,74 +127,35 @@ function bindGlobalSafetyClicks() {
 
   document.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
-    const shareOpener = target?.closest("[data-mzm-open-share], [data-mzm-share-card='true'], .mzm-safe-share-cta");
-    if (shareOpener) {
-      window.setTimeout(cleanupModalState, 0);
-      window.setTimeout(cleanupModalState, 80);
-      return;
-    }
-
-    const closeButton = target?.closest(".mzm-share-popup__close, .mzm-radar-fixed-close");
-    if (closeButton) {
-      window.setTimeout(cleanupModalState, 0);
-      window.setTimeout(cleanupModalState, 80);
-      window.setTimeout(cleanupModalState, 220);
-      return;
-    }
-
-    if (target?.closest("nav.fixed.bottom-4 button")) {
-      window.setTimeout(cleanupModalState, 0);
-      window.setTimeout(cleanupModalState, 120);
-      window.setTimeout(cleanupModalState, 300);
+    if (
+      target?.closest("[data-mzm-open-share], [data-mzm-share-card='true'], .mzm-safe-share-cta") ||
+      target?.closest(".mzm-share-popup__close, .mzm-radar-fixed-close") ||
+      target?.closest("nav.fixed.bottom-4 button")
+    ) {
+      delayedCleanup();
     }
   }, true);
 
   window.addEventListener("mzm:open-share-popup", () => {
     document.querySelectorAll("#mzm-radar-fixed-modal").forEach((node) => node.remove());
-    window.setTimeout(cleanupModalState, 0);
-    window.setTimeout(cleanupModalState, 80);
+    delayedCleanup();
   });
 
-  window.addEventListener("mzm:open-radar", () => {
-    if (Array.from(document.querySelectorAll<HTMLElement>("[data-mzm-share-popup='true']")).find(isVisible)) {
-      window.setTimeout(cleanupModalState, 0);
-    }
-  });
-
-  window.addEventListener("touchmove", () => {
-    if (!document.querySelector("[data-mzm-share-popup='true'], #mzm-radar-fixed-modal")) cleanupModalState();
-  }, { passive: true });
+  window.addEventListener("mzm:open-radar", delayedCleanup);
+  window.addEventListener("resize", delayedCleanup, { passive: true });
+  window.addEventListener("orientationchange", delayedCleanup, { passive: true });
+  document.addEventListener("visibilitychange", delayedCleanup);
 }
 
 export default function AppStabilityGuard() {
   useEffect(() => {
     injectStyles();
     bindGlobalSafetyClicks();
+    unlockPageScroll();
     cleanupModalState();
 
-    let scheduled = false;
-    const schedule = () => {
-      if (scheduled) return;
-      scheduled = true;
-      window.requestAnimationFrame(() => {
-        scheduled = false;
-        cleanupModalState();
-      });
-    };
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "data-active", "aria-current", "style"] });
-
-    const interval = window.setInterval(cleanupModalState, 700);
-
     return () => {
-      observer.disconnect();
-      window.clearInterval(interval);
-      document.body.classList.remove("mzm-modal-open");
-      document.body.style.removeProperty("overflow");
-      document.body.style.removeProperty("touch-action");
-      document.documentElement.style.removeProperty("overflow");
-      document.documentElement.style.removeProperty("touch-action");
+      unlockPageScroll();
     };
   }, []);
 
