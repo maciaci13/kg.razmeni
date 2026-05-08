@@ -4,13 +4,37 @@ import { useEffect } from "react";
 
 const STYLE_ID = "mzm-final-mobile-ui-patch-style";
 const DESIRED_TOP_GAP = 16;
+const SCROLL_IDLE_DELAY = 180;
+
+let isUserScrolling = false;
+let scrollIdleTimer: number | undefined;
 
 function normalize(value: string | null | undefined) {
   return (value || "").replace(/\s+/g, " ").trim();
 }
 
 function setImportant(el: HTMLElement, prop: string, value: string) {
+  if (el.style.getPropertyValue(prop) === value && el.style.getPropertyPriority(prop) === "important") return;
   el.style.setProperty(prop, value, "important");
+}
+
+function parseCssPx(value: string) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function markUserScrolling(onIdle: () => void) {
+  isUserScrolling = true;
+  if (scrollIdleTimer) window.clearTimeout(scrollIdleTimer);
+  scrollIdleTimer = window.setTimeout(() => {
+    isUserScrolling = false;
+    scrollIdleTimer = undefined;
+    onIdle();
+  }, SCROLL_IDLE_DELAY);
 }
 
 function injectStyles() {
@@ -34,15 +58,8 @@ function injectStyles() {
       width: 100% !important;
     }
 
-    .mzm-final-chat-shell {
-      display: block !important;
-    }
-
-    .mzm-final-chat-locked-shell {
-      display: grid !important;
-      gap: 1rem !important;
-    }
-
+    .mzm-final-chat-shell { display: block !important; }
+    .mzm-final-chat-locked-shell { display: grid !important; gap: 1rem !important; }
     .mzm-final-chat-title { margin: 0 !important; }
 
     .mzm-final-chat-kicker {
@@ -149,9 +166,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-function getMain() {
-  return document.querySelector<HTMLElement>("main:has(nav.fixed.bottom-4)") || document.querySelector<HTMLElement>("main");
-}
+function getMain() { return document.querySelector<HTMLElement>("main:has(nav.fixed.bottom-4)"); }
 
 function findTopBar() {
   return Array.from(document.querySelectorAll<HTMLElement>("div")).find((node) => {
@@ -176,27 +191,30 @@ function removeChatShellIfInactive() {
   document.querySelectorAll<HTMLElement>(".mzm-final-chat-shell").forEach((shell) => shell.remove());
 }
 
+function isContentShellCandidate(node: HTMLElement, topBar: HTMLElement) {
+  if (node === topBar || topBar.contains(node) || node.closest("nav.fixed.bottom-4")) return false;
+  if (node.classList.contains("mzm-final-chat-shell")) return true;
+  const rect = node.getBoundingClientRect();
+  if (rect.width < 220 || rect.height < 40) return false;
+  const text = normalize(node.textContent);
+  return Boolean(text) && (
+    text.includes("Намери") || text.includes("Нова заявка") || text.includes("Моите заявки") ||
+    text.includes("Още няма") || text.includes("Още са заключени") || text.includes("Чатове") ||
+    text.includes("Профил") || text.includes("Статус")
+  );
+}
+
 function findVisibleContentShell(topBar: HTMLElement) {
-  const candidates = Array.from(document.querySelectorAll<HTMLElement>(".mx-auto.max-w-md, section, div"));
-  const topBarBottom = topBar.getBoundingClientRect().bottom;
-  return candidates.find((node) => {
-    if (node === topBar || topBar.contains(node) || node.closest("nav.fixed.bottom-4")) return false;
-    if (node.classList.contains("mzm-final-chat-shell")) return true;
-    const rect = node.getBoundingClientRect();
-    if (rect.width < 220 || rect.height < 40) return false;
-    if (rect.bottom <= topBarBottom) return false;
-    const text = normalize(node.textContent);
-    return Boolean(text) && (
-      text.includes("Намери") ||
-      text.includes("Нова заявка") ||
-      text.includes("Моите заявки") ||
-      text.includes("Още няма") ||
-      text.includes("Още са заключени") ||
-      text.includes("Чатове") ||
-      text.includes("Профил") ||
-      text.includes("Статус")
-    );
-  }) || null;
+  const siblingCandidates: HTMLElement[] = [];
+  let next = topBar.nextElementSibling;
+  while (next) {
+    if (next instanceof HTMLElement) siblingCandidates.push(next);
+    next = next.nextElementSibling;
+  }
+  const sibling = siblingCandidates.find((node) => isContentShellCandidate(node, topBar));
+  if (sibling) return sibling;
+  return Array.from(document.querySelectorAll<HTMLElement>(".mx-auto.max-w-md, .mzm-profile-subscreen, .mzm-final-chat-shell"))
+    .find((node) => isContentShellCandidate(node, topBar)) || null;
 }
 
 function createChatShellAfterTopBar(topBar: HTMLElement) {
@@ -210,11 +228,16 @@ function createChatShellAfterTopBar(topBar: HTMLElement) {
 
 function alignShell(topBar: HTMLElement, shell: HTMLElement) {
   shell.classList.add("mzm-final-tab-shell");
+  if (isUserScrolling) return;
+  const currentMargin = parseCssPx(window.getComputedStyle(shell).marginTop);
   const currentTop = shell.getBoundingClientRect().top;
+  const naturalTop = currentTop - currentMargin;
   const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
-  const delta = Math.round(desiredTop - currentTop);
-  const clamped = Math.max(-80, Math.min(18, delta));
-  setImportant(shell, "margin-top", `${clamped}px`);
+  const nextMargin = clamp(Math.round(desiredTop - naturalTop), -340, 20);
+  const previousMargin = Number(shell.dataset.mzmFinalMarginTop);
+  if (Number.isFinite(previousMargin) && Math.abs(previousMargin - nextMargin) <= 1) return;
+  shell.dataset.mzmFinalMarginTop = String(nextMargin);
+  setImportant(shell, "margin-top", `${nextMargin}px`);
 }
 
 function alignContentBelowTopBar() {
@@ -222,20 +245,16 @@ function alignContentBelowTopBar() {
   if (!main) return;
   setImportant(main, "padding-top", "10px");
   setImportant(main, "padding-bottom", "calc(4.85rem + env(safe-area-inset-bottom, 0px))");
-
   const direct = main.firstElementChild;
   if (direct instanceof HTMLElement) {
     setImportant(direct, "padding-top", "0");
     setImportant(direct, "padding-bottom", "calc(4.85rem + env(safe-area-inset-bottom, 0px))");
   }
-
   const topBar = findTopBar();
   if (!topBar) return;
   setImportant(topBar, "margin-bottom", "0");
   setImportant(topBar, "padding-top", "0");
-
   removeChatShellIfInactive();
-
   const shell = isActiveTab("Чат") ? createChatShellAfterTopBar(topBar) : findVisibleContentShell(topBar);
   if (!shell) return;
   alignShell(topBar, shell);
@@ -248,162 +267,86 @@ function findHeroSection() {
   }) || null;
 }
 
-function openRadar(event?: Event) {
-  event?.preventDefault();
-  event?.stopPropagation();
-  window.dispatchEvent(new CustomEvent("mzm:open-radar"));
-}
-
+function openRadar(event?: Event) { event?.preventDefault(); event?.stopPropagation(); window.dispatchEvent(new CustomEvent("mzm:open-radar")); }
 function openRequests(event?: Event) {
-  event?.preventDefault();
-  event?.stopPropagation();
+  event?.preventDefault(); event?.stopPropagation();
   const navButton = Array.from(document.querySelectorAll<HTMLButtonElement>("nav.fixed.bottom-4 button")).find((button) => normalize(button.textContent).includes("Заявка"));
   navButton?.click();
 }
-
-function makeRadarButton() {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "mzm-final-radar-button";
-  button.setAttribute("aria-label", "Радар за шанс");
-  button.innerHTML = `<span class="mzm-final-radar-icon">⌁</span><span>Радар за шанс</span>`;
-  button.addEventListener("click", openRadar);
-  return button;
-}
-
-function makeRequestButton() {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "mzm-final-request-button";
-  button.innerHTML = `Пусни заявка <span>›</span>`;
-  button.addEventListener("click", openRequests);
-  return button;
-}
+function makeRadarButton() { const button = document.createElement("button"); button.type = "button"; button.className = "mzm-final-radar-button"; button.setAttribute("aria-label", "Радар за шанс"); button.innerHTML = `<span class="mzm-final-radar-icon">⌁</span><span>Радар за шанс</span>`; button.addEventListener("click", openRadar); return button; }
+function makeRequestButton() { const button = document.createElement("button"); button.type = "button"; button.className = "mzm-final-request-button"; button.innerHTML = `Пусни заявка <span>›</span>`; button.addEventListener("click", openRequests); return button; }
 
 function patchHeroActions() {
   const hero = findHeroSection();
-  if (!hero) return;
-  if (hero.querySelector<HTMLElement>(".mzm-final-hero-actions")) return;
-
+  if (!hero || hero.querySelector<HTMLElement>(".mzm-final-hero-actions")) return;
   const requestButton = Array.from(hero.querySelectorAll<HTMLButtonElement>("button")).find((button) => normalize(button.textContent).includes("Пусни заявка"));
   if (!requestButton) return;
-
   let row: HTMLElement | null = requestButton.parentElement;
-  while (row && row !== hero) {
-    const buttons = row.querySelectorAll("button").length;
-    const text = normalize(row.textContent);
-    if (buttons >= 1 && text.includes("Пусни заявка")) break;
-    row = row.parentElement;
-  }
+  while (row && row !== hero) { const buttons = row.querySelectorAll("button").length; const text = normalize(row.textContent); if (buttons >= 1 && text.includes("Пусни заявка")) break; row = row.parentElement; }
   if (!row || row === hero) return;
-
-  const next = document.createElement("div");
-  next.className = "mzm-final-hero-actions";
-  next.append(makeRadarButton(), makeRequestButton());
-  row.replaceWith(next);
+  const next = document.createElement("div"); next.className = "mzm-final-hero-actions"; next.append(makeRadarButton(), makeRequestButton()); row.replaceWith(next);
 }
 
 function patchChatLockedHero() {
-  if (!isActiveTab("Чат")) {
-    removeChatShellIfInactive();
-    return;
-  }
-
+  if (!isActiveTab("Чат")) { removeChatShellIfInactive(); return; }
   const existingUnlocked = Array.from(document.querySelectorAll<HTMLElement>("textarea, [data-chat-active='true']")).length > 0;
-  if (existingUnlocked) return;
-
-  const topBar = findTopBar();
-  if (!topBar) return;
+  if (existingUnlocked) { document.querySelectorAll<HTMLElement>(".mzm-final-chat-shell").forEach((node) => node.remove()); return; }
+  const topBar = findTopBar(); if (!topBar) return;
   const shell = createChatShellAfterTopBar(topBar);
-
-  shell.innerHTML = `
-    <div class="mzm-final-chat-locked-shell">
-      <section class="mzm-final-chat-title">
-        <p class="mzm-final-chat-kicker">Чатове</p>
-        <h1>Още са заключени</h1>
-        <p>Чатовете се отключват само когато всички родители в потенциалния цикъл потвърдят интерес.</p>
-      </section>
-      <article class="mzm-safe-share-card" data-mzm-share-card="true">
-        <button type="button" class="mzm-safe-share-cta" data-mzm-open-share>
-          <span class="mzm-safe-share-cta__icon">↗</span>
-          <span class="mzm-safe-share-cta__content">
-            <small>По-бързо съвпадение</small>
-            <strong>Увеличи шанса за съвпадение</strong>
-          </span>
-          <span class="mzm-safe-share-cta__arrow">›</span>
-        </button>
-      </article>
-    </div>
-  `;
-  alignShell(topBar, shell);
+  if (shell.dataset.mzmFinalChatLocked === "true") { alignShell(topBar, shell); return; }
+  shell.dataset.mzmFinalChatLocked = "true";
+  const locked = document.createElement("div"); locked.className = "mzm-final-chat-locked-shell";
+  const title = document.createElement("section"); title.className = "mzm-final-chat-title"; title.innerHTML = `<p class="mzm-final-chat-kicker">Чатове</p><h1>Още са заключени</h1><p>Чатовете се отключват само когато всички родители в потенциалния цикъл потвърдят интерес.</p>`;
+  const card = document.createElement("article"); card.className = "mzm-safe-share-card"; card.dataset.mzmShareCard = "true";
+  const button = document.createElement("button"); button.type = "button"; button.className = "mzm-safe-share-cta"; button.dataset.mzmOpenShare = "true";
+  button.innerHTML = `<span class="mzm-safe-share-cta__icon">↗</span><span class="mzm-safe-share-cta__content"><small>По-бързо съвпадение</small><strong>Увеличи шанса за съвпадение</strong></span><span class="mzm-safe-share-cta__arrow">›</span>`;
+  card.append(button); locked.append(title, card); shell.replaceChildren(locked); alignShell(topBar, shell);
 }
 
 function patchMatchesEmptyOrder() {
   const matchTitle = Array.from(document.querySelectorAll<HTMLElement>("h1")).find((h1) => normalize(h1.textContent).includes("Още няма съвпадение"));
   if (!matchTitle) return;
-
   const shell = matchTitle.closest("div")?.parentElement;
   if (!shell || shell.dataset.mzmMatchOrderFixed === "true") return;
-
   const smallText = Array.from(shell.querySelectorAll<HTMLElement>("p")).find((p) => normalize(p.textContent).includes("При съвпадение тук ще получиш покана"));
   const cta = Array.from(shell.querySelectorAll<HTMLElement>("section, article, div, button")).find((node) => normalize(node.textContent).includes("Увеличи шанса за съвпадение"));
-
   if (!smallText || !cta) return;
-
   matchTitle.insertAdjacentElement("afterend", smallText);
-  smallText.style.setProperty("margin-top", ".95rem", "important");
-  smallText.style.setProperty("margin-bottom", "1.2rem", "important");
-  smallText.style.setProperty("font-size", "1rem", "important");
-  smallText.style.setProperty("line-height", "1.55", "important");
-  smallText.style.setProperty("font-weight", "700", "important");
-  smallText.style.setProperty("color", "rgba(28,27,25,.52)", "important");
-  smallText.insertAdjacentElement("afterend", cta);
-  shell.dataset.mzmMatchOrderFixed = "true";
+  smallText.style.setProperty("margin-top", ".95rem", "important"); smallText.style.setProperty("margin-bottom", "1.2rem", "important"); smallText.style.setProperty("font-size", "1rem", "important"); smallText.style.setProperty("line-height", "1.55", "important"); smallText.style.setProperty("font-weight", "700", "important"); smallText.style.setProperty("color", "rgba(28,27,25,.52)", "important");
+  smallText.insertAdjacentElement("afterend", cta); shell.dataset.mzmMatchOrderFixed = "true";
 }
 
-function run() {
-  injectStyles();
-  alignContentBelowTopBar();
-  patchHeroActions();
-  patchChatLockedHero();
-  patchMatchesEmptyOrder();
-}
+function run() { injectStyles(); alignContentBelowTopBar(); patchHeroActions(); patchChatLockedHero(); patchMatchesEmptyOrder(); }
 
 export default function FinalMobileUiPatch() {
   useEffect(() => {
     let raf = 0;
-    const schedule = () => {
-      window.cancelAnimationFrame(raf);
-      raf = window.requestAnimationFrame(run);
-    };
-
+    const schedule = () => { window.cancelAnimationFrame(raf); raf = window.requestAnimationFrame(run); };
     schedule();
-    const t1 = window.setTimeout(schedule, 350);
-    const t2 = window.setTimeout(schedule, 900);
-    const t3 = window.setTimeout(schedule, 1800);
-
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("nav.fixed.bottom-4 button, [data-mzm-open-share], .mzm-share-popup__close, .mzm-radar-fixed-close")) {
-        window.setTimeout(schedule, 40);
-        window.setTimeout(schedule, 220);
-      }
-    };
-
-    document.addEventListener("click", onClick, true);
-    window.addEventListener("mzm:open-radar", schedule);
-    window.addEventListener("mzm:open-share-popup", schedule);
-
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    const onScroll = () => markUserScrolling(schedule);
+    const onResize = () => schedule();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("touchmove", onScroll, { passive: true });
+    window.visualViewport?.addEventListener("scroll", onScroll);
+    window.visualViewport?.addEventListener("resize", onResize);
+    const interval = window.setInterval(schedule, 900);
+    const t1 = window.setTimeout(schedule, 900);
+    const t2 = window.setTimeout(schedule, 1800);
     return () => {
-      window.cancelAnimationFrame(raf);
+      if (scrollIdleTimer) window.clearTimeout(scrollIdleTimer);
+      scrollIdleTimer = undefined;
+      isUserScrolling = false;
+      observer.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("touchmove", onScroll);
+      window.visualViewport?.removeEventListener("scroll", onScroll);
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.clearInterval(interval);
       window.clearTimeout(t1);
       window.clearTimeout(t2);
-      window.clearTimeout(t3);
-      document.removeEventListener("click", onClick, true);
-      window.removeEventListener("mzm:open-radar", schedule);
-      window.removeEventListener("mzm:open-share-popup", schedule);
     };
   }, []);
-
   return null;
 }
