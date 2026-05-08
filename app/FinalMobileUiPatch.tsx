@@ -14,7 +14,7 @@ function setImportant(el: HTMLElement, prop: string, value: string) {
 }
 
 function injectStyles() {
-  document.getElementById(STYLE_ID)?.remove();
+  if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
@@ -30,7 +30,7 @@ function injectStyles() {
 
     .mzm-final-tab-shell,
     .mzm-final-chat-shell {
-      transition: margin-top .12s ease !important;
+      transition: none !important;
       width: 100% !important;
     }
 
@@ -43,9 +43,7 @@ function injectStyles() {
       gap: 1rem !important;
     }
 
-    .mzm-final-chat-title {
-      margin: 0 !important;
-    }
+    .mzm-final-chat-title { margin: 0 !important; }
 
     .mzm-final-chat-kicker {
       margin: 0 0 .7rem !important;
@@ -212,14 +210,11 @@ function createChatShellAfterTopBar(topBar: HTMLElement) {
 
 function alignShell(topBar: HTMLElement, shell: HTMLElement) {
   shell.classList.add("mzm-final-tab-shell");
-  setImportant(shell, "margin-top", "0px");
-  window.requestAnimationFrame(() => {
-    const currentTop = shell.getBoundingClientRect().top;
-    const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
-    const delta = Math.round(desiredTop - currentTop);
-    const clamped = Math.max(-340, Math.min(20, delta));
-    setImportant(shell, "margin-top", `${clamped}px`);
-  });
+  const currentTop = shell.getBoundingClientRect().top;
+  const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
+  const delta = Math.round(desiredTop - currentTop);
+  const clamped = Math.max(-80, Math.min(18, delta));
+  setImportant(shell, "margin-top", `${clamped}px`);
 }
 
 function alignContentBelowTopBar() {
@@ -376,28 +371,37 @@ function run() {
 
 export default function FinalMobileUiPatch() {
   useEffect(() => {
-    let scheduled = false;
+    let raf = 0;
     const schedule = () => {
-      if (scheduled) return;
-      scheduled = true;
-      window.requestAnimationFrame(() => {
-        scheduled = false;
-        run();
-      });
+      window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(run);
     };
 
     schedule();
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-    const interval = window.setInterval(schedule, 250);
-    const t1 = window.setTimeout(schedule, 900);
-    const t2 = window.setTimeout(schedule, 1800);
+    const t1 = window.setTimeout(schedule, 350);
+    const t2 = window.setTimeout(schedule, 900);
+    const t3 = window.setTimeout(schedule, 1800);
+
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("nav.fixed.bottom-4 button, [data-mzm-open-share], .mzm-share-popup__close, .mzm-radar-fixed-close")) {
+        window.setTimeout(schedule, 40);
+        window.setTimeout(schedule, 220);
+      }
+    };
+
+    document.addEventListener("click", onClick, true);
+    window.addEventListener("mzm:open-radar", schedule);
+    window.addEventListener("mzm:open-share-popup", schedule);
 
     return () => {
-      observer.disconnect();
-      window.clearInterval(interval);
+      window.cancelAnimationFrame(raf);
       window.clearTimeout(t1);
       window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener("mzm:open-radar", schedule);
+      window.removeEventListener("mzm:open-share-popup", schedule);
     };
   }, []);
 
