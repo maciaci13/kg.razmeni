@@ -11,8 +11,8 @@ function injectStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     /* Final bottom navigation reset. This file must be mounted last. */
-    html,
-    body {
+    html:has(body main nav.fixed.bottom-4),
+    body:has(main nav.fixed.bottom-4) {
       min-height: 100% !important;
       height: auto !important;
       overflow-y: auto !important;
