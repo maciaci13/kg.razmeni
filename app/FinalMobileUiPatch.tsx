@@ -213,13 +213,15 @@ function createChatShellAfterTopBar(topBar: HTMLElement) {
 function alignShell(topBar: HTMLElement, shell: HTMLElement) {
   shell.classList.add("mzm-final-tab-shell");
   setImportant(shell, "margin-top", "0px");
-  window.requestAnimationFrame(() => {
-    const currentTop = shell.getBoundingClientRect().top;
-    const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
-    const delta = Math.round(desiredTop - currentTop);
-    const clamped = Math.max(-340, Math.min(20, delta));
-    setImportant(shell, "margin-top", `${clamped}px`);
-  });
+  // getBoundingClientRect forces a synchronous layout flush — no inner rAF needed.
+  // Using an inner rAF caused a race: the outer rAF (run every 250 ms) would reset
+  // margin-top to 0, and the browser could paint that intermediate state before the
+  // inner rAF fired to correct it, producing the visible gap on mobile.
+  const currentTop = shell.getBoundingClientRect().top;
+  const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
+  const delta = Math.round(desiredTop - currentTop);
+  const clamped = Math.max(-340, Math.min(20, delta));
+  setImportant(shell, "margin-top", `${clamped}px`);
 }
 
 function alignContentBelowTopBar() {
@@ -238,6 +240,10 @@ function alignContentBelowTopBar() {
   if (!topBar) return;
   setImportant(topBar, "margin-bottom", "0");
   setImportant(topBar, "padding-top", "0");
+  // direct = main.firstElementChild which is the TopBar, not the AppShell.
+  // The padding-bottom set on `direct` above adds ~78px of invisible space below
+  // the TopBar buttons, pushing all content down. Clear it here.
+  setImportant(topBar, "padding-bottom", "0");
 
   removeChatShellIfInactive();
 
