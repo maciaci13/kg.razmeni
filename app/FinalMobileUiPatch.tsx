@@ -240,6 +240,10 @@ function alignContentBelowTopBar() {
   if (!topBar) return;
   setImportant(topBar, "margin-bottom", "0");
   setImportant(topBar, "padding-top", "0");
+  // direct = main.firstElementChild which is the TopBar, not the AppShell.
+  // The padding-bottom set on `direct` above adds ~78px of invisible space below
+  // the TopBar buttons, pushing all content down. Clear it here.
+  setImportant(topBar, "padding-bottom", "0");
 
   removeChatShellIfInactive();
 
