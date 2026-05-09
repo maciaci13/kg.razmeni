@@ -248,17 +248,26 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
+let dataCache: { catalog: Catalog | null; snapshot: Snapshot | null } | null = null;
+
 async function mount() {
   injectStyles();
   const section = findRequestFormSection();
   if (!section || section.dataset.mzmRequestPolished === "true") return;
+  // Lock synchronously before any await — prevents concurrent mounts from all
+  // passing the guard check and each doing formSection.innerHTML = "".
+  section.dataset.mzmRequestPolished = "true";
   const formSection: HTMLElement = section;
-  const [catalog, snapshot] = await Promise.all([getJson<Catalog>("/api/catalog"), getJson<Snapshot>("/api/playground")]);
+  try {
+  if (!dataCache) {
+    const [catalog, snapshot] = await Promise.all([getJson<Catalog>("/api/catalog"), getJson<Snapshot>("/api/playground")]);
+    dataCache = { catalog, snapshot };
+  }
+  const { catalog, snapshot } = dataCache;
   const prefs = getPrefs();
   const institutions = sortItems(catalog?.institutions?.length ? catalog.institutions : snapshot?.kindergartens || []);
   const districts = catalog?.districts?.length ? catalog.districts : Array.from(new Set(institutions.map((i) => i.district).filter(Boolean) as string[]));
   const years = catalog?.years?.length ? catalog.years : currentYearOptions();
-  formSection.dataset.mzmRequestPolished = "true";
   formSection.innerHTML = "";
   formSection.className = "mzm-request-form-card";
   const root = document.createElement("div"); root.id = ROOT_ID;
@@ -316,6 +325,23 @@ async function mount() {
   };
   root.append(closeToggle, inner, submit, note, collapsed); formSection.appendChild(root); rebuild(prefs.from, prefs.wanted);
   const hasExisting = hydrateExistingCards(snapshot, selectedType, institutions); setFormMode(formSection, hasExisting ? "collapsed" : "expanded"); if (prefs.openRequest) forceOpenForm(formSection); placeShareAfterCarousel();
+  } catch {
+    // Clear lock so next run can retry after a network/parse error
+    delete section.dataset.mzmRequestPolished;
+  }
 }
 function run() { void mount(); }
-export default function RequestFormHardReset() { useEffect(() => { run(); const observer = new MutationObserver(run); observer.observe(document.documentElement, { childList: true, subtree: true }); return () => observer.disconnect(); }, []); return null; }
+export default function RequestFormHardReset() {
+  useEffect(() => {
+    run();
+    let scheduled = false;
+    const observer = new MutationObserver(() => {
+      if (scheduled) return;
+      scheduled = true;
+      window.requestAnimationFrame(() => { scheduled = false; run(); });
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+  return null;
+}
