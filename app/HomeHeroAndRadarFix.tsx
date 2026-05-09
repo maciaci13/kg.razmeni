@@ -141,7 +141,11 @@ function openRequestTabAndForm() {
     const formSection = Array.from(document.querySelectorAll<HTMLElement>("section, div")).find((node) => normalize(node.textContent).includes("Активирай заявка") && normalize(node.textContent).includes("Желана градина"));
     formSection?.classList.remove("is-collapsed");
     formSection?.querySelector<HTMLButtonElement>(".mzm-toggle-open, [class*='toggle']")?.click();
-    formSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (formSection) {
+      const rect = formSection.getBoundingClientRect();
+      const top = (window.pageYOffset || document.documentElement.scrollTop) + rect.top - 8;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
   }, 220);
   window.setTimeout(() => window.dispatchEvent(new CustomEvent("mzm:open-request-form")), 80);
   window.setTimeout(() => window.dispatchEvent(new CustomEvent("mzm:open-request-form")), 450);

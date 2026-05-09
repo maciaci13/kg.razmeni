@@ -132,11 +132,16 @@ function setFormMode(section: HTMLElement, mode: "expanded" | "collapsed") {
   if (!hasActive) section.classList.remove("is-collapsed");
   else section.classList.toggle("is-collapsed", mode === "collapsed");
 }
+function scrollToElement(el: HTMLElement) {
+  const rect = el.getBoundingClientRect();
+  const top = (window.pageYOffset || document.documentElement.scrollTop) + rect.top - 8;
+  window.scrollTo({ top, behavior: "smooth" });
+}
+
 function forceOpenForm(section: HTMLElement) {
   section.classList.remove("is-collapsed");
   section.classList.add("has-active-requests");
-  const inner = section.querySelector<HTMLElement>(".mzm-form-inner");
-  inner?.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.requestAnimationFrame(() => scrollToElement(section));
 }
 
 function createRequestCard(data: CardData) {
