@@ -103,14 +103,10 @@ function updateCarouselState(shell: HTMLElement) {
   if (!dots) return;
   const cards = Array.from(shell.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
   const activeIndex = cards.length ? ((getActiveIndex(shell) % cards.length) + cards.length) % cards.length : 0;
-
-  // Guard: skip DOM updates when nothing changed — prevents the MutationObserver
-  // loop (dots.innerHTML = "" triggers observer → run → updateCarouselState again)
-  // which was restarting CSS transitions every frame, causing visible trembling.
-  const stateKey = `${activeIndex}:${cards.length}`;
-  if (shell.dataset.mzmCarouselState === stateKey) return;
-  shell.dataset.mzmCarouselState = stateKey;
   shell.dataset.activeIndex = String(activeIndex);
+
+  // Always apply CSS classes — cards may be new DOM elements (opacity:0) even
+  // when activeIndex and count haven't changed (e.g. after a card is replaced).
   cards.forEach((card, index) => {
     const forward = (index - activeIndex + cards.length) % cards.length;
     const backward = (activeIndex - index + cards.length) % cards.length;
@@ -120,6 +116,14 @@ function updateCarouselState(shell: HTMLElement) {
     card.classList.toggle("is-prev-card", backward === 1);
     card.classList.toggle("is-hidden-card", forward > 2 && backward > 1);
   });
+
+  // Guard only the dots recreation — dots.innerHTML="" triggers MutationObserver
+  // which would loop back here causing transitions to restart (trembling).
+  // CSS class updates above must run every time, so they stay outside the guard.
+  const stateKey = `${activeIndex}:${cards.length}`;
+  if (shell.dataset.mzmCarouselState === stateKey) return;
+  shell.dataset.mzmCarouselState = stateKey;
+
   dots.innerHTML = "";
   cards.forEach((_card, index) => {
     const dot = document.createElement("button");
