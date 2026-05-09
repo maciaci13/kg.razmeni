@@ -103,6 +103,13 @@ function updateCarouselState(shell: HTMLElement) {
   if (!dots) return;
   const cards = Array.from(shell.querySelectorAll<HTMLElement>("[data-mzm-active-request-card='true']"));
   const activeIndex = cards.length ? ((getActiveIndex(shell) % cards.length) + cards.length) % cards.length : 0;
+
+  // Guard: skip DOM updates when nothing changed — prevents the MutationObserver
+  // loop (dots.innerHTML = "" triggers observer → run → updateCarouselState again)
+  // which was restarting CSS transitions every frame, causing visible trembling.
+  const stateKey = `${activeIndex}:${cards.length}`;
+  if (shell.dataset.mzmCarouselState === stateKey) return;
+  shell.dataset.mzmCarouselState = stateKey;
   shell.dataset.activeIndex = String(activeIndex);
   cards.forEach((card, index) => {
     const forward = (index - activeIndex + cards.length) % cards.length;
