@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Място За Място — Match Route Mockup</title>
+  <style>
+    :root{--bg:#fbfaf6;--ink:#241d1a;--muted:#9b8f8a;--soft:#eee9df;--orange:#ff7a22;--orange2:#ce8a52;--purple:#8d66d7;--green:#79a758;--blue:#69a7c8;--dock:#fffaf6}
+    *{box-sizing:border-box} body{margin:0;background:#eee;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);display:grid;place-items:start center;min-height:100vh}
+    .phone{width:min(430px,100vw);min-height:932px;background:var(--bg);position:relative;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,.16)}
+    .phone:before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(70,55,40,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(70,55,40,.045) 1px,transparent 1px);background-size:28px 28px;mask-image:linear-gradient(to bottom,#000 0 76%,transparent);pointer-events:none}
+    .status{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:46px 29px 18px;font-weight:900;font-size:15px;letter-spacing:-.02em}.battery{font-size:14px}.tabs{position:relative;z-index:2;margin:0 20px;height:62px;border-radius:999px;background:#ebe7dd;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;padding:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}.tab{height:50px;display:grid;place-items:center;border-radius:999px;color:#a19490;font-size:16px;font-weight:900}.tab.active{background:#fff;box-shadow:0 10px 28px rgba(36,29,26,.09);color:#1f1a17}.map{position:relative;z-index:2;height:560px;margin-top:20px}.route{position:absolute;inset:0}.node{position:absolute;width:76px;height:76px;border-radius:999px;background:rgba(255,255,255,.7);display:grid;place-items:center;box-shadow:0 18px 40px rgba(50,43,35,.11),inset 0 0 0 1px rgba(255,255,255,.9)}.node:before{content:"";position:absolute;inset:-18px;border-radius:999px;background:rgba(255,255,255,.42);box-shadow:0 14px 36px rgba(60,48,38,.08);z-index:-1}.dot{width:23px;height:23px;border-radius:999px;box-shadow:0 0 0 8px rgba(255,255,255,.5),inset 0 1px 2px rgba(255,255,255,.35)}.dot.orange{background:var(--orange)}.dot.purple{background:var(--purple)}.dot.green{background:var(--green)}.dot.blue{background:var(--blue)}.label{position:absolute;left:50%;top:-54px;transform:translateX(-50%);width:max-content;max-width:178px;padding:9px 13px;border-radius:999px;background:rgba(255,255,255,.9);box-shadow:0 14px 26px rgba(34,29,24,.08);font-size:13px;line-height:1.1;font-weight:900;text-align:center;letter-spacing:-.03em}.n1{left:136px;top:92px}.n2{left:165px;top:360px}.n3{left:302px;top:240px}.n4{left:255px;top:474px}.n4 .label{top:88px}.actions{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1.95fr;gap:12px;margin:0 20px}.btn{height:60px;border:0;border-radius:999px;font-size:17px;font-weight:950;letter-spacing:-.035em}.btn.secondary{background:rgba(255,255,255,.82);color:#5a4039;box-shadow:0 15px 36px rgba(44,35,28,.08)}.btn.primary{background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;box-shadow:0 18px 42px rgba(240,116,32,.28)}.note{position:relative;z-index:2;margin:22px 20px 110px;padding:18px;border-radius:26px;background:#fff3e8;border:1px solid rgba(255,122,34,.18);color:#6c4c3e;font-weight:750;line-height:1.35}.note b{color:var(--orange)}.dock{position:absolute;z-index:5;left:15px;right:15px;bottom:18px;height:72px;border-radius:34px;background:rgba(255,250,246,.92);display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:7px;box-shadow:0 -6px 36px rgba(70,60,50,.08),0 16px 44px rgba(70,60,50,.18);backdrop-filter:blur(18px)}.dock-item{display:grid;place-items:center;color:#9d918d;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}.dock-item b{font-size:20px;line-height:1}.dock-item.active{border-radius:24px;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;box-shadow:0 13px 28px rgba(240,116,32,.25)}
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <div class="status"><span>09:41</span><span class="battery">••• 95%</span></div>
+    <div class="tabs"><div class="tab">2 страни</div><div class="tab active">3 страни</div><div class="tab">4 страни</div></div>
+    <section class="map" aria-label="Маршрут на потенциално съвпадение">
+      <svg class="route" viewBox="0 0 430 560" fill="none" aria-hidden="true">
+        <path d="M177 130 C155 190 143 260 164 356" stroke="#8d66d7" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 18"/>
+        <path d="M194 140 C235 160 282 182 314 220" stroke="#ff7a22" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 17"/>
+        <path d="M188 372 C250 348 300 305 324 266" stroke="#79a758" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 18"/>
+        <path d="M198 417 C220 454 242 480 255 510" stroke="#69a7c8" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 18"/>
+      </svg>
+      <div class="node n1"><div class="label">ДГ 175 „Слънчеви лъчи“<br>сграда 2</div><span class="dot orange"></span></div>
+      <div class="node n2"><div class="label">ДГ 184 „Мечо Пух“</div><span class="dot purple"></span></div>
+      <div class="node n3"><div class="label">ДГ 30 „Радецки“</div><span class="dot green"></span></div>
+      <div class="node n4"><div class="label">ДГ 76 „Сърничка“</div><span class="dot blue"></span></div>
+    </section>
+    <section class="actions"><button class="btn secondary">Не мога</button><button class="btn primary">Потвърждавам ›</button></section>
+    <aside class="note"><b>Важно:</b> Потвърждението е израз на интерес за размяна. Данните после ще се наливат динамично от реалния каталог.</aside>
+    <nav class="dock"><div class="dock-item"><b>⌂</b>Начало</div><div class="dock-item"><b>＋</b>Заявка</div><div class="dock-item active"><b>✦</b>Съвпадение</div><div class="dock-item"><b>◌</b>Чат</div><div class="dock-item"><b>☻</b>Профил</div></nav>
+  </main>
+</body>
+</html>
