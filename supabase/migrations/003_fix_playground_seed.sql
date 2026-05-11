@@ -22,19 +22,19 @@ begin
   perform public.reset_playground_data();
 
   insert into public.kindergartens (official_number, name, normalized_name, district, address, phone, email, latitude, longitude, source_name, last_verified_at)
-  values ('PG-1', 'ДГ „Слънце“', 'дг слънце', 'Изгрев', 'ул. Тестова 1', '02 000 0001', 'sun@example.local', 42.6701000, 23.3501000, 'playground', now())
+  values ('175', 'ДГ 175 „Слънчеви лъчи“ - сграда 2', 'дг 175 слънчеви лъчи сграда 2', 'Изгрев', 'ул. Тестова 1', '02 000 0001', 'sun@example.local', 42.6701000, 23.3501000, 'playground', now())
   returning id into kg1;
 
   insert into public.kindergartens (official_number, name, normalized_name, district, address, phone, email, latitude, longitude, source_name, last_verified_at)
-  values ('PG-2', 'ДГ „Дъга“', 'дг дъга', 'Лозенец', 'ул. Тестова 2', '02 000 0002', 'rainbow@example.local', 42.6761000, 23.3221000, 'playground', now())
+  values ('30', 'ДГ 30 „Радецки“', 'дг 30 радецки', 'Лозенец', 'ул. Тестова 2', '02 000 0002', 'rainbow@example.local', 42.6761000, 23.3221000, 'playground', now())
   returning id into kg2;
 
   insert into public.kindergartens (official_number, name, normalized_name, district, address, phone, email, latitude, longitude, source_name, last_verified_at)
-  values ('PG-3', 'ДГ „Мечо Пух“', 'дг мечо пух', 'Красно село', 'ул. Тестова 3', '02 000 0003', 'pooh@example.local', 42.6831000, 23.2901000, 'playground', now())
+  values ('184', 'ДГ 184 „Мечо Пух“', 'дг 184 мечо пух', 'Красно село', 'ул. Тестова 3', '02 000 0003', 'pooh@example.local', 42.6831000, 23.2901000, 'playground', now())
   returning id into kg3;
 
   insert into public.kindergartens (official_number, name, normalized_name, district, address, phone, email, latitude, longitude, source_name, last_verified_at)
-  values ('PG-4', 'ДГ „Вълшебство“', 'дг вълшебство', 'Младост', 'ул. Тестова 4', '02 000 0004', 'magic@example.local', 42.6501000, 23.3801000, 'playground', now())
+  values ('76', 'ДГ 76 „Сърничка“', 'дг 76 сърничка', 'Младост', 'ул. Тестова 4', '02 000 0004', 'magic@example.local', 42.6501000, 23.3801000, 'playground', now())
   returning id into kg4;
 
   insert into public.app_users (email, display_name, email_verified, is_playground)
