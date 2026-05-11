@@ -10,7 +10,6 @@ import HomeStatLinks from "./HomeStatLinks";
 import HomeStatsCleanup from "./HomeStatsCleanup";
 import MatchEmptyCopyPolish from "./MatchEmptyCopyPolish";
 import MatchFlashGuard from "./MatchFlashGuard";
-import MatchRouteMapBridge from "./MatchRouteMapBridge";
 import MatchSimulatorBridge from "./MatchSimulatorBridge";
 import MobileChromePolish from "./MobileChromePolish";
 import NavEmergencyFix from "./NavEmergencyFix";
@@ -61,7 +60,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <TabLoadingStates />
         <MatchFlashGuard />
         <MatchSimulatorBridge />
-        <MatchRouteMapBridge />
         <MatchEmptyCopyPolish />
         <MobileChromePolish />
         <RequestFormHardReset />
