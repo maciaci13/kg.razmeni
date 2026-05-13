@@ -1,44 +1,57 @@
 "use client";
 
-import Link from "next/link";
+import { Home, Plus, Sparkles, MessageSquare, CircleUser } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { PlaygroundSnapshot } from "@/lib/playground";
 
+// ─── Types ───────────────────────────────────────────────────────────────────────────────────────
 type AppTab = "home" | "requests" | "matches" | "chats" | "profile";
 type ApiError = { error: string };
 type Participant = PlaygroundSnapshot["participants"][number];
 type Chat = PlaygroundSnapshot["chats"][number];
 
-const tabs: { id: AppTab; label: string; icon: string }[] = [
-  { id: "home", label: "Начало", icon: "⌂" },
-  { id: "requests", label: "Заявка", icon: "+" },
-  { id: "matches", label: "Match", icon: "✦" },
-  { id: "chats", label: "Чат", icon: "▤" },
-  { id: "profile", label: "Профил", icon: "○" }
+// ─── Constants ───────────────────────────────────────────────────────────────────────────────────
+const tabs = [
+  { id: "home" as AppTab,     label: "Начало",    Icon: Home },
+  { id: "requests" as AppTab, label: "Заявка",    Icon: Plus },
+  { id: "matches" as AppTab,  label: "Match",     Icon: Sparkles },
+  { id: "chats" as AppTab,    label: "Чат",       Icon: MessageSquare },
+  { id: "profile" as AppTab,  label: "Профил",    Icon: CircleUser },
 ];
 
 const placeTypes = ["Общ ред", "СОП", "Хронични заболявания", "Социални критерии"];
+
 const statusOptions = [
-  ["not_started", "Още не съм започнал/а"],
-  ["checking_procedure", "Проверявам процедурата"],
-  ["contacted_kindergarten", "Свързал/а съм се със заведение"],
-  ["can_continue", "Мога да продължа"],
-  ["cannot_continue", "Не мога да продължа"],
-  ["dropped_out", "Отказвам се"]
+  ["not_started",           "Още не съм започнал/а"],
+  ["checking_procedure",    "Проверявам процедурата"],
+  ["contacted_kindergarten","Свързал/а съм се със заведение"],
+  ["can_continue",          "Мога да продължа"],
+  ["cannot_continue",       "Не мога да продължа"],
+  ["dropped_out",           "Отказвам се"],
 ] as const;
 
 const steps = [
-  { title: "Потвърждение", helper: "Всички страни приемат потенциалното съвпадение." },
-  { title: "Отключена координация", helper: "Чатовете се отварят и започва уточняване." },
-  { title: "Проверка на процедурата", helper: "Всеки проверява официалния ред и контакт със заведение." },
-  { title: "Готовност за действие", helper: "Всички маркират дали могат да продължат." },
-  { title: "Официални действия", helper: "Следват се само официалните административни стъпки." },
-  { title: "Резултат", helper: "Цикълът се отбелязва като приключен или отпаднал." }
+  { title: "Потвърждение",           helper: "Всички страни приемат потенциалното съвпадение." },
+  { title: "Отключена координация",  helper: "Чатовете се отварят и започва уточняване." },
+  { title: "Проверка на процедурата",  helper: "Всеки проверява официалния ред и контакт със заведение." },
+  { title: "Готовност за действие",    helper: "Всички маркират дали могат да продължат." },
+  { title: "Официални действия",       helper: "Следват се само официалните административни стъпки." },
+  { title: "Резултат",                helper: "Цикълът се отбелязва като приключен или отпаднал." },
 ];
 
-const rejectedStep = { title: "Отказано", helper: "Процесът е прекратен. Веригата и чатовете са затворени." };
-const colors = ["bg-lime", "bg-[#DED1E8]", "bg-[#ECECC7]", "bg-[#D2E4E2]"];
+const rejectedStep = {
+  title: "Отказано",
+  helper: "Процесът е прекратен. Веригата и чатовете са затворени.",
+};
 
+const cardTones = [
+  "bg-gradient-ember text-primary-foreground",
+  "bg-gradient-sage",
+  "bg-gradient-mist",
+  "bg-gradient-butter",
+];
+
+// ─── API ───────────────────────────────────────────────────────────────────────────────────────────
 async function api(body?: object): Promise<PlaygroundSnapshot> {
   const response = body
     ? await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -48,46 +61,666 @@ async function api(body?: object): Promise<PlaygroundSnapshot> {
   return json;
 }
 
-function statusLabel(status?: string) { return statusOptions.find(([v]) => v === status)?.[1] ?? status ?? "—"; }
+// ─── Helpers ────────────────────────────────────────────────────────────────────────────────────
+function statusLabel(status?: string) {
+  return statusOptions.find(([v]) => v === status)?.[1] ?? status ?? "—";
+}
 function participantStatus(p: Participant, allConfirmed: boolean) {
   if (p.confirmation_status === "declined") return "Отказана размяна";
-  if (p.confirmation_status === "pending") return "Очаква потвърждение";
-  if (!allConfirmed) return "Потвърдил/а · чака останалите";
+  if (p.confirmation_status === "pending")  return "Очаква потвърждение";
+  if (!allConfirmed)                        return "Потвърдил/а · чака останалите";
   return statusLabel(p.coordination_status);
 }
 
-function SelectField({ value, onChange, children, className = "", disabled = false }: { value: string; onChange: (value: string) => void; children: React.ReactNode; className?: string; disabled?: boolean }) {
-  return <div className={`relative ${className}`}><select value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className="app-select w-full appearance-none rounded-[1.35rem] border-0 bg-paper py-4 pl-4 pr-14 text-sm font-bold text-ink outline-none disabled:opacity-50">{children}</select><span className="app-select-chevron" /></div>;
+// ─── UI Primitives ─────────────────────────────────────────────────────────────────────────────
+function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-md px-5 pt-6 pb-36 relative overflow-visible">
+      {children}
+    </div>
+  );
 }
 
-function AppShell({ children }: { children: React.ReactNode }) { return <div className="mx-auto max-w-md space-y-5 pb-6">{children}</div>; }
-function TopBar({ selectedName, onProfile }: { selectedName: string; onProfile: () => void }) { return <div className="mb-5 flex items-center justify-between px-1 pt-1"><button className="grid h-14 w-14 place-items-center rounded-[1.25rem] bg-white/80 shadow-soft backdrop-blur"><span className="grid grid-cols-2 gap-1"><i className="h-2 w-2 rounded-sm border-2 border-ink/65" /><i className="h-2 w-2 rounded-sm border-2 border-ink/65" /><i className="h-2 w-2 rounded-sm border-2 border-ink/65" /><i className="h-2 w-2 rounded-sm border-2 border-ink/65" /></span></button><button onClick={onProfile} className="rounded-[1.35rem] bg-white/80 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-ink/45 shadow-soft backdrop-blur">{selectedName || "Профил"}</button></div>; }
-function PageTitle({ eyebrow, title, body }: { eyebrow: string; title: string; body?: string }) { return <div className="px-1"><p className="text-xs font-extrabold uppercase tracking-[0.24em] text-orange">{eyebrow}</p><h1 className="mt-2 text-4xl font-extrabold leading-[0.95] tracking-[-0.055em]">{title}</h1>{body ? <p className="mt-3 text-sm font-medium leading-6 text-ink/55">{body}</p> : null}</div>; }
+function TopBar({ selectedName, onProfile }: { selectedName: string; onProfile: () => void }) {
+  return (
+    <header className="flex items-center justify-between mb-6">
+      <button className="liquid-action h-12 w-12 rounded-[1.35rem] flex items-center justify-center">
+        <span className="grid grid-cols-2 gap-[5px]">
+          <i className="block h-[7px] w-[7px] rounded-[3px] bg-foreground/50" />
+          <i className="block h-[7px] w-[7px] rounded-[3px] bg-foreground/50" />
+          <i className="block h-[7px] w-[7px] rounded-[3px] bg-foreground/50" />
+          <i className="block h-[7px] w-[7px] rounded-[3px] bg-foreground/50" />
+        </span>
+      </button>
+      <button
+        onClick={onProfile}
+        className="liquid-pill px-5 h-12 rounded-full text-[11px] tracking-[0.24em] uppercase text-muted-foreground font-bold"
+      >
+        {selectedName || "Профил"}
+      </button>
+    </header>
+  );
+}
 
-function HeroSearch({ setTab, activeRequestText, matchCount }: { setTab: (tab: AppTab) => void; activeRequestText: string; matchCount: number }) { return <section className="relative overflow-hidden rounded-[2rem] bg-[#FFF0E3] p-5 shadow-soft"><RouteMark className="absolute -right-8 -top-10 h-36 w-36 opacity-15" /><div className="relative z-10 flex items-start justify-between gap-4"><div><p className="text-sm font-semibold text-ink/50">Твоят маршрут</p><h1 className="mt-1 text-4xl font-extrabold leading-[0.95] tracking-[-0.055em]">Намери <span className="text-orange">място</span></h1><p className="mt-2 text-sm font-medium leading-5 text-ink/60">за възможна координация между родители</p></div><div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-[1.8rem] bg-white/65 shadow-soft"><div className="grid h-16 w-16 place-items-center rounded-full bg-lime text-xl">⌁</div></div></div><div className="relative z-10 mt-5 flex items-center gap-2 rounded-full bg-white/85 p-2 shadow-[inset_0_0_0_1px_rgba(28,27,25,0.04)]"><button className="grid h-12 w-12 place-items-center rounded-full bg-orange text-xl text-white shadow-soft">⌖</button><button className="grid h-12 w-12 place-items-center rounded-full bg-paper text-lg text-ink/60">⌕</button><button onClick={() => setTab("requests")} className="flex min-h-12 flex-1 items-center justify-between rounded-full bg-paper px-5 text-left text-sm font-bold text-ink/55">Пусни заявка <span className="text-xl text-orange">›</span></button></div><div className="relative z-10 mt-5 grid grid-cols-2 gap-3"><StatCard number={activeRequestText ? "01" : "00"} title="Активна заявка" body={activeRequestText || "Няма активна заявка"} tone="bg-lime" /><StatCard number={String(matchCount).padStart(2, "0")} title="Потенциални маршрута" body="2/3/4-странни цикли" tone="bg-[#D2E4E2]" /></div></section>; }
-function HomeTab({ setTab, activeRequestText, matchCount }: { setTab: (tab: AppTab) => void; activeRequestText: string; matchCount: number }) { return <AppShell><HeroSearch setTab={setTab} activeRequestText={activeRequestText} matchCount={matchCount} /><section className="space-y-3"><div className="flex items-center justify-between px-1"><h2 className="text-2xl font-extrabold tracking-[-0.04em]">За теб днес</h2><button className="rounded-full bg-white/80 px-4 py-2 text-xs font-bold shadow-soft">Виж всички</button></div><InsightCard category="Безопасност" title="Преди да пишеш на други родители" body="Не споделяй ЕГН, документи или данни на детето в чата. Координацията е само информативна." tone="bg-[#ECECC7]" /><InsightCard category="Важно за match" title="Типът място трябва да съвпада" body="Общ ред, СОП, хронични заболявания и социални критерии не се смесват в един цикъл." tone="bg-[#DED1E8]" /></section></AppShell>; }
+function PageTitle({ eyebrow, title, body }: { eyebrow: string; title: string; body?: string }) {
+  return (
+    <div className="mb-5">
+      <p className="text-[11px] tracking-[0.22em] uppercase text-primary font-extrabold">{eyebrow}</p>
+      <h1 className="mt-2 font-display text-4xl leading-[0.95] tracking-[-0.055em]">{title}</h1>
+      {body ? <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p> : null}
+    </div>
+  );
+}
 
-function RequestsTab({ snapshot, selectedProfileId, selectedPlaceType, setSelectedPlaceType, myRequests, kgById, requestToText, createRequest, deactivateRequest, deleteRequest, loading }: { snapshot: PlaygroundSnapshot | null; selectedProfileId: string; selectedPlaceType: string; setSelectedPlaceType: (value: string) => void; myRequests: PlaygroundSnapshot["requests"]; kgById: Map<string, PlaygroundSnapshot["kindergartens"][number]>; requestToText: (requestId: string) => string; createRequest: (data: { fromKgId: string; wantedKgId: string; ageGroup: string }) => void; deactivateRequest: (id: string) => void; deleteRequest: (id: string) => void; loading: boolean }) { const [fromKgId, setFromKgId] = useState(""); const [wantedKgId, setWantedKgId] = useState(""); const [ageGroup, setAgeGroup] = useState("2019"); const kindergartens = snapshot?.kindergartens ?? []; return <AppShell><PageTitle eyebrow="Нова заявка" title="Къде сте и къде искате да сте?" body="Избери сегашно и желано място. Match-ът работи само между еднакъв тип места." /><section className="rounded-[2.2rem] bg-white/90 p-4 shadow-soft backdrop-blur"><div className="space-y-3 rounded-[1.8rem] bg-paper p-4"><FieldLabel>Имаме място в</FieldLabel><SelectField value={fromKgId} onChange={setFromKgId}><option value="">Избери градина</option>{kindergartens.map((kg) => <option key={kg.id} value={kg.id}>{kg.name} · {kg.district}</option>)}</SelectField><FieldLabel>Желана градина</FieldLabel><SelectField value={wantedKgId} onChange={setWantedKgId}><option value="">Избери желана градина</option>{kindergartens.map((kg) => <option key={kg.id} value={kg.id}>{kg.name} · {kg.district}</option>)}</SelectField><FieldLabel>Набор / група</FieldLabel><input value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} className="w-full rounded-[1.35rem] bg-white/70 px-4 py-4 text-sm font-bold outline-none" /></div><PlaceTypeSelector value={selectedPlaceType} onChange={setSelectedPlaceType} /><button disabled={loading || !selectedProfileId || !fromKgId || !wantedKgId} onClick={() => createRequest({ fromKgId, wantedKgId, ageGroup })} className="mt-4 w-full rounded-full bg-orange px-5 py-4 text-sm font-extrabold text-white shadow-soft disabled:opacity-40">Активирай заявка</button><p className="mt-3 text-center text-xs font-medium leading-5 text-ink/45">Заявката ще се скрие автоматично при потенциален цикъл.</p></section><section className="space-y-3"><h2 className="px-1 text-2xl font-extrabold tracking-[-0.04em]">Моите заявки</h2>{myRequests.length ? myRequests.map((r) => <RequestCard key={r.id} text={`${kgById.get(r.from_kindergarten_id)?.name ?? "—"} → ${requestToText(r.id)}`} ageGroup={r.child_group_year_or_age_group} active={r.is_active} locked={r.is_locked} placeType={selectedPlaceType} onDeactivate={() => deactivateRequest(r.id)} onDelete={() => deleteRequest(r.id)} loading={loading} />) : <EmptyCard title="Няма активна заявка" body="Попълни формата горе, за да стартираш търсене на съвпадение." />}</section></AppShell>; }
+function FieldLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <label className={`block text-[11px] font-extrabold uppercase tracking-[0.18em] text-muted-foreground mb-2 ${className}`}>
+      {children}
+    </label>
+  );
+}
 
-function MatchesTab({ activeMatch, activeParticipant, participants, selectedProfileId, userById, fromToText, allConfirmed, matchIsClosed, currentStep, currentStepInfo, loading, confirm, decline, updateMyStatus, leave }: { activeMatch?: PlaygroundSnapshot["matches"][number]; activeParticipant?: Participant; participants: Participant[]; selectedProfileId: string; userById: Map<string, PlaygroundSnapshot["users"][number]>; fromToText: (p: Participant) => string; allConfirmed: boolean; matchIsClosed: boolean; currentStep: number; currentStepInfo: { title: string; helper: string }; loading: boolean; confirm: () => void; decline: () => void; updateMyStatus: (status: string) => void; leave: () => void }) { const [showTimeline, setShowTimeline] = useState(false); if (!activeMatch || !activeParticipant) return <AppShell><PageTitle eyebrow="Match" title="Още няма цикъл" body="Когато има потенциално съвпадение, заявката се скрива и тук се появява поканата." /><EmptyCard title="Няма match" body="Пусни заявка или използвай симулатора от профила за тестове." /></AppShell>; if (activeParticipant.confirmation_status === "pending" && !matchIsClosed) return <AppShell><PageTitle eyebrow="Match покана" title="Има потенциален цикъл" body="Заявката ти вече е скрита. Потвърди интерес, за да се отключи координацията." /><section className="rounded-[2.2rem] bg-white/90 p-4 shadow-soft backdrop-blur"><CycleMap participants={participants} selectedProfileId={selectedProfileId} userById={userById} fromToText={fromToText} allConfirmed={allConfirmed} readOnly /><div className="mt-5 grid grid-cols-2 gap-2"><button disabled={loading} onClick={confirm} className="rounded-full bg-orange px-3 py-4 text-sm font-extrabold text-white">Приемам</button><button disabled={loading} onClick={decline} className="rounded-full bg-paper px-3 py-4 text-sm font-extrabold">Отказвам</button></div></section></AppShell>; return <AppShell><PageTitle eyebrow="Статус в прогрес" title={matchIsClosed ? "Отказано" : "Координация"} body={matchIsClosed ? "Процесът е затворен след отказ." : "Следи кой на какъв етап е и промени само своя статус."} /><section className="rounded-[2.2rem] bg-white/90 p-4 shadow-soft backdrop-blur"><button type="button" onClick={() => setShowTimeline((v) => !v)} className={`flex w-full items-center justify-between gap-4 rounded-[1.6rem] px-5 py-4 text-left shadow-sm ${matchIsClosed ? "bg-red-100" : "bg-lime"}`}><div><p className="text-xs font-extrabold uppercase tracking-[0.22em] text-ink/45">Стъпка {currentStep || 1} от {steps.length}</p><p className="mt-2 text-lg font-extrabold leading-tight">{currentStepInfo.title}</p><p className="mt-1 text-xs font-semibold leading-5 text-ink/60">{currentStepInfo.helper}</p></div><span className={`playground-toggle-icon ${showTimeline ? "is-open" : ""}`} /></button>{showTimeline ? <Timeline currentStep={currentStep} rejected={matchIsClosed} /> : null}{!matchIsClosed ? <CycleMap participants={participants} selectedProfileId={selectedProfileId} userById={userById} fromToText={fromToText} allConfirmed={allConfirmed} loading={loading} updateMyStatus={updateMyStatus} /> : <EmptyCard title="Веригата е затворена" body="Чатовете вече не се показват за този процес." />}{!matchIsClosed ? <button onClick={leave} className="mt-5 w-full rounded-full bg-paper px-4 py-4 text-sm font-extrabold">Отказ от процеса</button> : null}</section></AppShell>; }
+function SelectField({
+  value, onChange, children, className = "", disabled = false,
+}: {
+  value: string; onChange: (v: string) => void; children: React.ReactNode; className?: string; disabled?: boolean;
+}) {
+  return (
+    <div className={`relative ${className}`}>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none rounded-[1.35rem] border border-border bg-card py-4 pl-5 pr-12 text-sm font-bold text-foreground outline-none disabled:opacity-50"
+      >
+        {children}
+      </select>
+      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">▾</span>
+    </div>
+  );
+}
 
-function ChatsTab({ activeMatch, allConfirmed, matchIsClosed, availableChats, selectedChat, selectedChatId, setSelectedChatId, snapshot, selectedProfileId, selectedUserName, userById, chatTitle, messageBody, setMessageBody, sendMessage, loading }: { activeMatch?: PlaygroundSnapshot["matches"][number]; allConfirmed: boolean; matchIsClosed: boolean; availableChats: Chat[]; selectedChat?: Chat; selectedChatId: string; setSelectedChatId: (id: string) => void; snapshot: PlaygroundSnapshot | null; selectedProfileId: string; selectedUserName: string; userById: Map<string, PlaygroundSnapshot["users"][number]>; chatTitle: (chat: Chat) => string; messageBody: string; setMessageBody: (value: string) => void; sendMessage: () => void; loading: boolean }) { if (!activeMatch || !allConfirmed || matchIsClosed) return <AppShell><PageTitle eyebrow="Чатове" title="Още са заключени" body="Чатовете се появяват само след потвърждение от всички страни." /><SafetyNote /></AppShell>; return <AppShell><PageTitle eyebrow="Чатове" title={selectedChat ? chatTitle(selectedChat) : "Координация"} body="При 2 страни показваме само личния чат. При 3/4 има групов и лични чатове." /><section className="rounded-[2.2rem] bg-white/90 p-4 shadow-soft backdrop-blur">{availableChats.length ? <div className="flex gap-2 overflow-x-auto pb-1">{availableChats.map((c) => <button key={c.id} onClick={() => setSelectedChatId(c.id)} className={`shrink-0 rounded-full px-4 py-3 text-xs font-extrabold ${selectedChatId === c.id ? "bg-orange text-white" : "bg-paper"}`}>{chatTitle(c)}</button>)}</div> : <p className="text-sm text-ink/50">Няма активни чатове.</p>}<div className="mt-5 space-y-3">{snapshot?.messages.filter((m) => selectedChat && m.chat_id === selectedChat.id).map((m) => { const mine = m.sender_user_id === selectedProfileId; return <Bubble key={m.id} mine={mine} name={mine ? "Ти" : userById.get(m.sender_user_id)?.display_name ?? "Родител"} body={m.body} />; })}</div>{selectedChat ? <div className="mt-5 space-y-2"><textarea value={messageBody} onChange={(e) => setMessageBody(e.target.value)} className="min-h-24 w-full rounded-[1.6rem] border-0 bg-paper p-4 text-sm outline-none" /><button disabled={loading || selectedChat.status !== "active"} onClick={sendMessage} className="w-full rounded-full bg-orange px-4 py-4 text-sm font-extrabold text-white disabled:opacity-30">Изпрати като {selectedUserName}</button></div> : null}</section><SafetyNote /></AppShell>; }
+function EmptyCard({ title, body }: { title: string; body: string }) {
+  return (
+    <section className="rounded-[2rem] bg-card/85 p-5 shadow-soft border border-border">
+      <h3 className="font-display text-xl">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+    </section>
+  );
+}
 
-function ProfileTab({ selectedProfileId, selectedUserName, users, setSelectedProfileId }: { selectedProfileId: string; selectedUserName: string; users: PlaygroundSnapshot["users"]; setSelectedProfileId: (id: string) => void }) { return <AppShell><section className="rounded-[2.2rem] bg-white/90 p-5 shadow-soft backdrop-blur"><div className="flex items-center gap-4"><div className="grid h-20 w-20 place-items-center rounded-[1.8rem] bg-orange text-2xl font-extrabold text-white shadow-soft">{selectedUserName.slice(-1) || "А"}</div><div className="min-w-0 flex-1"><p className="text-xs font-extrabold uppercase tracking-[0.2em] text-ink/40">Профил</p><h1 className="mt-1 text-3xl font-extrabold tracking-[-0.05em]">{selectedUserName || "Родител"}</h1><p className="mt-1 text-sm font-semibold text-ink/55">Тестов профил · София</p></div></div><FieldLabel className="mt-5">Тестов потребител</FieldLabel><SelectField value={selectedProfileId} onChange={setSelectedProfileId}>{users.map((u) => <option key={u.id} value={u.id}>{u.display_name}</option>)}</SelectField></section><section className="rounded-[2.2rem] bg-white/90 p-5 shadow-soft backdrop-blur"><p className="text-xs font-extrabold uppercase tracking-[0.2em] text-ink/40">Настройки</p><div className="mt-4 space-y-3"><SettingsRow title="Данни за детето" body="Набор, район и тип място" /><SettingsRow title="Поверителност" body="Показваме само нужното за координация" /><SettingsRow title="Правила и безопасност" body="Без продажба, гаранции и неофициални обещания" /></div></section><section className="grid grid-cols-2 gap-3"><button className="rounded-[1.8rem] bg-[#ECECC7] p-5 text-left shadow-soft"><p className="text-xs font-extrabold uppercase tracking-[0.2em] text-ink/40">Каузата</p><p className="mt-2 text-lg font-extrabold leading-tight">Подкрепи проекта</p></button><Link href="/playground" className="rounded-[1.8rem] bg-ink p-5 text-white shadow-soft"><p className="text-xs font-extrabold uppercase tracking-[0.22em] text-white/50">Тестове</p><p className="mt-2 text-lg font-extrabold leading-tight">Симулатор</p></Link></section></AppShell>; }
+function SafetyNote() {
+  return (
+    <div className="rounded-[1.7rem] glass p-4 text-xs font-medium leading-5 text-muted-foreground">
+      Независима платформа за потенциални съвпадения. Не е официална услуга и не гарантира прием, преместване или размяна.
+    </div>
+  );
+}
 
-function StatCard({ number, title, body, tone }: { number: string; title: string; body: string; tone: string }) { return <div className={`rounded-[1.8rem] ${tone} p-4 shadow-soft`}><span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/65 text-lg font-extrabold">{number}</span><h3 className="mt-5 text-lg font-extrabold tracking-[-0.03em]">{title}</h3><p className="mt-2 text-xs font-semibold leading-5 text-ink/55">{body}</p></div>; }
-function InsightCard({ category, title, body, tone }: { category: string; title: string; body: string; tone: string }) { return <article className={`relative overflow-hidden rounded-[2rem] ${tone} p-5 shadow-soft`}><RouteMark className="absolute -right-8 -top-7 h-28 w-28 opacity-15" /><div className="relative z-10"><div className="mb-5 flex items-center justify-between"><span className="rounded-full bg-white/60 px-3 py-1.5 text-xs font-extrabold">{category}</span><span className="rounded-full bg-white/60 px-3 py-1.5 text-xs font-bold">3 мин.</span></div><h3 className="text-xl font-extrabold leading-tight tracking-[-0.03em]">{title}</h3><p className="mt-3 text-sm font-semibold leading-6 text-ink/58">{body}</p></div></article>; }
-function FieldLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) { return <label className={`block text-xs font-extrabold uppercase tracking-[0.18em] text-ink/40 ${className}`}>{children}</label>; }
-function PlaceTypeSelector({ value, onChange }: { value: string; onChange: (value: string) => void }) { return <div className="mt-4 rounded-[1.8rem] bg-[#F7F5EF] p-3"><p className="px-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-ink/35">Тип място</p><div className="mt-3 grid grid-cols-2 gap-2">{placeTypes.map((type) => <button key={type} onClick={() => onChange(type)} className={`rounded-2xl px-3 py-3 text-left text-xs font-extrabold ${value === type ? "bg-orange text-white" : "bg-white/75"}`}>{type}</button>)}</div></div>; }
-function RequestCard({ text, ageGroup, active, locked, placeType, onDeactivate, onDelete, loading }: { text: string; ageGroup: string; active: boolean; locked: boolean; placeType: string; onDeactivate: () => void; onDelete: () => void; loading: boolean }) { return <div className="rounded-[2rem] bg-[#ECECC7] p-5 shadow-soft"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-[0.2em] text-ink/40">{active ? "Активна" : "Неактивна"} · {placeType}</p><h3 className="mt-2 text-xl font-extrabold leading-tight">{text}</h3><p className="mt-2 text-sm font-semibold text-ink/55">Набор {ageGroup}</p></div><span className="rounded-full bg-white/65 px-3 py-2 text-xs font-extrabold">{locked ? "MATCH" : "ON"}</span></div><div className="mt-5 grid grid-cols-2 gap-2"><button disabled={loading || !active} onClick={onDeactivate} className="rounded-full bg-white/65 px-4 py-3 text-xs font-extrabold disabled:opacity-30">Деактивирай</button><button disabled={loading || locked} onClick={onDelete} className="rounded-full bg-ink px-4 py-3 text-xs font-extrabold text-white disabled:opacity-30">Изтрий</button></div></div>; }
-function EmptyCard({ title, body }: { title: string; body: string }) { return <section className="rounded-[2rem] bg-white/85 p-5 shadow-soft"><h3 className="text-xl font-extrabold tracking-[-0.03em]">{title}</h3><p className="mt-2 text-sm font-medium leading-6 text-ink/55">{body}</p></section>; }
-function CycleMap({ participants, selectedProfileId, userById, fromToText, allConfirmed, loading = false, updateMyStatus, readOnly = false }: { participants: Participant[]; selectedProfileId: string; userById: Map<string, PlaygroundSnapshot["users"][number]>; fromToText: (p: Participant) => string; allConfirmed: boolean; loading?: boolean; updateMyStatus?: (status: string) => void; readOnly?: boolean }) { if (!participants.length) return null; return <div className="mt-5 rounded-[1.75rem] bg-paper p-4"><p className="mb-4 text-xs font-extrabold uppercase tracking-[0.2em] text-ink/40">Верига и статуси</p><div className="space-y-3">{participants.map((p, i) => { const me = p.user_id === selectedProfileId; const user = userById.get(p.user_id); return <div key={p.id} className="relative">{i < participants.length - 1 ? <div className="absolute left-8 top-[4.5rem] h-5 border-l border-dashed border-ink/25" /> : null}<div className={`relative z-10 rounded-[1.4rem] p-3 ${me ? "bg-ink text-white" : colors[i % colors.length]}`}><div className="flex items-center gap-3"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-sm font-extrabold text-ink shadow-sm">{me ? "Ти" : i + 1}</div><div className="min-w-0 flex-1"><p className="font-extrabold leading-tight">{me ? "Ти" : user?.display_name}</p><p className={`mt-1 text-[11px] font-semibold leading-4 ${me ? "text-white/65" : "text-ink/60"}`}>{fromToText(p)}</p></div></div><div className="mt-3">{me && allConfirmed && !readOnly ? <SelectField value={p.coordination_status} disabled={loading} onChange={(value) => updateMyStatus?.(value)}>{statusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</SelectField> : <div className={`px-1 py-1 text-xs font-extrabold ${me ? "text-white/65" : "text-ink/55"}`}>{participantStatus(p, allConfirmed)}</div>}</div></div></div>; })}</div></div>; }
-function Timeline({ currentStep, rejected = false }: { currentStep: number; rejected?: boolean }) { return <div className="mt-5 rounded-[1.75rem] bg-paper px-4 py-5">{steps.map((s, i) => { const n = i + 1; const done = n < currentStep; const current = n === currentStep; const title = rejected && n === 6 ? "Отказано" : s.title; const helper = rejected && n === 6 ? rejectedStep.helper : s.helper; return <div key={s.title} className="relative grid grid-cols-[2rem_1fr] gap-3 pb-6 last:pb-0">{i < steps.length - 1 ? <div className={`absolute left-[0.94rem] top-8 h-[calc(100%-1.7rem)] border-l-2 border-dashed ${done ? rejected ? "border-red-300" : "border-lime" : "border-ink/15"}`} /> : null}<div className={`relative z-10 grid h-8 w-8 place-items-center rounded-full text-xs font-extrabold ${done ? rejected ? "bg-red-100 text-red-900" : "bg-lime text-ink" : current ? rejected ? "bg-red-100 text-red-900" : "bg-ink text-white" : "bg-white text-ink/35 ring-1 ring-ink/10"}`}>{done ? "✓" : rejected && current ? "!" : n}</div><div className="pt-0.5"><p className={`text-[10px] font-extrabold uppercase tracking-[0.18em] ${current ? "text-ink" : "text-ink/40"}`}>Стъпка {n}</p><p className={`mt-1 text-sm font-extrabold ${current ? "text-ink" : "text-ink/65"}`}>{title}</p><p className="mt-1 text-xs font-medium leading-5 text-ink/45">{helper}</p></div></div>; })}</div>; }
-function Bubble({ name, body, mine = false }: { name: string; body: string; mine?: boolean }) { return <div className={`rounded-[1.8rem] p-4 text-sm shadow-soft ${mine ? "ml-8 bg-orange text-white" : "mr-8 bg-paper"}`}><p className={`text-xs font-extrabold ${mine ? "text-white/60" : "text-ink/40"}`}>{name}</p><p className="mt-1 leading-6">{body}</p></div>; }
-function SafetyNote() { return <div className="rounded-[1.7rem] bg-white/75 p-4 text-xs font-semibold leading-5 text-ink/55 shadow-soft backdrop-blur">Независима платформа за потенциални съвпадения. Не е официална услуга и не гарантира прием, преместване или размяна.</div>; }
-function SettingsRow({ title, body }: { title: string; body: string }) { return <div className="rounded-[1.5rem] bg-paper p-4"><p className="text-sm font-extrabold">{title}</p><p className="mt-1 text-xs font-semibold leading-5 text-ink/50">{body}</p></div>; }
-function RouteMark({ className = "" }: { className?: string }) { return <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true"><path d="M20 36h42L82 18v84" stroke="#1C1B19" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" opacity="0.16"/><circle cx="83" cy="42" r="8" fill="#1C1B19" opacity="0.16"/></svg>; }
+// ─── Home Tab ───────────────────────────────────────────────────────────────────────────────────────────
+function HomeTab({
+  setTab, activeRequestText, matchCount,
+}: {
+  setTab: (tab: AppTab) => void;
+  activeRequestText: string;
+  matchCount: number;
+}) {
+  return (
+    <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-[2rem] bg-gradient-cocoa text-primary-foreground p-5 shadow-glow">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(255,255,255,.15)_0%,transparent_28%)]" />
+        <div className="relative z-10">
+          <p className="text-[11px] tracking-[0.22em] uppercase font-bold opacity-60">Намери място</p>
+          <h1 className="mt-2 font-display text-[2.6rem] leading-[0.92] tracking-[-0.05em]">Намери<br />място</h1>
+          <p className="mt-2 text-sm leading-5 opacity-65">за координирано преместване между детски заведения в София</p>
+        </div>
+        <div className="relative z-10 mt-5 grid grid-cols-2 gap-3">
+          <div className="rounded-[1.5rem] bg-white/15 p-4">
+            <span className="font-display text-2xl font-black">{activeRequestText ? "01" : "00"}</span>
+            <p className="mt-1 text-xs font-bold opacity-65">Активна заявка</p>
+            <p className="mt-1 text-[11px] opacity-50 leading-4 truncate">{activeRequestText || "Няма активна заявка"}</p>
+          </div>
+          <div className="rounded-[1.5rem] bg-white/15 p-4">
+            <span className="font-display text-2xl font-black">{String(matchCount).padStart(2, "0")}</span>
+            <p className="mt-1 text-xs font-bold opacity-65">Потенциал</p>
+            <p className="mt-1 text-[11px] opacity-50 leading-4">2/3/4-странни цикли</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setTab("requests")}
+          className="relative z-10 mt-4 w-full h-12 rounded-full bg-white/20 font-display text-sm font-black tracking-[-0.02em] border border-white/25 hover:bg-white/25 transition-colors"
+        >
+          Пусни заявка ›
+        </button>
+      </section>
 
+      <h2 className="font-display text-2xl tracking-[-0.04em]">За теб днес</h2>
+
+      <article className="rounded-[2rem] bg-gradient-butter p-5 shadow-soft">
+        <p className="text-[11px] tracking-[0.22em] uppercase font-extrabold text-muted-foreground">Безопасност</p>
+        <h3 className="mt-2 font-display text-xl">Преди да пишеш на други родители</h3>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">Не споделяй ЕГН, документи или данни на детето в чата. Координацията е само информативна.</p>
+      </article>
+
+      <article className="rounded-[2rem] bg-gradient-mist p-5 shadow-soft">
+        <p className="text-[11px] tracking-[0.22em] uppercase font-extrabold text-muted-foreground">Важно за match</p>
+        <h3 className="mt-2 font-display text-xl">Типът място трябва да съвпада</h3>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">Общ ред, СОП, хронични заболявания и социални критерии не се смесват в един цикъл.</p>
+      </article>
+    </div>
+  );
+}
+
+// ─── Requests Tab ─────────────────────────────────────────────────────────────────────────────────
+function RequestsTab({
+  snapshot, selectedProfileId, selectedPlaceType, setSelectedPlaceType,
+  myRequests, kgById, requestToText, createRequest, deactivateRequest, deleteRequest, loading,
+}: {
+  snapshot: PlaygroundSnapshot | null;
+  selectedProfileId: string;
+  selectedPlaceType: string;
+  setSelectedPlaceType: (v: string) => void;
+  myRequests: PlaygroundSnapshot["requests"];
+  kgById: Map<string, PlaygroundSnapshot["kindergartens"][number]>;
+  requestToText: (id: string) => string;
+  createRequest: (data: { fromKgId: string; wantedKgId: string; ageGroup: string }) => void;
+  deactivateRequest: (id: string) => void;
+  deleteRequest: (id: string) => void;
+  loading: boolean;
+}) {
+  const [fromKgId, setFromKgId] = useState("");
+  const [wantedKgId, setWantedKgId] = useState("");
+  const [ageGroup, setAgeGroup] = useState("2019");
+  const [open, setOpen] = useState(true);
+  const kindergartens = snapshot?.kindergartens ?? [];
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        eyebrow="Нова заявка"
+        title="Къде сте и къде искате да сте?"
+        body="Избери сегашно и желано място. Съвпадението работи само между еднакъв тип места."
+      />
+
+      <div className="rounded-[2rem] bg-card border border-border shadow-soft overflow-hidden">
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full px-6 py-5 flex items-center justify-between text-left"
+        >
+          <span className="font-display text-[1.4rem] tracking-[-0.04em]">Активирай заявка</span>
+          <div className="liquid-action h-10 w-10 rounded-2xl flex items-center justify-center text-muted-foreground text-lg">
+            {open ? "↑" : "↓"}
+          </div>
+        </button>
+
+        {open && (
+          <div className="px-5 pb-6 space-y-5">
+            <div>
+              <FieldLabel>Имаме място в</FieldLabel>
+              <SelectField value={fromKgId} onChange={setFromKgId}>
+                <option value="">Избери градина</option>
+                {kindergartens.map((kg) => (
+                  <option key={kg.id} value={kg.id}>{kg.name} · {kg.district}</option>
+                ))}
+              </SelectField>
+            </div>
+            <div>
+              <FieldLabel>Желана градина</FieldLabel>
+              <SelectField value={wantedKgId} onChange={setWantedKgId}>
+                <option value="">Избери желана градина</option>
+                {kindergartens.map((kg) => (
+                  <option key={kg.id} value={kg.id}>{kg.name} · {kg.district}</option>
+                ))}
+              </SelectField>
+            </div>
+            <div>
+              <FieldLabel>Набор / група</FieldLabel>
+              <input
+                value={ageGroup}
+                onChange={(e) => setAgeGroup(e.target.value)}
+                className="w-full rounded-[1.35rem] border border-border bg-card px-5 py-4 text-sm font-bold outline-none"
+              />
+            </div>
+            <div>
+              <FieldLabel>Тип място</FieldLabel>
+              <div className="flex flex-wrap gap-2">
+                {placeTypes.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setSelectedPlaceType(t)}
+                    className={`min-h-11 rounded-full text-sm font-extrabold px-5 transition-all ${
+                      t === selectedPlaceType
+                        ? "bg-gradient-ember text-primary-foreground shadow-glow"
+                        : "bg-secondary border border-border text-foreground shadow-soft"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              disabled={loading || !selectedProfileId || !fromKgId || !wantedKgId}
+              onClick={() => createRequest({ fromKgId, wantedKgId, ageGroup })}
+              className="w-full h-14 rounded-full bg-gradient-ember text-primary-foreground font-extrabold text-sm shadow-glow disabled:opacity-40"
+            >
+              Активирай заявка
+            </button>
+            <p className="text-center text-xs text-muted-foreground">Заявката ще се скрие автоматично при потенциален цикъл.</p>
+          </div>
+        )}
+      </div>
+
+      <h2 className="font-display text-2xl tracking-[-0.04em]">Моите заявки</h2>
+
+      {myRequests.length ? myRequests.map((r) => (
+        <div key={r.id} className="rounded-[2rem] bg-gradient-sage p-5 shadow-soft">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] tracking-[0.2em] uppercase font-extrabold text-muted-foreground">
+                {r.is_active ? "Активна" : "Неактивна"} · {selectedPlaceType}
+              </p>
+              <h3 className="mt-2 font-display text-xl leading-tight">
+                {kgById.get(r.from_kindergarten_id)?.name ?? "—"} → {requestToText(r.id)}
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">Набор {r.child_group_year_or_age_group}</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-white/65 px-3 py-1.5 text-xs font-extrabold">
+              {r.is_locked ? "MATCH" : "ON"}
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              disabled={loading || !r.is_active}
+              onClick={() => deactivateRequest(r.id)}
+              className="rounded-full bg-white/65 px-4 py-3 text-xs font-extrabold disabled:opacity-30"
+            >
+              Деактивирай
+            </button>
+            <button
+              disabled={loading || r.is_locked}
+              onClick={() => deleteRequest(r.id)}
+              className="rounded-full bg-foreground text-card px-4 py-3 text-xs font-extrabold disabled:opacity-30"
+            >
+              Изтрий
+            </button>
+          </div>
+        </div>
+      )) : (
+        <EmptyCard title="Няма активна заявка" body="Попълни формата горе, за да стартираш търсене на съвпадение." />
+      )}
+    </div>
+  );
+}
+
+// ─── Cycle Map & Timeline ──────────────────────────────────────────────────────────────────────────
+function CycleMap({
+  participants, selectedProfileId, userById, fromToText, allConfirmed,
+  loading = false, updateMyStatus, readOnly = false,
+}: {
+  participants: Participant[];
+  selectedProfileId: string;
+  userById: Map<string, PlaygroundSnapshot["users"][number]>;
+  fromToText: (p: Participant) => string;
+  allConfirmed: boolean;
+  loading?: boolean;
+  updateMyStatus?: (status: string) => void;
+  readOnly?: boolean;
+}) {
+  if (!participants.length) return null;
+  return (
+    <div className="rounded-[1.75rem] bg-secondary/60 p-4">
+      <p className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground">Верига и статуси</p>
+      <div className="space-y-3">
+        {participants.map((p, i) => {
+          const me = p.user_id === selectedProfileId;
+          const user = userById.get(p.user_id);
+          return (
+            <div key={p.id} className="relative">
+              {i < participants.length - 1 && (
+                <div className="absolute left-8 top-[4.5rem] h-5 border-l border-dashed border-foreground/20" />
+              )}
+              <div className={`relative z-10 rounded-[1.4rem] p-3.5 ${cardTones[i % cardTones.length]}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-extrabold shadow-sm ${
+                    me ? "bg-white/25" : "bg-white/60 text-foreground"
+                  }`}>
+                    {me ? "Ти" : i + 1}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-extrabold leading-tight">{me ? "Ти" : user?.display_name}</p>
+                    <p className="mt-1 text-[11px] font-medium leading-4 opacity-60">{fromToText(p)}</p>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  {me && allConfirmed && !readOnly ? (
+                    <SelectField value={p.coordination_status} disabled={loading} onChange={(v) => updateMyStatus?.(v)}>
+                      {statusOptions.map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </SelectField>
+                  ) : (
+                    <p className="px-1 text-xs font-extrabold opacity-60">{participantStatus(p, allConfirmed)}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Timeline({ currentStep, rejected = false }: { currentStep: number; rejected?: boolean }) {
+  return (
+    <div className="rounded-[1.75rem] bg-secondary/60 px-4 py-5">
+      {steps.map((s, i) => {
+        const n = i + 1;
+        const done = n < currentStep;
+        const current = n === currentStep;
+        const title = rejected && n === 6 ? rejectedStep.title : s.title;
+        const helper = rejected && n === 6 ? rejectedStep.helper : s.helper;
+        return (
+          <div key={s.title} className="relative grid grid-cols-[2rem_1fr] gap-3 pb-5 last:pb-0">
+            {i < steps.length - 1 && (
+              <div className={`absolute left-[0.94rem] top-8 h-[calc(100%-1.7rem)] border-l-2 border-dashed ${
+                done ? (rejected ? "border-red-300" : "border-sage/60") : "border-foreground/15"
+              }`} />
+            )}
+            <div className={`relative z-10 grid h-8 w-8 place-items-center rounded-full text-xs font-extrabold ${
+              done    ? (rejected ? "bg-red-100 text-red-800" : "bg-gradient-sage text-foreground") :
+              current ? (rejected ? "bg-red-100 text-red-800" : "bg-gradient-ember text-primary-foreground") :
+              "bg-white text-muted-foreground ring-1 ring-foreground/10"
+            }`}>
+              {done ? "✓" : (rejected && current ? "!" : n)}
+            </div>
+            <div className="pt-0.5">
+              <p className={`text-[10px] font-extrabold uppercase tracking-[0.18em] ${
+                current ? "text-foreground" : "text-muted-foreground"
+              }`}>Стъпка {n}</p>
+              <p className={`mt-1 text-sm font-extrabold ${
+                current ? "text-foreground" : "text-foreground/65"
+              }`}>{title}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{helper}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Matches Tab ───────────────────────────────────────────────────────────────────────────────────
+function MatchesTab({
+  activeMatch, activeParticipant, participants, selectedProfileId, userById,
+  fromToText, allConfirmed, matchIsClosed, currentStep, currentStepInfo,
+  loading, confirm, decline, updateMyStatus, leave,
+}: {
+  activeMatch?: PlaygroundSnapshot["matches"][number];
+  activeParticipant?: Participant;
+  participants: Participant[];
+  selectedProfileId: string;
+  userById: Map<string, PlaygroundSnapshot["users"][number]>;
+  fromToText: (p: Participant) => string;
+  allConfirmed: boolean;
+  matchIsClosed: boolean;
+  currentStep: number;
+  currentStepInfo: { title: string; helper: string };
+  loading: boolean;
+  confirm: () => void;
+  decline: () => void;
+  updateMyStatus: (status: string) => void;
+  leave: () => void;
+}) {
+  const [showTimeline, setShowTimeline] = useState(false);
+
+  if (!activeMatch || !activeParticipant) {
+    return (
+      <div className="space-y-5">
+        <PageTitle eyebrow="Match" title="Още няма цикъл" body="Когато има потенциално съвпадение, заявката се скрива и тук се появява поканата." />
+        <EmptyCard title="Няма match" body="Пусни заявка или използвай симулатора от профила за тестове." />
+      </div>
+    );
+  }
+
+  if (activeParticipant.confirmation_status === "pending" && !matchIsClosed) {
+    return (
+      <div className="space-y-5">
+        <PageTitle eyebrow="Match покана" title="Има потенциален цикъл" body="Заявката ти вече е скрита. Потвърди интерес, за да се отключи координацията." />
+        <section className="rounded-[2rem] bg-card border border-border p-5 shadow-soft space-y-4">
+          <CycleMap participants={participants} selectedProfileId={selectedProfileId} userById={userById} fromToText={fromToText} allConfirmed={allConfirmed} readOnly />
+          <div className="grid grid-cols-2 gap-3">
+            <button disabled={loading} onClick={confirm} className="h-14 rounded-full bg-gradient-ember text-primary-foreground font-extrabold text-sm shadow-glow disabled:opacity-40">Приемам</button>
+            <button disabled={loading} onClick={decline} className="h-14 rounded-full bg-secondary border border-border font-extrabold text-sm disabled:opacity-40">Отказвам</button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        eyebrow={matchIsClosed ? "Затворен процес" : "Статус в прогрес"}
+        title={matchIsClosed ? "Отказано" : "Координация"}
+        body={matchIsClosed ? "Процесът е затворен след отказ." : "Следи кой на какъв етап е и промени само своя статус."}
+      />
+      <section className="rounded-[2rem] bg-card border border-border p-5 shadow-soft space-y-4">
+        <button
+          type="button"
+          onClick={() => setShowTimeline((v) => !v)}
+          className={`w-full flex items-center justify-between gap-4 rounded-[1.6rem] px-5 py-4 text-left shadow-soft ${
+            matchIsClosed ? "bg-red-50" : "bg-gradient-sage"
+          }`}
+        >
+          <div>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-muted-foreground">
+              Стъпка {currentStep || 1} от {steps.length}
+            </p>
+            <p className="mt-2 font-display text-lg leading-tight">{currentStepInfo.title}</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">{currentStepInfo.helper}</p>
+          </div>
+          <span className="text-muted-foreground shrink-0">{showTimeline ? "↑" : "↓"}</span>
+        </button>
+
+        {showTimeline && <Timeline currentStep={currentStep} rejected={matchIsClosed} />}
+
+        {!matchIsClosed ? (
+          <CycleMap
+            participants={participants}
+            selectedProfileId={selectedProfileId}
+            userById={userById}
+            fromToText={fromToText}
+            allConfirmed={allConfirmed}
+            loading={loading}
+            updateMyStatus={updateMyStatus}
+          />
+        ) : (
+          <EmptyCard title="Веригата е затворена" body="Чатовете вече не се показват за този процес." />
+        )}
+
+        {!matchIsClosed && (
+          <button
+            onClick={leave}
+            className="w-full rounded-full bg-red-50 px-4 py-4 text-sm font-extrabold text-red-700"
+          >
+            Отказ от процеса
+          </button>
+        )}
+      </section>
+    </div>
+  );
+}
+
+// ─── Chats Tab ───────────────────────────────────────────────────────────────────────────────────────
+function ChatsTab({
+  activeMatch, allConfirmed, matchIsClosed, availableChats, selectedChat,
+  selectedChatId, setSelectedChatId, snapshot, selectedProfileId, selectedUserName,
+  userById, chatTitle, messageBody, setMessageBody, sendMessage, loading,
+}: {
+  activeMatch?: PlaygroundSnapshot["matches"][number];
+  allConfirmed: boolean;
+  matchIsClosed: boolean;
+  availableChats: Chat[];
+  selectedChat?: Chat;
+  selectedChatId: string;
+  setSelectedChatId: (id: string) => void;
+  snapshot: PlaygroundSnapshot | null;
+  selectedProfileId: string;
+  selectedUserName: string;
+  userById: Map<string, PlaygroundSnapshot["users"][number]>;
+  chatTitle: (c: Chat) => string;
+  messageBody: string;
+  setMessageBody: (v: string) => void;
+  sendMessage: () => void;
+  loading: boolean;
+}) {
+  if (!activeMatch || !allConfirmed || matchIsClosed) {
+    return (
+      <div className="space-y-5">
+        <PageTitle eyebrow="Чатове" title="Още са заключени" body="Чатовете се появяват само след потвърждение от всички страни." />
+        <div className="rounded-[2rem] bg-gradient-butter p-5 shadow-soft flex items-center gap-4">
+          <div className="h-14 w-14 rounded-2xl bg-gradient-ember flex items-center justify-center text-primary-foreground text-xl shadow-pill">↗</div>
+          <div>
+            <p className="text-[11px] tracking-[0.22em] uppercase font-bold text-muted-foreground">По-бързо съвпадение</p>
+            <p className="font-display text-base mt-0.5">Увеличи шанса за съвпадение</p>
+          </div>
+        </div>
+        <SafetyNote />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        eyebrow="Чатове"
+        title={selectedChat ? chatTitle(selectedChat) : "Координация"}
+        body="При 2 страни — само личен чат. При 3/4 — групов и лични."
+      />
+      <section className="rounded-[2rem] bg-card border border-border p-5 shadow-soft space-y-4">
+        {availableChats.length ? (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {availableChats.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedChatId(c.id)}
+                className={`shrink-0 rounded-full px-4 py-2.5 text-xs font-extrabold transition-all ${
+                  selectedChatId === c.id
+                    ? "bg-gradient-ember text-primary-foreground shadow-glow"
+                    : "bg-secondary text-foreground"
+                }`}
+              >
+                {chatTitle(c)}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Няма активни чатове.</p>
+        )}
+
+        <div className="space-y-3">
+          {snapshot?.messages
+            .filter((m) => selectedChat && m.chat_id === selectedChat.id)
+            .map((m) => {
+              const mine = m.sender_user_id === selectedProfileId;
+              return (
+                <div
+                  key={m.id}
+                  className={`rounded-[1.8rem] p-4 text-sm shadow-soft ${
+                    mine ? "ml-8 bg-gradient-ember text-primary-foreground" : "mr-8 bg-secondary"
+                  }`}
+                >
+                  <p className={`text-xs font-extrabold ${mine ? "opacity-60" : "text-muted-foreground"}`}>
+                    {mine ? "Ти" : userById.get(m.sender_user_id)?.display_name ?? "Родител"}
+                  </p>
+                  <p className="mt-1 leading-6">{m.body}</p>
+                </div>
+              );
+            })}
+        </div>
+
+        {selectedChat && (
+          <div className="space-y-2">
+            <textarea
+              value={messageBody}
+              onChange={(e) => setMessageBody(e.target.value)}
+              className="min-h-24 w-full rounded-[1.6rem] border border-border bg-secondary/60 p-4 text-sm outline-none resize-none"
+            />
+            <button
+              disabled={loading || selectedChat.status !== "active"}
+              onClick={sendMessage}
+              className="w-full h-14 rounded-full bg-gradient-ember text-primary-foreground font-extrabold text-sm shadow-glow disabled:opacity-30"
+            >
+              Изпрати като {selectedUserName}
+            </button>
+          </div>
+        )}
+      </section>
+      <SafetyNote />
+    </div>
+  );
+}
+
+// ─── Profile Tab ────────────────────────────────────────────────────────────────────────────────────
+function ProfileTab({
+  selectedProfileId, selectedUserName, users, setSelectedProfileId,
+}: {
+  selectedProfileId: string;
+  selectedUserName: string;
+  users: PlaygroundSnapshot["users"];
+  setSelectedProfileId: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="rounded-[2rem] bg-card border border-border p-5 shadow-soft flex items-center gap-4">
+        <div className="grid h-20 w-20 shrink-0 place-items-center rounded-[1.8rem] bg-gradient-ember text-primary-foreground font-display text-3xl shadow-pill">
+          {selectedUserName.slice(-1) || "А"}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground font-bold">Профил</p>
+          <h1 className="mt-1 font-display text-3xl leading-tight">{selectedUserName || "Родител"}</h1>
+          <p className="mt-1 text-xs text-muted-foreground">Тестов профил · София</p>
+        </div>
+      </div>
+
+      <div className="rounded-[2rem] bg-card border border-border p-5 shadow-soft">
+        <FieldLabel>Тестов потребител</FieldLabel>
+        <SelectField value={selectedProfileId} onChange={setSelectedProfileId}>
+          {users.map((u) => <option key={u.id} value={u.id}>{u.display_name}</option>)}
+        </SelectField>
+      </div>
+
+      <div className="rounded-[2rem] bg-card border border-border p-5 shadow-soft space-y-3">
+        <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground font-bold">Настройки</p>
+        {[
+          { title: "Данни за профила",   body: "Район, набор, тип място и сегашна градина" },
+          { title: "Поверителност",     body: "Показваме само нужното за координация" },
+          { title: "Правила и безопасност", body: "Без продажба, гаранции и неофициални обещания" },
+        ].map((row) => (
+          <div key={row.title} className="rounded-[1.5rem] bg-secondary/60 p-4">
+            <p className="font-display text-sm font-extrabold">{row.title}</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">{row.body}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-[2rem] bg-gradient-sage p-5 shadow-soft min-h-[130px] flex flex-col justify-between">
+          <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground font-bold">Каузата</p>
+          <h3 className="font-display text-2xl">Подкрепи<br />проекта</h3>
+        </div>
+        <a href="/playground" className="rounded-[2rem] bg-gradient-cocoa text-primary-foreground p-5 shadow-glow min-h-[130px] flex flex-col justify-between">
+          <p className="text-[11px] tracking-[0.22em] uppercase font-bold opacity-60">Тестове</p>
+          <h3 className="font-display text-2xl">Симулатор</h3>
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [tab, setTab] = useState<AppTab>("home");
   const [snapshot, setSnapshot] = useState<PlaygroundSnapshot | null>(null);
@@ -106,9 +739,17 @@ export default function HomePage() {
   const kgById = useMemo(() => new Map((snapshot?.kindergartens ?? []).map((kg) => [kg.id, kg])), [snapshot]);
   const userById = useMemo(() => new Map((snapshot?.users ?? []).map((u) => [u.id, u])), [snapshot]);
   const myParticipants = useMemo(() => (snapshot?.participants ?? []).filter((p) => p.user_id === activeUserId), [snapshot, activeUserId]);
-  const activeMatch = useMemo(() => { const ids = new Set(myParticipants.map((p) => p.match_id)); return (snapshot?.matches ?? []).find((m) => ids.has(m.id)); }, [snapshot, myParticipants]);
+  const activeMatch = useMemo(() => {
+    const ids = new Set(myParticipants.map((p) => p.match_id));
+    return (snapshot?.matches ?? []).find((m) => ids.has(m.id));
+  }, [snapshot, myParticipants]);
   const activeParticipant = activeMatch ? myParticipants.find((p) => p.match_id === activeMatch.id) : undefined;
-  const participants = useMemo(() => (snapshot?.participants ?? []).filter((p) => p.match_id === activeMatch?.id).sort((a, b) => a.participant_order - b.participant_order), [snapshot, activeMatch]);
+  const participants = useMemo(() =>
+    (snapshot?.participants ?? [])
+      .filter((p) => p.match_id === activeMatch?.id)
+      .sort((a, b) => a.participant_order - b.participant_order),
+    [snapshot, activeMatch]
+  );
   const allConfirmed = participants.length > 0 && participants.every((p) => p.confirmation_status === "interested");
   const anyDeclined = participants.some((p) => p.confirmation_status === "declined");
   const anyDropped = participants.some((p) => p.coordination_status === "dropped_out");
@@ -118,25 +759,230 @@ export default function HomePage() {
   const matchIsClosed = Boolean(activeMatch && (anyDeclined || anyDropped || ["at_risk", "cancelled"].includes(activeMatch.status)));
   const currentStep = !activeMatch ? 0 : matchIsClosed ? 6 : !allConfirmed ? 1 : allCan ? 5 : anyCannot ? 4 : anyStarted ? 3 : 2;
   const currentStepInfo = matchIsClosed ? rejectedStep : (steps[Math.max(currentStep - 1, 0)] ?? steps[0]);
-  const myRequests = useMemo(() => !snapshot || !activeUserId || activeMatch ? [] : snapshot.requests.filter((r) => r.user_id === activeUserId), [snapshot, activeUserId, activeMatch]);
-  const activeRequestText = myRequests[0] ? `${kgById.get(myRequests[0].from_kindergarten_id)?.name ?? "—"} → ${requestToText(myRequests[0].id)}` : "";
-  const availableChats = useMemo(() => { if (!snapshot || !activeMatch || !activeUserId || !allConfirmed || matchIsClosed) return []; const hideGroupChat = participants.length === 2; return snapshot.chats.filter((c) => c.match_id === activeMatch.id && c.status === "active").filter((c) => !(hideGroupChat && c.chat_type === "group")).filter((c) => c.chat_type === "group" || c.direct_user_1_id === activeUserId || c.direct_user_2_id === activeUserId).sort((a, b) => (a.chat_type === "group" ? -1 : 1) - (b.chat_type === "group" ? -1 : 1)); }, [snapshot, activeMatch, activeUserId, allConfirmed, matchIsClosed, participants.length]);
+  const myRequests = useMemo(() =>
+    !snapshot || !activeUserId || activeMatch ? [] :
+    snapshot.requests.filter((r) => r.user_id === activeUserId),
+    [snapshot, activeUserId, activeMatch]
+  );
+  const activeRequestText = myRequests[0]
+    ? `${kgById.get(myRequests[0].from_kindergarten_id)?.name ?? "—"} → ${requestToText(myRequests[0].id)}`
+    : "";
+  const availableChats = useMemo(() => {
+    if (!snapshot || !activeMatch || !activeUserId || !allConfirmed || matchIsClosed) return [];
+    const hideGroupChat = participants.length === 2;
+    return snapshot.chats
+      .filter((c) => c.match_id === activeMatch.id && c.status === "active")
+      .filter((c) => !(hideGroupChat && c.chat_type === "group"))
+      .filter((c) => c.chat_type === "group" || c.direct_user_1_id === activeUserId || c.direct_user_2_id === activeUserId)
+      .sort((a, b) => (a.chat_type === "group" ? -1 : 1) - (b.chat_type === "group" ? -1 : 1));
+  }, [snapshot, activeMatch, activeUserId, allConfirmed, matchIsClosed, participants.length]);
   const selectedChat = availableChats.find((c) => c.id === selectedChatId) ?? availableChats[0];
 
-  async function run(action?: object) { setLoading(true); setError(null); try { const next = await api(action); setSnapshot(next); if (!selectedProfileId && next.users[0]) setSelectedProfileId(next.users[0].id); } catch (err) { setError(err instanceof Error ? err.message : "Unknown error"); } finally { setLoading(false); } }
-  function fromToText(p: Participant) { return `${kgById.get(p.from_kindergarten_id)?.name ?? "—"} → ${kgById.get(p.wants_kindergarten_id)?.name ?? "—"}`; }
-  function requestToText(requestId: string) { const wanted = (snapshot?.wantedKindergartens ?? []).find((w) => w.request_id === requestId); return wanted ? kgById.get(wanted.wanted_kindergarten_id)?.name ?? "—" : "—"; }
-  function chatTitle(c: Chat) { if (c.chat_type === "group") return "Групов чат"; const otherId = c.direct_user_1_id === activeUserId ? c.direct_user_2_id : c.direct_user_1_id; return `Лично: ${userById.get(otherId ?? "")?.display_name ?? "родител"}`; }
-  function createRequest(data: { fromKgId: string; wantedKgId: string; ageGroup: string }) { if (!activeUserId) return setError("Няма избран профил."); if (data.fromKgId === data.wantedKgId) return setError("Текущата и желаната градина трябва да са различни."); run({ action: "createRequest", userId: activeUserId, fromKindergartenId: data.fromKgId, wantedKindergartenId: data.wantedKgId, ageGroup: data.ageGroup }); }
-  function updateMyStatus(status: string) { if (!activeMatch || !activeUserId) return; run({ action: "status", matchId: activeMatch.id, userId: activeUserId, status }); }
-  function leaveProcess(keepChat: boolean) { if (!activeMatch || !activeUserId) return; setShowLeaveOptions(false); run({ action: "leave", matchId: activeMatch.id, userId: activeUserId, keepChat }); }
-  function sendMessage() { if (!selectedChat || !activeUserId) return; run({ action: "message", chatId: selectedChat.id, userId: activeUserId, body: messageBody }); }
+  async function run(action?: object) {
+    setLoading(true);
+    setError(null);
+    try {
+      const next = await api(action);
+      setSnapshot(next);
+      if (!selectedProfileId && next.users[0]) setSelectedProfileId(next.users[0].id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function fromToText(p: Participant) {
+    return `${kgById.get(p.from_kindergarten_id)?.name ?? "—"} → ${kgById.get(p.wants_kindergarten_id)?.name ?? "—"}`;
+  }
+
+  function requestToText(requestId: string) {
+    const wanted = (snapshot?.wantedKindergartens ?? []).find((w) => w.request_id === requestId);
+    return wanted ? kgById.get(wanted.wanted_kindergarten_id)?.name ?? "—" : "—";
+  }
+
+  function chatTitle(c: Chat) {
+    if (c.chat_type === "group") return "Групов чат";
+    const otherId = c.direct_user_1_id === activeUserId ? c.direct_user_2_id : c.direct_user_1_id;
+    return `Лично: ${userById.get(otherId ?? "")?.display_name ?? "родител"}`;
+  }
+
+  function createRequest(data: { fromKgId: string; wantedKgId: string; ageGroup: string }) {
+    if (!activeUserId) return setError("Няма избран профил.");
+    if (data.fromKgId === data.wantedKgId) return setError("Текущата и желаната градина трябва да са различни.");
+    run({ action: "createRequest", userId: activeUserId, fromKindergartenId: data.fromKgId, wantedKindergartenId: data.wantedKgId, ageGroup: data.ageGroup });
+  }
+
+  function updateMyStatus(status: string) {
+    if (!activeMatch || !activeUserId) return;
+    run({ action: "status", matchId: activeMatch.id, userId: activeUserId, status });
+  }
+
+  function leaveProcess(keepChat: boolean) {
+    if (!activeMatch || !activeUserId) return;
+    setShowLeaveOptions(false);
+    run({ action: "leave", matchId: activeMatch.id, userId: activeUserId, keepChat });
+  }
+
+  function sendMessage() {
+    if (!selectedChat || !activeUserId) return;
+    run({ action: "message", chatId: selectedChat.id, userId: activeUserId, body: messageBody });
+  }
 
   useEffect(() => { run({ action: "setupBase" }); }, []);
-  useEffect(() => { if (users.length && !users.some((u) => u.id === selectedProfileId)) setSelectedProfileId(users[0].id); }, [users, selectedProfileId]);
-  useEffect(() => { if (availableChats.length && !availableChats.some((c) => c.id === selectedChatId)) setSelectedChatId(availableChats[0].id); }, [availableChats, selectedChatId]);
+  useEffect(() => {
+    if (users.length && !users.some((u) => u.id === selectedProfileId)) setSelectedProfileId(users[0].id);
+  }, [users, selectedProfileId]);
+  useEffect(() => {
+    if (availableChats.length && !availableChats.some((c) => c.id === selectedChatId)) setSelectedChatId(availableChats[0].id);
+  }, [availableChats, selectedChatId]);
 
-  const Active = tab === "home" ? <HomeTab setTab={setTab} activeRequestText={activeRequestText} matchCount={activeMatch ? 1 : 0} /> : tab === "requests" ? <RequestsTab snapshot={snapshot} selectedProfileId={activeUserId} selectedPlaceType={selectedPlaceType} setSelectedPlaceType={setSelectedPlaceType} myRequests={myRequests} kgById={kgById} requestToText={requestToText} createRequest={createRequest} deactivateRequest={(id) => run({ action: "deactivateRequest", requestId: id })} deleteRequest={(id) => run({ action: "deleteRequest", requestId: id })} loading={loading} /> : tab === "matches" ? <MatchesTab activeMatch={activeMatch} activeParticipant={activeParticipant} participants={participants} selectedProfileId={activeUserId} userById={userById} fromToText={fromToText} allConfirmed={allConfirmed} matchIsClosed={matchIsClosed} currentStep={currentStep} currentStepInfo={currentStepInfo} loading={loading} confirm={() => activeMatch && run({ action: "confirm", matchId: activeMatch.id, userId: activeUserId })} decline={() => activeMatch && run({ action: "decline", matchId: activeMatch.id, userId: activeUserId })} updateMyStatus={updateMyStatus} leave={() => setShowLeaveOptions(true)} /> : tab === "chats" ? <ChatsTab activeMatch={activeMatch} allConfirmed={allConfirmed} matchIsClosed={matchIsClosed} availableChats={availableChats} selectedChat={selectedChat} selectedChatId={selectedChat?.id ?? ""} setSelectedChatId={setSelectedChatId} snapshot={snapshot} selectedProfileId={activeUserId} selectedUserName={selectedUserName} userById={userById} chatTitle={chatTitle} messageBody={messageBody} setMessageBody={setMessageBody} sendMessage={sendMessage} loading={loading} /> : <ProfileTab selectedProfileId={activeUserId} selectedUserName={selectedUserName} users={users} setSelectedProfileId={setSelectedProfileId} />;
+  const Active =
+    tab === "home" ? (
+      <HomeTab setTab={setTab} activeRequestText={activeRequestText} matchCount={activeMatch ? 1 : 0} />
+    ) : tab === "requests" ? (
+      <RequestsTab
+        snapshot={snapshot}
+        selectedProfileId={activeUserId}
+        selectedPlaceType={selectedPlaceType}
+        setSelectedPlaceType={setSelectedPlaceType}
+        myRequests={myRequests}
+        kgById={kgById}
+        requestToText={requestToText}
+        createRequest={createRequest}
+        deactivateRequest={(id) => run({ action: "deactivateRequest", requestId: id })}
+        deleteRequest={(id) => run({ action: "deleteRequest", requestId: id })}
+        loading={loading}
+      />
+    ) : tab === "matches" ? (
+      <MatchesTab
+        activeMatch={activeMatch}
+        activeParticipant={activeParticipant}
+        participants={participants}
+        selectedProfileId={activeUserId}
+        userById={userById}
+        fromToText={fromToText}
+        allConfirmed={allConfirmed}
+        matchIsClosed={matchIsClosed}
+        currentStep={currentStep}
+        currentStepInfo={currentStepInfo}
+        loading={loading}
+        confirm={() => activeMatch && run({ action: "confirm", matchId: activeMatch.id, userId: activeUserId })}
+        decline={() => activeMatch && run({ action: "decline", matchId: activeMatch.id, userId: activeUserId })}
+        updateMyStatus={updateMyStatus}
+        leave={() => setShowLeaveOptions(true)}
+      />
+    ) : tab === "chats" ? (
+      <ChatsTab
+        activeMatch={activeMatch}
+        allConfirmed={allConfirmed}
+        matchIsClosed={matchIsClosed}
+        availableChats={availableChats}
+        selectedChat={selectedChat}
+        selectedChatId={selectedChat?.id ?? ""}
+        setSelectedChatId={setSelectedChatId}
+        snapshot={snapshot}
+        selectedProfileId={activeUserId}
+        selectedUserName={selectedUserName}
+        userById={userById}
+        chatTitle={chatTitle}
+        messageBody={messageBody}
+        setMessageBody={setMessageBody}
+        sendMessage={sendMessage}
+        loading={loading}
+      />
+    ) : (
+      <ProfileTab
+        selectedProfileId={activeUserId}
+        selectedUserName={selectedUserName}
+        users={users}
+        setSelectedProfileId={setSelectedProfileId}
+      />
+    );
 
-  return <main className="min-h-screen bg-paper px-4 pb-28 pt-5 text-ink">{error ? <div className="fixed left-4 right-4 top-4 z-50 mx-auto max-w-md rounded-3xl bg-red-100 p-4 text-sm font-semibold text-red-900 shadow-soft">{error}</div> : null}<TopBar selectedName={selectedUserName} onProfile={() => setTab("profile")} />{Active}<nav className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-[2.4rem] bg-white/88 p-2 shadow-soft backdrop-blur"><div className="grid grid-cols-5 items-end gap-1">{tabs.map((item) => <button key={item.id} onClick={() => setTab(item.id)} className={`flex flex-col items-center justify-center gap-1 rounded-[1.55rem] px-2 py-3 text-[10px] font-extrabold transition ${tab === item.id ? "bg-orange text-white shadow-soft" : "text-ink/55"}`}><span className="block text-lg leading-none">{item.icon}</span><span className="block w-full text-center text-[9px] tracking-[-0.04em] whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span></button>)}</div></nav>{showLeaveOptions && activeMatch && !matchIsClosed ? <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink/35 px-4 pt-8 backdrop-blur-sm" role="dialog" aria-modal="true"><div className="w-full max-w-md rounded-[2rem] bg-white p-5 shadow-soft"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-[0.2em] text-ink/40">Отказ от процеса</p><h2 className="mt-2 text-2xl font-extrabold tracking-[-0.04em]">Как да затворим цикъла?</h2></div><button onClick={() => setShowLeaveOptions(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-paper text-xl font-extrabold">×</button></div><p className="mt-3 text-sm font-medium leading-6 text-ink/55">Избери дали чатът да остане видим за координация след отказа или всичко да се затвори напълно.</p><div className="mt-5 grid gap-2"><button disabled={loading} onClick={() => leaveProcess(true)} className="rounded-full bg-ink px-4 py-4 text-sm font-extrabold text-white disabled:opacity-40">Отказвам се, но запази чата</button><button disabled={loading} onClick={() => leaveProcess(false)} className="rounded-full bg-orange px-4 py-4 text-sm font-extrabold text-white disabled:opacity-40">Отказвам се и затвори чата</button><button disabled={loading} onClick={() => setShowLeaveOptions(false)} className="rounded-full bg-beige px-4 py-4 text-sm font-extrabold disabled:opacity-40">Връщам се назад</button></div></div></div> : null}</main>;
+  return (
+    <main className="min-h-screen bg-background">
+      {error && (
+        <div className="fixed left-4 right-4 top-4 z-50 mx-auto max-w-md rounded-3xl bg-red-50 p-4 text-sm font-semibold text-red-800 shadow-soft">
+          {error}
+        </div>
+      )}
+
+      <AppShell>
+        <TopBar selectedName={selectedUserName} onProfile={() => setTab("profile")} />
+        {Active}
+      </AppShell>
+
+      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md">
+        <div className="liquid-dock rounded-[2rem] flex items-center justify-between px-3 py-2.5">
+          {tabs.map(({ id, label, Icon }) => {
+            const active = tab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                className={`flex min-w-0 flex-col items-center gap-0.5 px-2.5 py-2 rounded-[1.35rem] transition-all duration-200 ${
+                  active
+                    ? "bg-gradient-ember text-primary-foreground shadow-glow scale-[1.03] -translate-y-0.5"
+                    : "text-foreground/50"
+                }`}
+              >
+                <Icon className="h-5 w-5" strokeWidth={active ? 2.45 : 1.85} />
+                <span className={`text-[10px] leading-none mt-0.5 ${
+                  active ? "font-extrabold" : "font-bold"
+                }`}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {showLeaveOptions && activeMatch && !matchIsClosed && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/25 px-4 pb-8 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md rounded-[2rem] bg-card p-5 shadow-glow">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground">Отказ от процеса</p>
+                <h2 className="mt-2 font-display text-2xl">Как да затворим цикъла?</h2>
+              </div>
+              <button
+                onClick={() => setShowLeaveOptions(false)}
+                className="liquid-action grid h-10 w-10 shrink-0 place-items-center rounded-full font-extrabold text-lg"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-sm leading-6 text-muted-foreground mb-4">Избери дали чатът да остане видим или всичко да се затвори напълно.</p>
+            <div className="space-y-2">
+              <button
+                disabled={loading}
+                onClick={() => leaveProcess(true)}
+                className="w-full h-14 rounded-full bg-gradient-cocoa text-primary-foreground font-extrabold text-sm shadow-glow disabled:opacity-40"
+              >
+                Отказвам се, но запази чата
+              </button>
+              <button
+                disabled={loading}
+                onClick={() => leaveProcess(false)}
+                className="w-full h-14 rounded-full bg-red-600 text-white font-extrabold text-sm disabled:opacity-40"
+              >
+                Отказвам се и затвори чата
+              </button>
+              <button
+                disabled={loading}
+                onClick={() => setShowLeaveOptions(false)}
+                className="w-full h-14 rounded-full bg-secondary border border-border font-extrabold text-sm disabled:opacity-40"
+              >
+                Връщам се назад
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
 }
