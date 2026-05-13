@@ -1,16 +1,14 @@
 "use client";
 
-import { Home, Plus, Sparkles, MessageSquare, CircleUser } from "lucide-react";
+import { Home, Plus, Sparkles, MessageSquare, CircleUser, ChevronDown, ChevronUp, MoreHorizontal, ArrowUpRight, Lock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { PlaygroundSnapshot } from "@/lib/playground";
 
-// ─── Types ───────────────────────────────────────────────────────────────────────────────────────
 type AppTab = "home" | "requests" | "matches" | "chats" | "profile";
 type ApiError = { error: string };
 type Participant = PlaygroundSnapshot["participants"][number];
 type Chat = PlaygroundSnapshot["chats"][number];
 
-// ─── Constants ───────────────────────────────────────────────────────────────────────────────────
 const tabs = [
   { id: "home" as AppTab,     label: "Начало",    Icon: Home },
   { id: "requests" as AppTab, label: "Заявка",    Icon: Plus },
@@ -31,12 +29,12 @@ const statusOptions = [
 ] as const;
 
 const steps = [
-  { title: "Потвърждение",           helper: "Всички страни приемат потенциалното съвпадение." },
-  { title: "Отключена координация",  helper: "Чатовете се отварят и започва уточняване." },
-  { title: "Проверка на процедурата",  helper: "Всеки проверява официалния ред и контакт със заведение." },
-  { title: "Готовност за действие",    helper: "Всички маркират дали могат да продължат." },
-  { title: "Официални действия",       helper: "Следват се само официалните административни стъпки." },
-  { title: "Резултат",                helper: "Цикълът се отбелязва като приключен или отпаднал." },
+  { title: "Потвърждение",            helper: "Всички страни приемат потенциалното съвпадение." },
+  { title: "Отключена координация",   helper: "Чатовете се отварят и започва уточняване." },
+  { title: "Проверка на процедурата", helper: "Всеки проверява официалния ред и контакт със заведение." },
+  { title: "Готовност за действие",   helper: "Всички маркират дали могат да продължат." },
+  { title: "Официални действия",      helper: "Следват се само официалните административни стъпки." },
+  { title: "Резултат",               helper: "Цикълът се отбелязва като приключен или отпаднал." },
 ];
 
 const rejectedStep = {
@@ -51,7 +49,14 @@ const cardTones = [
   "bg-gradient-butter",
 ];
 
-// ─── API ───────────────────────────────────────────────────────────────────────────────────────────
+const mapColors = ["#dc7840", "#74a860", "#96bcc8", "#efe5c4"];
+const mapPositions = [
+  { dot: "left-[64px] top-[34px]",    label: "left-[14px] top-[110px]" },
+  { dot: "left-[226px] top-[144px]",  label: "right-0 top-[212px]" },
+  { dot: "left-[96px] top-[218px]",   label: "left-[54px] top-[282px]" },
+  { dot: "left-[180px] top-[78px]",   label: "right-4 top-[140px]" },
+];
+
 async function api(body?: object): Promise<PlaygroundSnapshot> {
   const response = body
     ? await fetch("/api/playground", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -61,7 +66,6 @@ async function api(body?: object): Promise<PlaygroundSnapshot> {
   return json;
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────────────────────────
 function statusLabel(status?: string) {
   return statusOptions.find(([v]) => v === status)?.[1] ?? status ?? "—";
 }
@@ -72,7 +76,7 @@ function participantStatus(p: Participant, allConfirmed: boolean) {
   return statusLabel(p.coordination_status);
 }
 
-// ─── UI Primitives ─────────────────────────────────────────────────────────────────────────────
+// ─── UI Primitives ────────────────────────────────────────────────────────────
 function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-md px-5 pt-6 pb-36 relative overflow-visible">
@@ -157,7 +161,93 @@ function SafetyNote() {
   );
 }
 
-// ─── Home Tab ───────────────────────────────────────────────────────────────────────────────────────────
+function UpsellBanner() {
+  return (
+    <div className="rounded-[2rem] bg-gradient-butter p-4 pr-5 shadow-soft flex items-center gap-4 overflow-hidden relative">
+      <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-white/20 blur-2xl" />
+      <div className="relative h-14 w-14 shrink-0 rounded-[1.4rem] bg-gradient-ember flex items-center justify-center shadow-pill">
+        <ArrowUpRight className="h-5 w-5 text-primary-foreground" />
+      </div>
+      <div className="relative flex-1">
+        <p className="text-[10px] tracking-[0.22em] uppercase font-extrabold text-muted-foreground">По-бързо съвпадение</p>
+        <p className="font-display text-base mt-0.5">Увеличи шанса за съвпадение</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Process Map ──────────────────────────────────────────────────────────────
+function ProcessMap({
+  participants, kgById, compact = false,
+}: {
+  participants: Participant[];
+  kgById: Map<string, PlaygroundSnapshot["kindergartens"][number]>;
+  compact?: boolean;
+}) {
+  const nodes = participants.slice(0, 4).map((p, i) => ({
+    kg: kgById.get(p.from_kindergarten_id),
+    color: mapColors[i % mapColors.length],
+    pos: mapPositions[i % mapPositions.length],
+  }));
+
+  return (
+    <div className={`relative overflow-hidden rounded-[26px] border border-black/5 bg-card/60 ${compact ? "h-[360px]" : "h-[430px]"}`}>
+      <div className="absolute inset-0 opacity-45" style={{ backgroundImage: "linear-gradient(rgba(90,74,58,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(90,74,58,.06) 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+      <div className={`absolute left-1/2 top-1/2 ${compact ? "h-[300px] w-[320px]" : "h-[430px] w-[360px]"} -translate-x-1/2 -translate-y-1/2`}>
+        <svg viewBox="0 0 320 300" className="absolute inset-0 z-[1] h-full w-full" fill="none">
+          {nodes.length > 1 && <path d="M88 72 C124 94 174 111 230 126" stroke="#dc7840" strokeWidth="7" strokeLinecap="round" strokeDasharray="1 17" />}
+          {nodes.length > 2 && <path d="M230 166 C196 214 158 235 101 252" stroke="#74a860" strokeWidth="7" strokeLinecap="round" strokeDasharray="1 18" />}
+          {nodes.length > 1 && <path d="M68 93 C52 158 58 203 90 252" stroke="#96bcc8" strokeWidth="7" strokeLinecap="round" strokeDasharray="1 18" />}
+        </svg>
+        {nodes.map((node, i) => (
+          <div key={i}>
+            <div className={`absolute z-[3] ${node.pos.dot}`}>
+              <div className="grid h-[62px] w-[62px] place-items-center rounded-full bg-white shadow-soft">
+                <span className="h-[26px] w-[26px] rounded-full border-[9px] border-white/70" style={{ background: node.color }} />
+              </div>
+            </div>
+            <div className={`absolute z-[4] max-w-[130px] rounded-full bg-white px-[13px] py-2 font-display text-[10px] font-black text-foreground shadow-soft truncate ${node.pos.label}`}>
+              {node.kg?.name ?? "—"}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProcessPopup({
+  onClose, participants, kgById,
+}: {
+  onClose: () => void;
+  participants: Participant[];
+  kgById: Map<string, PlaygroundSnapshot["kindergartens"][number]>;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#211712]/20 p-[18px] backdrop-blur-[10px]"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-h-[86vh] w-full max-w-[390px] overflow-hidden rounded-[32px] border border-white/90 bg-white/95 p-[18px] shadow-glow"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 grid h-[38px] w-[38px] place-items-center rounded-2xl bg-white font-display text-[22px] font-black text-foreground"
+        >
+          ×
+        </button>
+        <h2 className="font-display text-2xl tracking-[-0.04em]">Схема на процеса</h2>
+        <div className="mt-3.5">
+          <ProcessMap participants={participants} kgById={kgById} compact />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Home Tab ─────────────────────────────────────────────────────────────────
 function HomeTab({
   setTab, activeRequestText, matchCount,
 }: {
@@ -211,7 +301,7 @@ function HomeTab({
   );
 }
 
-// ─── Requests Tab ─────────────────────────────────────────────────────────────────────────────────
+// ─── Requests Tab ─────────────────────────────────────────────────────────────
 function RequestsTab({
   snapshot, selectedProfileId, selectedPlaceType, setSelectedPlaceType,
   myRequests, kgById, requestToText, createRequest, deactivateRequest, deleteRequest, loading,
@@ -231,129 +321,207 @@ function RequestsTab({
   const [fromKgId, setFromKgId] = useState("");
   const [wantedKgId, setWantedKgId] = useState("");
   const [ageGroup, setAgeGroup] = useState("2019");
+  const [district, setDistrict] = useState("");
   const [open, setOpen] = useState(true);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const kindergartens = snapshot?.kindergartens ?? [];
+  const districts = useMemo(
+    () => Array.from(new Set(kindergartens.map((kg) => kg.district).filter(Boolean))).sort(),
+    [kindergartens]
+  );
+  const filteredKgs = district ? kindergartens.filter((kg) => kg.district === district) : kindergartens;
+
+  function swapKindergartens() {
+    const tmp = fromKgId;
+    setFromKgId(wantedKgId);
+    setWantedKgId(tmp);
+  }
 
   return (
     <div className="space-y-5">
-      <PageTitle
-        eyebrow="Нова заявка"
-        title="Къде сте и къде искате да сте?"
-        body="Избери сегашно и желано място. Съвпадението работи само между еднакъв тип места."
-      />
+      <div className="space-y-3">
+        <p className="text-[11px] tracking-[0.22em] uppercase text-primary font-extrabold">Нова заявка</p>
+        <h1 className="font-display text-[3rem] leading-[0.95] tracking-[-0.05em] text-balance max-w-[92%]">
+          Къде сте и къде искате да сте?
+        </h1>
+        <p className="text-[15px] leading-7 text-muted-foreground max-w-[92%]">
+          Избери сегашно и желано място. Съвпадението работи само между еднакъв тип места.
+        </p>
+      </div>
 
-      <div className="rounded-[2rem] bg-card border border-border shadow-soft overflow-hidden">
+      <div className="rounded-[2rem] bg-card/92 backdrop-blur-xl border border-border shadow-soft overflow-visible relative">
         <button
           onClick={() => setOpen(!open)}
-          className="w-full px-6 py-5 flex items-center justify-between text-left"
+          className="w-full px-6 py-6 flex items-center justify-between"
         >
-          <span className="font-display text-[1.4rem] tracking-[-0.04em]">Активирай заявка</span>
-          <div className="liquid-action h-10 w-10 rounded-2xl flex items-center justify-center text-muted-foreground text-lg">
-            {open ? "↑" : "↓"}
+          <span className="font-display text-[1.55rem] tracking-[-0.04em]">Активирай заявка</span>
+          <div className="liquid-action h-10 w-10 rounded-2xl flex items-center justify-center">
+            {open ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </div>
         </button>
 
         {open && (
-          <div className="px-5 pb-6 space-y-5">
+          <div className="px-5 pb-7 space-y-6 overflow-visible">
             <div>
-              <FieldLabel>Имаме място в</FieldLabel>
-              <SelectField value={fromKgId} onChange={setFromKgId}>
-                <option value="">Избери градина</option>
-                {kindergartens.map((kg) => (
-                  <option key={kg.id} value={kg.id}>{kg.name} · {kg.district}</option>
+              <FieldLabel>Район</FieldLabel>
+              <SelectField value={district} onChange={setDistrict}>
+                <option value="">Всички райони</option>
+                {districts.map((d) => (
+                  <option key={d} value={d}>{d}</option>
                 ))}
               </SelectField>
             </div>
+
             <div>
-              <FieldLabel>Желана градина</FieldLabel>
-              <SelectField value={wantedKgId} onChange={setWantedKgId}>
-                <option value="">Избери желана градина</option>
-                {kindergartens.map((kg) => (
-                  <option key={kg.id} value={kg.id}>{kg.name} · {kg.district}</option>
-                ))}
-              </SelectField>
-            </div>
-            <div>
-              <FieldLabel>Набор / група</FieldLabel>
+              <FieldLabel>Набор / Група</FieldLabel>
               <input
                 value={ageGroup}
                 onChange={(e) => setAgeGroup(e.target.value)}
                 className="w-full rounded-[1.35rem] border border-border bg-card px-5 py-4 text-sm font-bold outline-none"
               />
             </div>
+
             <div>
               <FieldLabel>Тип място</FieldLabel>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {placeTypes.map((t) => (
                   <button
                     key={t}
                     onClick={() => setSelectedPlaceType(t)}
-                    className={`min-h-11 rounded-full text-sm font-extrabold px-5 transition-all ${
+                    className={`min-h-14 rounded-full text-[15px] font-extrabold px-6 transition-all duration-200 ${
                       t === selectedPlaceType
-                        ? "bg-gradient-ember text-primary-foreground shadow-glow"
-                        : "bg-secondary border border-border text-foreground shadow-soft"
+                        ? "bg-gradient-ember text-primary-foreground shadow-pill scale-[1.01]"
+                        : "bg-card text-foreground border border-border shadow-soft"
                     }`}
                   >
                     {t}
                   </button>
                 ))}
               </div>
+              <label className="flex items-center gap-3 mt-5 px-1 py-2 rounded-2xl cursor-pointer">
+                <div className="h-7 w-7 rounded-xl bg-card border border-border shadow-soft shrink-0" />
+                <span className="text-[15px] text-muted-foreground font-medium">Запази тези данни в профила ми</span>
+              </label>
             </div>
+
+            <div className="space-y-4">
+              <div>
+                <FieldLabel>Сегашна градина</FieldLabel>
+                <SelectField value={fromKgId} onChange={setFromKgId}>
+                  <option value="">Избери градина</option>
+                  {filteredKgs.map((kg) => (
+                    <option key={kg.id} value={kg.id}>{kg.name} · {kg.district}</option>
+                  ))}
+                </SelectField>
+              </div>
+
+              <div className="flex justify-center">
+                <button
+                  onClick={swapKindergartens}
+                  className="liquid-action h-14 w-14 rounded-full flex items-center justify-center text-muted-foreground font-black text-lg shadow-soft"
+                >
+                  ↕
+                </button>
+              </div>
+
+              <div>
+                <FieldLabel>Желана градина</FieldLabel>
+                <SelectField value={wantedKgId} onChange={setWantedKgId}>
+                  <option value="">Избери желана градина</option>
+                  {filteredKgs.map((kg) => (
+                    <option key={kg.id} value={kg.id}>{kg.name} · {kg.district}</option>
+                  ))}
+                </SelectField>
+              </div>
+            </div>
+
             <button
               disabled={loading || !selectedProfileId || !fromKgId || !wantedKgId}
               onClick={() => createRequest({ fromKgId, wantedKgId, ageGroup })}
-              className="w-full h-14 rounded-full bg-gradient-ember text-primary-foreground font-extrabold text-sm shadow-glow disabled:opacity-40"
+              className="w-full h-16 rounded-full bg-gradient-ember text-primary-foreground font-extrabold text-lg shadow-glow disabled:opacity-40"
             >
               Активирай заявка
             </button>
-            <p className="text-center text-xs text-muted-foreground">Заявката ще се скрие автоматично при потенциален цикъл.</p>
           </div>
         )}
       </div>
 
-      <h2 className="font-display text-2xl tracking-[-0.04em]">Моите заявки</h2>
+      <div className="rounded-[1.8rem] border border-border/70 bg-card/70 backdrop-blur-xl px-6 py-5 shadow-soft">
+        <p className="text-[14px] leading-7 text-muted-foreground">
+          Заявката ще се скрие автоматично при потенциален цикъл.
+        </p>
+      </div>
 
-      {myRequests.length ? myRequests.map((r) => (
-        <div key={r.id} className="rounded-[2rem] bg-gradient-sage p-5 shadow-soft">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] tracking-[0.2em] uppercase font-extrabold text-muted-foreground">
-                {r.is_active ? "Активна" : "Неактивна"} · {selectedPlaceType}
-              </p>
-              <h3 className="mt-2 font-display text-xl leading-tight">
-                {kgById.get(r.from_kindergarten_id)?.name ?? "—"} → {requestToText(r.id)}
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">Набор {r.child_group_year_or_age_group}</p>
-            </div>
-            <span className="shrink-0 rounded-full bg-white/65 px-3 py-1.5 text-xs font-extrabold">
-              {r.is_locked ? "MATCH" : "ON"}
-            </span>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <button
-              disabled={loading || !r.is_active}
-              onClick={() => deactivateRequest(r.id)}
-              className="rounded-full bg-white/65 px-4 py-3 text-xs font-extrabold disabled:opacity-30"
-            >
-              Деактивирай
-            </button>
-            <button
-              disabled={loading || r.is_locked}
-              onClick={() => deleteRequest(r.id)}
-              className="rounded-full bg-foreground text-card px-4 py-3 text-xs font-extrabold disabled:opacity-30"
-            >
-              Изтрий
-            </button>
-          </div>
+      <h2 className="font-display text-[2rem] tracking-[-0.05em]">Моите заявки</h2>
+
+      {myRequests.length ? (
+        <div className="flex gap-4 overflow-x-auto -mx-5 px-5 pb-2 snap-x">
+          {myRequests.map((r, i) => {
+            const tones = ["bg-gradient-sage", "bg-gradient-mist", "bg-gradient-butter", "bg-gradient-ember text-primary-foreground"];
+            const toneIdx = i % 4;
+            const isEmber = toneIdx === 3;
+            return (
+              <div
+                key={r.id}
+                className={`${tones[toneIdx]} rounded-[2rem] p-5 min-w-[88%] snap-start shadow-soft relative overflow-hidden`}
+              >
+                <div className="absolute inset-0 opacity-[0.14] bg-[radial-gradient(circle_at_85%_15%,white_0%,transparent_24%)]" />
+                <div className="relative flex items-center justify-between">
+                  <span className={`text-[10px] tracking-[0.22em] uppercase font-extrabold ${isEmber ? "text-white/60" : "text-foreground/60"}`}>
+                    {r.is_active ? "Активна" : "Неактивна"} · {selectedPlaceType}
+                  </span>
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveMenu(activeMenu === r.id ? null : r.id)}
+                      className="liquid-action h-10 w-10 rounded-full flex items-center justify-center"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                    {activeMenu === r.id && (
+                      <div className="absolute right-0 top-12 z-20 w-48 rounded-[1.5rem] bg-card border border-border shadow-glow p-2 space-y-1">
+                        <button
+                          disabled={loading || !r.is_active}
+                          onClick={() => { deactivateRequest(r.id); setActiveMenu(null); }}
+                          className="w-full text-left px-4 py-3 rounded-2xl text-sm font-bold hover:bg-secondary disabled:opacity-30"
+                        >
+                          Деактивирай
+                        </button>
+                        <button
+                          disabled={loading || r.is_locked}
+                          onClick={() => { deleteRequest(r.id); setActiveMenu(null); }}
+                          className="w-full text-left px-4 py-3 rounded-2xl text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-30"
+                        >
+                          Изтрий
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="relative mt-5 space-y-1">
+                  <div className="font-display text-[1.4rem] leading-tight">{kgById.get(r.from_kindergarten_id)?.name ?? "—"}</div>
+                  <div className={`${isEmber ? "text-white/55" : "text-foreground/55"} text-lg`}>→</div>
+                  <div className="font-display text-[1.4rem] leading-tight">{requestToText(r.id)}</div>
+                </div>
+                <div className={`text-[13px] mt-3 font-medium ${isEmber ? "text-white/60" : "text-foreground/60"}`}>
+                  Набор {r.child_group_year_or_age_group}
+                </div>
+                <button className="mt-5 px-5 h-10 rounded-full bg-white/72 backdrop-blur-xl shadow-soft text-[11px] font-black tracking-[0.18em] uppercase">
+                  {r.is_locked ? "Съвпадение" : "В търсене"}
+                </button>
+              </div>
+            );
+          })}
         </div>
-      )) : (
+      ) : (
         <EmptyCard title="Няма активна заявка" body="Попълни формата горе, за да стартираш търсене на съвпадение." />
       )}
+
+      <UpsellBanner />
     </div>
   );
 }
 
-// ─── Cycle Map & Timeline ──────────────────────────────────────────────────────────────────────────
+// ─── Cycle Map & Timeline ─────────────────────────────────────────────────────
 function CycleMap({
   participants, selectedProfileId, userById, fromToText, allConfirmed,
   loading = false, updateMyStatus, readOnly = false,
@@ -451,11 +619,11 @@ function Timeline({ currentStep, rejected = false }: { currentStep: number; reje
   );
 }
 
-// ─── Matches Tab ───────────────────────────────────────────────────────────────────────────────────
+// ─── Matches Tab ──────────────────────────────────────────────────────────────
 function MatchesTab({
   activeMatch, activeParticipant, participants, selectedProfileId, userById,
   fromToText, allConfirmed, matchIsClosed, currentStep, currentStepInfo,
-  loading, confirm, decline, updateMyStatus, leave,
+  loading, confirm, decline, updateMyStatus, leave, kgById,
 }: {
   activeMatch?: PlaygroundSnapshot["matches"][number];
   activeParticipant?: Participant;
@@ -472,8 +640,10 @@ function MatchesTab({
   decline: () => void;
   updateMyStatus: (status: string) => void;
   leave: () => void;
+  kgById: Map<string, PlaygroundSnapshot["kindergartens"][number]>;
 }) {
   const [showTimeline, setShowTimeline] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   if (!activeMatch || !activeParticipant) {
     return (
@@ -501,11 +671,18 @@ function MatchesTab({
 
   return (
     <div className="space-y-5">
-      <PageTitle
-        eyebrow={matchIsClosed ? "Затворен процес" : "Статус в прогрес"}
-        title={matchIsClosed ? "Отказано" : "Координация"}
-        body={matchIsClosed ? "Процесът е затворен след отказ." : "Следи кой на какъв етап е и промени само своя статус."}
-      />
+      <div>
+        <p className="text-[11px] tracking-[0.22em] uppercase text-primary font-extrabold">
+          {matchIsClosed ? "Затворен процес" : "Статус в прогрес"}
+        </p>
+        <h1 className="mt-2 font-display text-4xl leading-[0.95] tracking-[-0.055em]">
+          {matchIsClosed ? "Отказано" : "Координация"}
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          {matchIsClosed ? "Процесът е затворен след отказ." : "Следи кой на какъв етап е и промени само своя статус."}
+        </p>
+      </div>
+
       <section className="rounded-[2rem] bg-card border border-border p-5 shadow-soft space-y-4">
         <button
           type="button"
@@ -527,15 +704,23 @@ function MatchesTab({
         {showTimeline && <Timeline currentStep={currentStep} rejected={matchIsClosed} />}
 
         {!matchIsClosed ? (
-          <CycleMap
-            participants={participants}
-            selectedProfileId={selectedProfileId}
-            userById={userById}
-            fromToText={fromToText}
-            allConfirmed={allConfirmed}
-            loading={loading}
-            updateMyStatus={updateMyStatus}
-          />
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground">Процес</p>
+              <button onClick={() => setShowMap(true)} className="text-sm font-black text-primary">
+                Виж схема ›
+              </button>
+            </div>
+            <CycleMap
+              participants={participants}
+              selectedProfileId={selectedProfileId}
+              userById={userById}
+              fromToText={fromToText}
+              allConfirmed={allConfirmed}
+              loading={loading}
+              updateMyStatus={updateMyStatus}
+            />
+          </>
         ) : (
           <EmptyCard title="Веригата е затворена" body="Чатовете вече не се показват за този процес." />
         )}
@@ -549,11 +734,15 @@ function MatchesTab({
           </button>
         )}
       </section>
+
+      {showMap && (
+        <ProcessPopup onClose={() => setShowMap(false)} participants={participants} kgById={kgById} />
+      )}
     </div>
   );
 }
 
-// ─── Chats Tab ───────────────────────────────────────────────────────────────────────────────────────
+// ─── Chats Tab ────────────────────────────────────────────────────────────────
 function ChatsTab({
   activeMatch, allConfirmed, matchIsClosed, availableChats, selectedChat,
   selectedChatId, setSelectedChatId, snapshot, selectedProfileId, selectedUserName,
@@ -579,15 +768,27 @@ function ChatsTab({
   if (!activeMatch || !allConfirmed || matchIsClosed) {
     return (
       <div className="space-y-5">
-        <PageTitle eyebrow="Чатове" title="Още са заключени" body="Чатовете се появяват само след потвърждение от всички страни." />
-        <div className="rounded-[2rem] bg-gradient-butter p-5 shadow-soft flex items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-gradient-ember flex items-center justify-center text-primary-foreground text-xl shadow-pill">↗</div>
-          <div>
-            <p className="text-[11px] tracking-[0.22em] uppercase font-bold text-muted-foreground">По-бързо съвпадение</p>
-            <p className="font-display text-base mt-0.5">Увеличи шанса за съвпадение</p>
-          </div>
+        <p className="text-[11px] tracking-[0.22em] uppercase text-primary font-bold mt-6">Чатове</p>
+        <h1 className="font-display text-5xl leading-[1] text-balance">Още са<br />заключени</h1>
+        <p className="text-sm text-muted-foreground max-w-[34ch]">
+          Чатовете се отключват само когато всички родители в потенциалния цикъл потвърдят интерес.
+        </p>
+        <UpsellBanner />
+        <div className="space-y-3">
+          {["Цикъл #A21", "Цикъл #B07", "Потенциал #C13"].map((t, i) => (
+            <div key={i} className="bg-card rounded-3xl p-5 shadow-soft flex items-center gap-4 opacity-80">
+              <div className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center shrink-0">
+                <Lock className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <div className="font-display text-base">{t}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Чака потвърждение от {3 - i} {3 - i === 1 ? "родител" : "родители"}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-        <SafetyNote />
       </div>
     );
   }
@@ -663,7 +864,7 @@ function ChatsTab({
   );
 }
 
-// ─── Profile Tab ────────────────────────────────────────────────────────────────────────────────────
+// ─── Profile Tab ──────────────────────────────────────────────────────────────
 function ProfileTab({
   selectedProfileId, selectedUserName, users, setSelectedProfileId,
 }: {
@@ -695,9 +896,9 @@ function ProfileTab({
       <div className="rounded-[2rem] bg-card border border-border p-5 shadow-soft space-y-3">
         <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground font-bold">Настройки</p>
         {[
-          { title: "Данни за профила",   body: "Район, набор, тип място и сегашна градина" },
-          { title: "Поверителност",     body: "Показваме само нужното за координация" },
-          { title: "Правила и безопасност", body: "Без продажба, гаранции и неофициални обещания" },
+          { title: "Данни за профила",       body: "Район, набор, тип място и сегашна градина" },
+          { title: "Поверителност",           body: "Показваме само нужното за координация" },
+          { title: "Правила и безопасност",   body: "Без продажба, гаранции и неофициални обещания" },
         ].map((row) => (
           <div key={row.title} className="rounded-[1.5rem] bg-secondary/60 p-4">
             <p className="font-display text-sm font-extrabold">{row.title}</p>
@@ -720,7 +921,7 @@ function ProfileTab({
   );
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function HomePage() {
   const [tab, setTab] = useState<AppTab>("home");
   const [snapshot, setSnapshot] = useState<PlaygroundSnapshot | null>(null);
@@ -871,6 +1072,7 @@ export default function HomePage() {
         decline={() => activeMatch && run({ action: "decline", matchId: activeMatch.id, userId: activeUserId })}
         updateMyStatus={updateMyStatus}
         leave={() => setShowLeaveOptions(true)}
+        kgById={kgById}
       />
     ) : tab === "chats" ? (
       <ChatsTab
