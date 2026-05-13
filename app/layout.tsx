@@ -1,80 +1,31 @@
 import type { Metadata } from "next";
-import { Sofia_Sans } from "next/font/google";
-import AppStabilityGuard from "./AppStabilityGuard";
-import FinalMobileUiPatch from "./FinalMobileUiPatch";
-import HomeGuidanceEnhancer from "./HomeGuidanceEnhancer";
-import HomeHeroActionButtonsFinal from "./HomeHeroActionButtonsFinal";
-import HomeHeroAndRadarFix from "./HomeHeroAndRadarFix";
-import HomeHeroCopyPolish from "./HomeHeroCopyPolish";
-import HomeStatLinks from "./HomeStatLinks";
-import HomeStatsCleanup from "./HomeStatsCleanup";
-import MatchEmptyCopyPolish from "./MatchEmptyCopyPolish";
-import MatchFlashGuard from "./MatchFlashGuard";
-import MatchSimulatorBridge from "./MatchSimulatorBridge";
-import MobileChromePolish from "./MobileChromePolish";
-import NavEmergencyFix from "./NavEmergencyFix";
-import PlaygroundRandomToolsSafe from "./PlaygroundRandomToolsSafe";
-import ProfileOnboarding from "./ProfileOnboarding";
-import ProfileSubscreensEnhancer from "./ProfileSubscreensEnhancer";
-import RadarProfileDefaultsFix from "./RadarProfileDefaultsFix";
-import RadarUiPolish from "./RadarUiPolish";
-import RequestFormHardReset from "./RequestFormHardReset";
-import RequestProfileCheckboxFix from "./RequestProfileCheckboxFix";
-import RequestProfileDefaultsSync from "./RequestProfileDefaultsSync";
-import RequestVisualPolish from "./RequestVisualPolish";
-import SearchableSelectEnhancer from "./SearchableSelectEnhancer";
-import ShareEmptyStates from "./ShareEmptyStates";
-import ShareRequestEnhancer from "./ShareRequestEnhancer";
-import StatusDropdownCleanup from "./StatusDropdownCleanup";
-import TabLoadingStates from "./TabLoadingStates";
-import TextCopyNormalizer from "./TextCopyNormalizer";
+import { Manrope, Onest } from "next/font/google";
 import "./globals.css";
 
-const sofiaSans = Sofia_Sans({
+const manrope = Manrope({
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-sofia-sans",
-  display: "swap"
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-manrope",
+  display: "swap",
+});
+
+const onest = Onest({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-onest",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Място За Място",
-  description: "Безплатна платформа за потенциални съвпадения между родители за детски градини."
+  description: "Безплатна платформа за потенциални съвпадения между родители за детски градини.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="bg">
-      <body className={sofiaSans.className}>
+      <body className={`${manrope.variable} ${onest.variable}`}>
         {children}
-        <ProfileOnboarding />
-        <HomeHeroCopyPolish />
-        <HomeHeroAndRadarFix />
-        <HomeHeroActionButtonsFinal />
-        <RadarUiPolish />
-        <RadarProfileDefaultsFix />
-        <HomeGuidanceEnhancer />
-        <HomeStatLinks />
-        <HomeStatsCleanup />
-        <PlaygroundRandomToolsSafe />
-        <TabLoadingStates />
-        <MatchFlashGuard />
-        <MatchSimulatorBridge />
-        <MatchEmptyCopyPolish />
-        <MobileChromePolish />
-        <RequestFormHardReset />
-        <RequestProfileDefaultsSync />
-        <RequestProfileCheckboxFix />
-        <RequestVisualPolish />
-        <SearchableSelectEnhancer />
-        <ShareRequestEnhancer />
-        <ShareEmptyStates />
-        <StatusDropdownCleanup />
-        <TextCopyNormalizer />
-        <NavEmergencyFix />
-        <FinalMobileUiPatch />
-        <ProfileSubscreensEnhancer />
-        <AppStabilityGuard />
       </body>
     </html>
   );
