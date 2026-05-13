@@ -326,7 +326,7 @@ function RequestsTab({
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const kindergartens = snapshot?.kindergartens ?? [];
   const districts = useMemo(
-    () => Array.from(new Set(kindergartens.map((kg) => kg.district).filter(Boolean))).sort(),
+    () => Array.from(new Set(kindergartens.map((kg) => kg.district).filter((d): d is string => d !== null))).sort(),
     [kindergartens]
   );
   const filteredKgs = district ? kindergartens.filter((kg) => kg.district === district) : kindergartens;
