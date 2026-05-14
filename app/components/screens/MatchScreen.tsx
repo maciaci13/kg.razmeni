@@ -3,13 +3,24 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 
+type ParticipantTone = "orange" | "green" | "purple";
+type PreviewParticipant = {
+  id: string;
+  label: string;
+  avatar: string;
+  cardTone: ParticipantTone;
+  route: string;
+  status: string;
+  isMe: boolean;
+};
+
 const currentStep = { index: 2, total: 6, title: "Отвори чата и пиши с другите родители" };
 
-const participants = [
+const participants: PreviewParticipant[] = [
   { id: "me", label: "Ти", avatar: "Ти", cardTone: "orange", route: "ДГ №25 Изворче → ДГ №25 Изворче – сграда 2", status: "Още не съм започнал/а", isMe: true },
-  { id: "parent-c", label: "Родител C", avatar: "1", cardTone: "green", route: "ДГ №25 Изворче – сграда 3 → ДГ №25 Изворче", status: "Още не съм започнал/а" },
-  { id: "parent-b", label: "Родител Б", avatar: "Б", cardTone: "purple", route: "ДГ №25 Изворче – сграда 2 → ДГ №25 Изворче – сграда 3", status: "Още не съм започнал/а" }
-] as const;
+  { id: "parent-c", label: "Родител C", avatar: "1", cardTone: "green", route: "ДГ №25 Изворче – сграда 3 → ДГ №25 Изворче", status: "Още не съм започнал/а", isMe: false },
+  { id: "parent-b", label: "Родител Б", avatar: "Б", cardTone: "purple", route: "ДГ №25 Изворче – сграда 2 → ДГ №25 Изворче – сграда 3", status: "Още не съм започнал/а", isMe: false }
+];
 
 const mapNodes = [
   { id: "sun", label: "ДГ 25 „Слънчеви лъчи“", color: "#FF7A22", dotClass: "left-[64px] top-[34px]", labelClass: "left-[14px] top-[110px]" },
@@ -17,7 +28,7 @@ const mapNodes = [
   { id: "bear", label: "ДГ 184 „Мечо Пух“ — ясла", color: "#8D66D7", dotClass: "left-[96px] top-[218px]", labelClass: "left-[54px] top-[282px]" }
 ];
 
-const toneClass = {
+const toneClass: Record<ParticipantTone, string> = {
   orange: "bg-gradient-to-br from-[#FF8A3D] to-[#B9825A] text-white",
   green: "bg-gradient-to-br from-[#EEF5E8] to-[#D9E9CD] text-foreground",
   purple: "bg-gradient-to-br from-[#F1EBFB] to-[#DED2F5] text-foreground"
@@ -71,7 +82,7 @@ function ProcessMap({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function ParticipantCard({ participant }: { participant: (typeof participants)[number] }) {
+function ParticipantCard({ participant }: { participant: PreviewParticipant }) {
   return (
     <section className={`mb-2.5 flex gap-3 rounded-[28px] border border-white/90 p-4 shadow-[0_14px_34px_rgba(80,54,35,0.09)] ${toneClass[participant.cardTone]}`}>
       <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl font-display text-sm font-black ${participant.isMe ? "bg-white/20" : "bg-white/45"}`}>{participant.avatar}</div>
