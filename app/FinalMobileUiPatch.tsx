@@ -18,14 +18,37 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
+    html,
+    body {
+      min-height: 100% !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      overscroll-behavior-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
     main:has(nav.fixed.bottom-4) {
+      min-height: 100dvh !important;
+      height: auto !important;
+      overflow: visible !important;
       padding-top: 10px !important;
-      padding-bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px)) !important;
+      padding-bottom: calc(6.35rem + env(safe-area-inset-bottom, 0px)) !important;
+      touch-action: pan-y !important;
     }
 
     main:has(nav.fixed.bottom-4) > div {
+      min-height: auto !important;
+      height: auto !important;
+      overflow: visible !important;
       padding-top: 0 !important;
-      padding-bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px)) !important;
+      padding-bottom: calc(6.35rem + env(safe-area-inset-bottom, 0px)) !important;
+      touch-action: pan-y !important;
+    }
+
+    main:has(nav.fixed.bottom-4) section,
+    main:has(nav.fixed.bottom-4) article,
+    main:has(nav.fixed.bottom-4) form {
+      touch-action: pan-y !important;
     }
 
     .mzm-final-tab-shell,
@@ -211,12 +234,14 @@ function createChatShellAfterTopBar(topBar: HTMLElement) {
 }
 
 function alignShell(topBar: HTMLElement, shell: HTMLElement) {
+  if (isActiveTab("Заявка")) {
+    shell.classList.add("mzm-final-tab-shell");
+    setImportant(shell, "margin-top", "16px");
+    return;
+  }
+
   shell.classList.add("mzm-final-tab-shell");
   setImportant(shell, "margin-top", "0px");
-  // getBoundingClientRect forces a synchronous layout flush — no inner rAF needed.
-  // Using an inner rAF caused a race: the outer rAF (run every 250 ms) would reset
-  // margin-top to 0, and the browser could paint that intermediate state before the
-  // inner rAF fired to correct it, producing the visible gap on mobile.
   const currentTop = shell.getBoundingClientRect().top;
   const desiredTop = topBar.getBoundingClientRect().bottom + DESIRED_TOP_GAP;
   const delta = Math.round(desiredTop - currentTop);
@@ -227,22 +252,25 @@ function alignShell(topBar: HTMLElement, shell: HTMLElement) {
 function alignContentBelowTopBar() {
   const main = getMain();
   if (!main) return;
+  setImportant(main, "min-height", "100dvh");
+  setImportant(main, "height", "auto");
+  setImportant(main, "overflow", "visible");
   setImportant(main, "padding-top", "10px");
-  setImportant(main, "padding-bottom", "calc(4.85rem + env(safe-area-inset-bottom, 0px))");
+  setImportant(main, "padding-bottom", "calc(6.35rem + env(safe-area-inset-bottom, 0px))");
 
   const direct = main.firstElementChild;
   if (direct instanceof HTMLElement) {
+    setImportant(direct, "min-height", "auto");
+    setImportant(direct, "height", "auto");
+    setImportant(direct, "overflow", "visible");
     setImportant(direct, "padding-top", "0");
-    setImportant(direct, "padding-bottom", "calc(4.85rem + env(safe-area-inset-bottom, 0px))");
+    setImportant(direct, "padding-bottom", "calc(6.35rem + env(safe-area-inset-bottom, 0px))");
   }
 
   const topBar = findTopBar();
   if (!topBar) return;
   setImportant(topBar, "margin-bottom", "0");
   setImportant(topBar, "padding-top", "0");
-  // direct = main.firstElementChild which is the TopBar, not the AppShell.
-  // The padding-bottom set on `direct` above adds ~78px of invisible space below
-  // the TopBar buttons, pushing all content down. Clear it here.
   setImportant(topBar, "padding-bottom", "0");
 
   removeChatShellIfInactive();
@@ -395,7 +423,7 @@ export default function FinalMobileUiPatch() {
     schedule();
     const observer = new MutationObserver(schedule);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-    const interval = window.setInterval(schedule, 250);
+    const interval = window.setInterval(schedule, 700);
     const t1 = window.setTimeout(schedule, 900);
     const t2 = window.setTimeout(schedule, 1800);
 
