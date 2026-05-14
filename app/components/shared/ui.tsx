@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Participant } from "../types";
 import { participantColors, rejectedStep, statusOptions, steps } from "../types";
 import type { PlaygroundSnapshot } from "@/lib/playground";
@@ -13,11 +14,11 @@ export function participantStatus(p: Participant, allConfirmed: boolean) {
   return statusLabel(p.coordination_status);
 }
 
-export function SelectField({ value, onChange, children, className = "", disabled = false }: { value: string; onChange: (value: string) => void; children: React.ReactNode; className?: string; disabled?: boolean }) {
+export function SelectField({ value, onChange, children, className = "", disabled = false }: { value: string; onChange: (value: string) => void; children: ReactNode; className?: string; disabled?: boolean }) {
   return <div className={`relative ${className}`}><select value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className="app-select w-full appearance-none rounded-[1.35rem] border-0 bg-paper py-4 pl-4 pr-14 text-sm font-bold text-ink outline-none disabled:opacity-50">{children}</select><span className="app-select-chevron" /></div>;
 }
 
-export function AppSection({ children }: { children: React.ReactNode }) {
+export function AppSection({ children }: { children: ReactNode }) {
   return <div className="space-y-5">{children}</div>;
 }
 
@@ -25,7 +26,7 @@ export function PageTitle({ eyebrow, title, body }: { eyebrow: string; title: st
   return <div className="px-1"><p className="text-xs font-extrabold uppercase tracking-[0.24em] text-orange">{eyebrow}</p><h1 className="mt-2 text-4xl font-extrabold leading-[0.95] tracking-[-0.055em]">{title}</h1>{body ? <p className="mt-3 text-sm font-medium leading-6 text-ink/55">{body}</p> : null}</div>;
 }
 
-export function FieldLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+export function FieldLabel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <label className={`block text-xs font-extrabold uppercase tracking-[0.18em] text-ink/40 ${className}`}>{children}</label>;
 }
 
