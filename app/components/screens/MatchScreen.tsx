@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { PlaygroundSnapshot } from "@/lib/playground";
 import type { Participant } from "../types";
 import { AppSection, CycleMap, EmptyCard, PageTitle, Timeline } from "../shared/ui";
