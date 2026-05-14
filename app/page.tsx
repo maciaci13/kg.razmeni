@@ -22,9 +22,6 @@ export default function HomePage() {
 
   return (
     <AppShell activeTab={tab} setTab={setTab}>
-      <div className="mb-4 rounded-full bg-gradient-ember px-4 py-2 text-center text-[11px] font-black uppercase tracking-[0.22em] text-primary-foreground shadow-glow">
-        REDESIGN PREVIEW ACTIVE
-      </div>
       {Active}
     </AppShell>
   );
