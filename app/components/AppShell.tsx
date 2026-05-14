@@ -1,7 +1,8 @@
 import { Bell, CircleUser, Home, MessageSquare, Plus, Sparkles } from "lucide-react";
+import type { ComponentType, ReactNode } from "react";
 import type { AppTab } from "./types";
 
-const tabs: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }[] = [
+const tabs: { id: AppTab; label: string; icon: ComponentType<{ className?: string; strokeWidth?: number }> }[] = [
   { id: "home", label: "Начало", icon: Home },
   { id: "requests", label: "Заявка", icon: Plus },
   { id: "matches", label: "Съвпадение", icon: Sparkles },
@@ -9,7 +10,7 @@ const tabs: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
   { id: "profile", label: "Профил", icon: CircleUser }
 ];
 
-export function AppShell({ children, activeTab, setTab, selectedUserName }: { children: React.ReactNode; activeTab: AppTab; setTab: (tab: AppTab) => void; selectedUserName: string }) {
+export function AppShell({ children, activeTab, setTab, selectedUserName }: { children: ReactNode; activeTab: AppTab; setTab: (tab: AppTab) => void; selectedUserName: string }) {
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-background text-foreground">
       <div className="mx-auto max-w-md px-5 pb-36 pt-6 relative overflow-visible">
