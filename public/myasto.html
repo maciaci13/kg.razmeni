@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Място За Място — Hi-Fi v4</title>
+  <link rel="stylesheet" href="/styles/myasto.css">
+</head>
+<body>
+
+<div class="outer-nav">
+  <button class="onb on"  onclick="go('home')">🏠 Начало</button>
+  <button class="onb"     onclick="go('request')">📋 Заявка</button>
+  <button class="onb"     onclick="go('match')">✨ Съвпадение</button>
+  <button class="onb"     onclick="go('coord')">🔄 Координация</button>
+  <button class="onb"     onclick="go('chat')">💬 Чат</button>
+  <button class="onb"     onclick="go('radar')">📡 Радар</button>
+  <button class="onb"     onclick="go('profile')">👤 Профил</button>
+  <button class="onb"     onclick="go('safety')">🛡 Правила</button>
+  <button class="onb"     onclick="go('cause')">💛 Кауза</button>
+  <button class="onb"     onclick="go('share')">📤 Сподели</button>
+</div>
+<p class="outer-label">Място За Място · Hi-Fi v4 · 2025</p>
+
+<div class="phone">
+  <div class="status"><span>09:41</span><span>●●● 95%</span></div>
+  <div id="screens-root" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0"></div>
+</div>
+
+<script>
+(async function loadScreens() {
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = '/scripts/nav.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  const NAMES = ['home','request','match','coord','chat','chat-active','radar','profile','safety','cause','share'];
+  const root = document.getElementById('screens-root');
+
+  function injectFragment(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('style').forEach(s => {
+      const el = document.createElement('style');
+      el.textContent = s.textContent;
+      document.head.appendChild(el);
+      s.remove();
+    });
+    const scripts = [];
+    doc.querySelectorAll('script').forEach(s => {
+      scripts.push(s.textContent);
+      s.remove();
+    });
+    Array.from(doc.body.childNodes).forEach(n => root.appendChild(n.cloneNode(true)));
+    scripts.forEach(code => {
+      const el = document.createElement('script');
+      el.textContent = code;
+      document.body.appendChild(el);
+    });
+  }
+
+  const htmls = await Promise.all(
+    NAMES.map(name => fetch('/screens/' + name + '.html', {cache: 'no-store'}).then(r => r.text()))
+  );
+  htmls.forEach(injectFragment);
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  go('home');
+  initNav();
+})();
+</script>
+
+</body>
+</html>
