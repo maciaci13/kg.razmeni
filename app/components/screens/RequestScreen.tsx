@@ -5,26 +5,6 @@ import { ArrowUpRight, ChevronDown, ChevronUp, MoreHorizontal } from "lucide-rea
 
 const types = ["Общ ред", "СОП", "Хронични заболявания", "Социални критерии"];
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground font-extrabold mb-3">
-        {label}
-      </p>
-      {children}
-    </div>
-  );
-}
-
-function Select({ placeholder }: { placeholder: string }) {
-  return (
-    <button className="w-full min-h-16 rounded-[1.8rem] bg-card/82 backdrop-blur-xl border border-white/80 px-5 flex items-center justify-between text-[15px] font-bold text-secondary-foreground shadow-soft transition-all hover:scale-[1.01]">
-      <span className="text-left">{placeholder}</span>
-      <ChevronDown className="h-5 w-5 text-muted-foreground" />
-    </button>
-  );
-}
-
 export function RequestScreen() {
   const [open, setOpen] = useState(true);
   const [type, setType] = useState("Общ ред");
@@ -123,5 +103,18 @@ export function RequestScreen() {
         </div>
       </div>
     </>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground font-extrabold mb-3">{label}</p>{children}</div>;
+}
+
+function Select({ placeholder }: { placeholder: string }) {
+  return (
+    <button className="w-full min-h-16 rounded-[1.8rem] bg-card/82 backdrop-blur-xl border border-white/80 px-5 flex items-center justify-between text-[15px] font-bold text-secondary-foreground shadow-soft transition-all hover:scale-[1.01]">
+      <span className="text-left">{placeholder}</span>
+      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+    </button>
   );
 }
