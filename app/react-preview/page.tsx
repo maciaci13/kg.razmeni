@@ -2,21 +2,31 @@
 
 import { useState } from "react";
 import { usePlaygroundController } from "../components/playground/usePlaygroundController";
+import { HomeScreen } from "../components/screens/HomeScreen";
 import { RequestScreen } from "../components/screens/RequestScreen";
 import { MatchScreen } from "../components/screens/MatchScreen";
 import { ChatScreen } from "../components/screens/ChatScreen";
 import { ProfileScreen } from "../components/screens/ProfileScreen";
 
-type ReactPreviewTab = "requests" | "matches" | "chats" | "profile";
+type ReactPreviewTab = "home" | "requests" | "matches" | "chats" | "profile";
+
+const dockIcons: Record<ReactPreviewTab, string> = {
+  home: "⌂",
+  requests: "+",
+  matches: "✦",
+  chats: "◌",
+  profile: "☻",
+};
 
 export default function ReactPreviewPage() {
-  const [tab, setTab] = useState<ReactPreviewTab>("requests");
+  const [tab, setTab] = useState<ReactPreviewTab>("home");
   const playground = usePlaygroundController();
 
   return (
     <>
       <link rel="stylesheet" href="/styles/myasto.css" />
       <div className="outer-nav">
+        <button className={`onb ${tab === "home" ? "on" : ""}`} type="button" onClick={() => setTab("home")}>React · Начало</button>
         <button className={`onb ${tab === "requests" ? "on" : ""}`} type="button" onClick={() => setTab("requests")}>React · Заявка</button>
         <button className={`onb ${tab === "matches" ? "on" : ""}`} type="button" onClick={() => setTab("matches")}>React · Съвпадение</button>
         <button className={`onb ${tab === "chats" ? "on" : ""}`} type="button" onClick={() => setTab("chats")}>React · Чат</button>
@@ -29,6 +39,7 @@ export default function ReactPreviewPage() {
         <div className="status"><span>09:41</span><span>●●● 95%</span></div>
         <div className="screen on">
           <div className="app">
+            {tab === "home" ? <HomeScreen setTab={setTab as any} /> : null}
             {tab === "requests" ? (
               <RequestScreen
                 kindergartens={playground.kindergartens}
@@ -78,15 +89,19 @@ export default function ReactPreviewPage() {
               />
             ) : null}
           </div>
-          <nav className="dock">
-            <button type="button" className="tab" aria-disabled="true"><i>⌂</i>Начало</button>
-            <button type="button" className={`tab ${tab === "requests" ? "active" : ""}`} onClick={() => setTab("requests")}><i>＋</i>Заявка</button>
-            <button type="button" className={`tab ${tab === "matches" ? "active" : ""}`} onClick={() => setTab("matches")}><i>✦</i>Съвпадение</button>
-            <button type="button" className={`tab ${tab === "chats" ? "active" : ""}`} onClick={() => setTab("chats")}><i>💬</i>Чат</button>
-            <button type="button" className={`tab ${tab === "profile" ? "active" : ""}`} onClick={() => setTab("profile")}><i>👤</i>Профил</button>
+          <nav className="dock" aria-label="Основна навигация">
+            <DockButton id="home" label="Начало" tab={tab} setTab={setTab} />
+            <DockButton id="requests" label="Заявка" tab={tab} setTab={setTab} />
+            <DockButton id="matches" label="Съвпадение" tab={tab} setTab={setTab} />
+            <DockButton id="chats" label="Чат" tab={tab} setTab={setTab} />
+            <DockButton id="profile" label="Профил" tab={tab} setTab={setTab} />
           </nav>
         </div>
       </div>
     </>
   );
+}
+
+function DockButton({ id, label, tab, setTab }: { id: ReactPreviewTab; label: string; tab: ReactPreviewTab; setTab: (tab: ReactPreviewTab) => void }) {
+  return <button type="button" className={`tab ${tab === id ? "active" : ""}`} onClick={() => setTab(id)}><i>{dockIcons[id]}</i>{label}</button>;
 }
