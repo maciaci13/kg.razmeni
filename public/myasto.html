@@ -29,6 +29,7 @@
 
 <script>
 (async function loadScreens() {
+  // Load nav.js first so go() and initNav() are available
   await new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = '/scripts/nav.js';
@@ -41,18 +42,26 @@
 
   function injectFragment(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    // Inline <style> blocks → move to <head>
     doc.querySelectorAll('style').forEach(s => {
       const el = document.createElement('style');
       el.textContent = s.textContent;
       document.head.appendChild(el);
       s.remove();
     });
+
+    // Inline <script> blocks → collect and remove before cloning
     const scripts = [];
     doc.querySelectorAll('script').forEach(s => {
       scripts.push(s.textContent);
       s.remove();
     });
+
+    // Append screen node(s) to root
     Array.from(doc.body.childNodes).forEach(n => root.appendChild(n.cloneNode(true)));
+
+    // Execute collected scripts
     scripts.forEach(code => {
       const el = document.createElement('script');
       el.textContent = code;
@@ -60,10 +69,13 @@
     });
   }
 
+  // Fetch all screens in parallel, inject in order
   const htmls = await Promise.all(
     NAMES.map(name => fetch('/screens/' + name + '.html', {cache: 'no-store'}).then(r => r.text()))
   );
   htmls.forEach(injectFragment);
+
+  // Remove the default "on" class from the static fragment, then activate home
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
   go('home');
   initNav();

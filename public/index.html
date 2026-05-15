@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="bg">
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Място За Място — Redesign Preview</title><style>body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background: #fbfaf8; color: #211712; }</style></head>
+  <body><p>Зареждане на preview...</p><script>
+async function bootPreview(){
+  // Fetch shell — screens/CSS/JS are loaded by myasto.html itself, no version bump needed
+  const response = await fetch('/myasto.html', {cache: 'no-store'});
+  const html = await response.text();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  document.title = doc.title || 'Място За Място — Redesign Preview';
+  document.head.innerHTML = doc.head.innerHTML;
+
+  const polish = document.createElement('link');
+  polish.rel = 'stylesheet';
+  polish.href = '/polish.css?v=24';
+  document.head.appendChild(polish);
+
+  const cyclePatch = document.createElement('script');
+  cyclePatch.src = '/cycle-map-patch.js?v=8';
+  document.head.appendChild(cyclePatch);
+
+  document.body.innerHTML = doc.body.innerHTML;
+
+  // Re-execute scripts from myasto.html (the async screen loader + nav.js src tag)
+  doc.querySelectorAll('script').forEach((oldScript) => {
+    const script = document.createElement('script');
+    [...oldScript.attributes].forEach((attr) => script.setAttribute(attr.name, attr.value));
+    script.textContent = oldScript.textContent;
+    document.body.appendChild(script);
+  });
+
+  // Patches run after screens load — they have built-in retry logic
+  const firstStepsPatch = document.createElement('script');
+  firstStepsPatch.src = '/first-steps-patch.js?v=13';
+  document.body.appendChild(firstStepsPatch);
+
+  const coordinationPatch = document.createElement('script');
+  coordinationPatch.src = '/coordination-timeline-preview.js?v=43';
+  document.body.appendChild(coordinationPatch);
+}
+bootPreview().catch(() => { document.body.innerHTML = '<p>Не успях да заредя preview-а. Отвори <a href="/myasto.html">/myasto.html</a>.</p>'; });
+</script></body></html>
