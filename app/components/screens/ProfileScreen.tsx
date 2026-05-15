@@ -4,59 +4,64 @@ import type { PlaygroundSnapshot } from "@/lib/playground";
 export function ProfileScreen({ selectedProfileId, selectedUserName, users, setSelectedProfileId }: { selectedProfileId: string; selectedUserName: string; users: PlaygroundSnapshot["users"]; setSelectedProfileId: (id: string) => void }) {
   return (
     <>
-      <div className="bg-card rounded-3xl p-5 shadow-soft flex items-center gap-4">
-        <div className="h-20 w-20 rounded-3xl bg-gradient-ember flex items-center justify-center font-display text-3xl text-primary-foreground shadow-pill">
-          {selectedUserName.slice(-1) || "A"}
+      <div className="app-head">
+        <div className="app-head-left">
+          <div className="hello">Профил</div>
+          <div className="sub">Настройки, поверителност и поддръжка.</div>
         </div>
-        <div className="flex-1">
-          <p className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground font-bold">Профил</p>
-          <h1 className="font-display text-3xl leading-tight mt-0.5">{selectedUserName || "Родител"}</h1>
-          <p className="text-xs text-muted-foreground mt-1">София</p>
-        </div>
+        <div className="avatar">🔔</div>
       </div>
 
+      <div className="profile-cover">
+        <div className="profile-avatar">{selectedUserName?.slice(0, 1) || "А"}</div>
+      </div>
+
+      <div className="section-title" style={{ marginTop: 0 }}>{selectedUserName || "Родител А"}<span className="see">Редактирай</span></div>
+      <div className="place-sub" style={{ marginBottom: 14 }}>Тестов профил · София</div>
+
       {users.length > 1 ? (
-        <div className="mt-5 bg-card rounded-3xl p-5 shadow-soft">
-          <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground font-bold">Профил за преглед</p>
-          <select
-            value={selectedProfileId}
-            onChange={(event) => setSelectedProfileId(event.target.value)}
-            className="mt-4 w-full min-h-16 rounded-[1.8rem] bg-secondary/60 px-5 text-[15px] font-bold text-secondary-foreground outline-none"
-          >
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>{user.display_name}</option>
-            ))}
+        <div className="glass-card" style={{ padding: 14, marginBottom: 16 }}>
+          <div className="eyebrow soft" style={{ marginBottom: 8 }}>Тестов профил</div>
+          <select value={selectedProfileId} onChange={(event) => setSelectedProfileId(event.target.value)} style={{ width: "100%", border: 0, background: "transparent", outline: 0, fontSize: 15, fontWeight: 700, fontFamily: "Onest, sans-serif" }}>
+            {users.map((user) => <option key={user.id} value={user.id}>{user.display_name}</option>)}
           </select>
         </div>
       ) : null}
 
-      <div className="mt-5 bg-card rounded-3xl p-5 shadow-soft">
-        <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground font-bold">Настройки</p>
-        <div className="mt-4 space-y-3">
-          <Link href="#" className="block bg-secondary/60 rounded-2xl p-4 hover:bg-secondary transition-colors">
-            <div className="font-display text-base">Данни за профила</div>
-            <div className="text-xs text-muted-foreground mt-1">Район, набор, тип място и сегашна градина</div>
-          </Link>
-          <div className="bg-secondary/60 rounded-2xl p-4">
-            <div className="font-display text-base">Поверителност</div>
-            <div className="text-xs text-muted-foreground mt-1">Показваме само нужното за координация</div>
-          </div>
-          <div className="bg-secondary/60 rounded-2xl p-4">
-            <div className="font-display text-base">Правила и безопасност</div>
-            <div className="text-xs text-muted-foreground mt-1">Без продажба, гаранции и неофициални обещания</div>
-          </div>
-        </div>
+      <div className="section-title">Настройки</div>
+
+      <div className="glass-card" style={{ padding: "4px 16px" }}>
+        <div className="setting-row"><div><div className="sr-label">Данни за профила</div><div className="sr-sub">Район, набор, тип място и сегашна градина</div></div><span className="sr-right">›</span></div>
+        <div className="setting-row"><div><div className="sr-label">Поверителност</div><div className="sr-sub">Показваме само нужното за координация</div></div><span className="sr-right">›</span></div>
+        <div className="setting-row"><div><div className="sr-label">Правила и безопасност</div><div className="sr-sub">Без продажба, гаранции и неофициални обещания</div></div><span className="sr-right">›</span></div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <Link href="#" className="bg-gradient-sage rounded-3xl p-5 shadow-soft min-h-[140px] flex flex-col justify-between">
-          <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground font-bold">Каузата</p>
-          <h3 className="font-display text-2xl">Подкрепи проекта</h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+        <div className="card-sage" style={{ borderRadius: 26, padding: 16 }}>
+          <div className="eyebrow green">Каузата</div>
+          <div className="place-title" style={{ lineHeight: 1.2 }}>Подкрепи<br />проекта</div>
+        </div>
+
+        <Link href="/playground" className="card-orange" style={{ borderRadius: 26, padding: 16, textDecoration: "none", display: "block" }}>
+          <div className="eyebrow" style={{ color: "var(--on-dark-lo)" }}>Тестове</div>
+          <div className="place-title" style={{ lineHeight: 1.2, color: "#fff" }}>Симулатор</div>
         </Link>
-        <Link href="/playground" className="bg-gradient-ember text-primary-foreground rounded-3xl p-5 shadow-glow min-h-[140px] flex flex-col justify-between text-left">
-          <p className="text-[11px] tracking-[0.22em] uppercase font-bold opacity-80">Тестове</p>
-          <h3 className="font-display text-2xl">Симулатор</h3>
+      </div>
+
+      <div className="section-title" style={{ marginTop: 26 }}>Dev preview</div>
+
+      <div className="glass-card" style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <Link href="/react-preview" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none", color: "inherit", fontFamily: "Manrope,sans-serif", fontWeight: 800 }}>
+          <span>Отвори React preview</span>
+          <span>↗</span>
         </Link>
+
+        <Link href="/playground" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none", color: "inherit", fontFamily: "Manrope,sans-serif", fontWeight: 800 }}>
+          <span>Отвори Playground simulator</span>
+          <span>↗</span>
+        </Link>
+
+        <div className="place-sub">Симулаторът е sandbox за демо сценарии и тестове. Не го смесваме с основния app flow.</div>
       </div>
     </>
   );
