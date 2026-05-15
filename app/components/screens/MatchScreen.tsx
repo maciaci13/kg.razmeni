@@ -39,17 +39,26 @@ const statusLabels: Record<string, string> = {
   dropped_out: "Отказвам се",
 };
 
-const fallbackParticipants: Participant[] = [
-  { id: "me", label: "Ти", avatar: "Ти", cardTone: "orange", route: "ДГ №25 Изворче → ДГ №25 Изворче – сграда 2", status: "Още не съм започнал/а", isMe: true, coordinationStatus: "not_started" },
-  { id: "parent-c", label: "Родител C", avatar: "1", cardTone: "green", route: "ДГ №25 Изворче – сграда 3 → ДГ №25 Изворче", status: "Още не съм започнал/а" },
-  { id: "parent-b", label: "Родител Б", avatar: "Б", cardTone: "purple", route: "ДГ №25 Изворче – сграда 2 → ДГ №25 Изворче – сграда 3", status: "Още не съм започнал/а" },
-];
-
 const toneClass: Record<Participant["cardTone"], string> = {
   orange: "bg-gradient-to-br from-[#FF8A3D] to-[#B9825A] text-white",
   green: "bg-gradient-to-br from-[#EEF5E8] to-[#D9E9CD] text-foreground",
   purple: "bg-gradient-to-br from-[#F1EBFB] to-[#DED2F5] text-foreground",
 };
+
+function EmptyMatchState() {
+  return (
+    <>
+      <p className="font-display text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Съвпадения</p>
+      <h1 className="mt-2 font-display text-4xl">Няма активен цикъл</h1>
+      <p className="mt-3 text-sm text-muted-foreground">Когато системата намери реално съвпадение между заявки, то ще се появи тук за потвърждение.</p>
+      <div className="mt-6 rounded-[2rem] border border-white/80 bg-white/75 p-5 shadow-[0_16px_38px_rgba(80,54,35,0.09)] backdrop-blur-xl">
+        <div className="mb-3 inline-flex h-[34px] items-center rounded-full bg-[#F5EFE8] px-4 font-display text-[12px] font-black text-[#8B5F47]">Очакваме match</div>
+        <h2 className="font-display text-[22px] font-black leading-tight tracking-[-0.05em] text-foreground">Пусни или редактирай заявка</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">Съвпаденията се показват само когато има реална верига. Тестовите сценарии се стартират отделно от профилния симулатор.</p>
+      </div>
+    </>
+  );
+}
 
 function StepCard({ allConfirmed }: { allConfirmed: boolean }) {
   return (
@@ -57,15 +66,9 @@ function StepCard({ allConfirmed }: { allConfirmed: boolean }) {
       <div className="pointer-events-none absolute -left-12 -top-10 h-36 w-36 rounded-full bg-[#FF8A3D]/10 blur-sm" />
       <div className="relative z-10 grid grid-cols-[1fr_126px] gap-2.5">
         <div>
-          <div className="mb-3 flex h-[38px] w-max items-center justify-center rounded-full bg-gradient-to-br from-[#FF8A3D] to-[#C98555] px-4 font-display text-[13px] font-black tracking-[-0.02em] text-white shadow-[0_12px_24px_rgba(255,138,61,0.20)]">
-            Стъпка: {allConfirmed ? "2" : "1"}/6
-          </div>
-          <h2 className="max-w-[190px] font-display text-[20px] font-black leading-[1.08] tracking-[-0.05em] text-foreground">
-            {allConfirmed ? "Отвори чата и пиши с другите родители" : "Потвърди интерес към потенциалния цикъл"}
-          </h2>
-          <a href="#chat" className="mt-3 inline-flex h-10 min-w-[86px] items-center justify-center rounded-full border-2 border-[#B8A898] bg-white px-[18px] font-display text-sm font-black text-[#5A4039] shadow-[0_12px_26px_rgba(80,54,35,0.10)]">
-            Чат ›
-          </a>
+          <div className="mb-3 flex h-[38px] w-max items-center justify-center rounded-full bg-gradient-to-br from-[#FF8A3D] to-[#C98555] px-4 font-display text-[13px] font-black tracking-[-0.02em] text-white shadow-[0_12px_24px_rgba(255,138,61,0.20)]">Стъпка: {allConfirmed ? "2" : "1"}/6</div>
+          <h2 className="max-w-[190px] font-display text-[20px] font-black leading-[1.08] tracking-[-0.05em] text-foreground">{allConfirmed ? "Отвори чата и пиши с другите родители" : "Потвърди интерес към потенциалния цикъл"}</h2>
+          <a href="#chat" className="mt-3 inline-flex h-10 min-w-[86px] items-center justify-center rounded-full border-2 border-[#B8A898] bg-white px-[18px] font-display text-sm font-black text-[#5A4039] shadow-[0_12px_26px_rgba(80,54,35,0.10)]">Чат ›</a>
         </div>
         <div className="relative h-[120px] translate-y-[33px]"><span className="absolute left-[10px] top-[11px] z-0 h-[74px] w-0.5 bg-[repeating-linear-gradient(to_bottom,rgba(83,54,48,.22)_0_6px,transparent_6px_13px)]" /><MiniStep top="top-0" label="Потвърждение" tone={allConfirmed ? "done" : "active"} /><MiniStep top="top-11" label="Координация" tone={allConfirmed ? "active" : "next"} /><MiniStep top="top-[88px]" label="Процедура" tone="next" /></div>
       </div>
@@ -90,10 +93,12 @@ function ParticipantCard({ participant, updateMyStatus }: { participant: Partici
 
 export function MatchScreen({ participants = [], selectedProfileId = "", participantRoute, participantName, allConfirmed = false, matchIsClosed = false, confirmMatch, declineMatch, updateMyStatus, loading = false }: MatchScreenProps) {
   const [showMap, setShowMap] = useState(false);
-  const visibleParticipants: Participant[] = participants.length ? participants.map((participant, index) => {
+  if (!participants.length) return <EmptyMatchState />;
+
+  const visibleParticipants: Participant[] = participants.map((participant, index) => {
     const isMe = participant.user_id === selectedProfileId;
     return { id: participant.id, label: isMe ? "Ти" : participantName?.(participant) ?? participant.participant_label, avatar: isMe ? "Ти" : String(index + 1), cardTone: isMe ? "orange" : index % 2 ? "green" : "purple", route: participantRoute?.(participant) ?? "— → —", status: participant.confirmation_status === "pending" ? "Очаква потвърждение" : statusLabels[participant.coordination_status] ?? participant.coordination_status, isMe, coordinationStatus: participant.coordination_status };
-  }) : fallbackParticipants;
+  });
 
   return (
     <>
