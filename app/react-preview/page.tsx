@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePlaygroundController } from "../components/playground/usePlaygroundController";
-import { HomeScreen } from "../components/screens/HomeScreen";
+import { ReactHomeScreen } from "../components/screens/ReactHomeScreen";
 import { RequestScreen } from "../components/screens/RequestScreen";
 import { MatchScreen } from "../components/screens/MatchScreen";
 import { ChatScreen } from "../components/screens/ChatScreen";
@@ -38,7 +38,7 @@ export default function ReactPreviewPage() {
         <div className="status"><span>09:41</span><span>●●● 95%</span></div>
         <div className="screen on">
           <div className="app">
-            {tab === "home" ? <HomeScreen setTab={setTab} /> : null}
+            {tab === "home" ? <ReactHomeScreen setTab={setTab} activeRequestsCount={playground.myRequests.length} matchesCount={playground.participants.length ? 1 : 0} /> : null}
             {tab === "requests" ? (
               <RequestScreen
                 kindergartens={playground.kindergartens}
