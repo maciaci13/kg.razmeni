@@ -3,11 +3,18 @@
 import { useState } from "react";
 
 const placeTypes = ["Общ ред", "Социални критерии", "Хронични заболявания", "СОП"];
+const districts = ["Избери район", "Лозенец", "Младост", "Люлин", "Оборище", "Витоша"];
+const cohorts = ["Избери набор / група", "Набор 2019", "Набор 2020", "Набор 2021", "Набор 2022", "Набор 2023"];
+const kindergartens = ["Избери градина", "ДГ №25 Изворче", "ДГ №25 Изворче – сграда 2", "ДГ №193 Славейче", "ДГ №192 Лозичка"];
 
 export function RequestScreen() {
   const [open, setOpen] = useState(true);
   const [selectedType, setSelectedType] = useState("Общ ред");
   const [saveProfile, setSaveProfile] = useState(false);
+  const [district, setDistrict] = useState(districts[0]);
+  const [cohort, setCohort] = useState(cohorts[0]);
+  const [fromKg, setFromKg] = useState(kindergartens[0]);
+  const [toKg, setToKg] = useState(kindergartens[0]);
 
   return (
     <>
@@ -27,8 +34,8 @@ export function RequestScreen() {
         </button>
         <div className="request-collapse-body">
           <div className="form-panel">
-            <PreviewInput label="Район" value="Избери район" muted />
-            <PreviewInput label="Набор / Група" value="Избери набор / група" muted />
+            <PreviewSelect label="Район" value={district} onChange={setDistrict} options={districts} muted={district === districts[0]} />
+            <PreviewSelect label="Набор / Група" value={cohort} onChange={setCohort} options={cohorts} muted={cohort === cohorts[0]} />
             <div style={{ padding: "4px 2px 10px" }}>
               <label className="eyebrow soft" style={{ display: "block", marginBottom: 8 }}>Тип място</label>
               <div className="chip-row">
@@ -54,11 +61,10 @@ export function RequestScreen() {
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
-              <label>Сегашна градина</label>
-              <div>Избери сегашна градина</div>
+              <PreviewSelect label="Сегашна градина" value={fromKg} onChange={setFromKg} options={kindergartens} muted={fromKg === kindergartens[0]} bare />
             </div>
             <div className="swap-btn-wrap">
-              <button className="swap-btn" type="button" aria-label="Размени">
+              <button className="swap-btn" type="button" aria-label="Размени" onClick={() => { const nextFrom = toKg; setToKg(fromKg); setFromKg(nextFrom); }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M7 16V4m0 0L3 8m4-4l4 4" />
                   <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
@@ -69,8 +75,7 @@ export function RequestScreen() {
               <svg className="swap-bg bg-star" viewBox="0 0 24 24" fill="none" stroke="#ff8a3d" strokeWidth="1.2" strokeLinecap="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
-              <label>Желана градина</label>
-              <div>Избери желана градина</div>
+              <PreviewSelect label="Желана градина" value={toKg} onChange={setToKg} options={kindergartens} muted={toKg === kindergartens[0]} bare />
             </div>
           </div>
 
@@ -96,6 +101,13 @@ export function RequestScreen() {
   );
 }
 
-function PreviewInput({ label, value, muted = false }: { label: string; value: string; muted?: boolean }) {
-  return <div className="input"><label>{label}</label><div style={muted ? { color: "var(--soft)" } : undefined}>{value}</div></div>;
+function PreviewSelect({ label, value, onChange, options, muted = false, bare = false }: { label: string; value: string; onChange: (value: string) => void; options: string[]; muted?: boolean; bare?: boolean }) {
+  return (
+    <label className={bare ? "" : "input"} style={bare ? { display: "block", position: "relative", zIndex: 2 } : { position: "relative", display: "block" }}>
+      <span style={{ display: "block", fontSize: 10, fontFamily: "Manrope, sans-serif", fontWeight: 800, color: "var(--soft)", textTransform: "uppercase", letterSpacing: ".09em", marginBottom: 4 }}>{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)} style={{ width: "100%", border: 0, background: "transparent", outline: 0, color: muted ? "var(--soft)" : "var(--ink)", fontSize: 15, fontWeight: 600, fontFamily: "Onest, system-ui, sans-serif", appearance: "auto", position: "relative", zIndex: 3 }}>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </label>
+  );
 }
