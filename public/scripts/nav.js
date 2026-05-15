@@ -1,6 +1,7 @@
-const screens = ['home','request','match','coord','chat','radar','profile','safety','cause','share'];
+const screens = ['home','request','coord','coord','chat','radar','profile','safety','cause','share'];
 
 function go(id) {
+  if (id === 'match') id = 'coord';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
   const s = document.getElementById('s-' + id);
   if (s) {
@@ -50,9 +51,7 @@ function toggleRequestForm(btn) {
   }
 }
 
-// Called after all screen fragments are injected into the DOM
 function initNav() {
-  // Chip toggles
   document.querySelectorAll('.chip-row').forEach(row => {
     row.querySelectorAll('.chip-sel').forEach(chip => {
       chip.addEventListener('click', function() {
@@ -62,7 +61,6 @@ function initNav() {
     });
   });
 
-  // Checkboxes
   document.querySelectorAll('.chk-row').forEach(row => {
     row.addEventListener('click', () => {
       const cb = row.querySelector('.chk-box');
@@ -73,16 +71,13 @@ function initNav() {
     });
   });
 
-  // Chat send
   const sendBtn = document.getElementById('send-btn');
   const chatIn = document.getElementById('chat-in');
   if (sendBtn) sendBtn.addEventListener('click', sendMsg);
   if (chatIn) chatIn.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
 
-  // Folder deck swipe
   const deck = document.getElementById('folderDeck');
   if (deck) {
-    const cards = deck.querySelectorAll('.folder-card');
     const dots = [document.getElementById('dot0'), document.getElementById('dot1')];
     let startX = 0, isDragging = false, flipped = false;
 
@@ -110,7 +105,6 @@ function initNav() {
     });
   }
 
-  // Close folder menus on outside click
   document.addEventListener('click', () => {
     document.querySelectorAll('.folder-menu-pop.open').forEach(p => p.classList.remove('open'));
   });
