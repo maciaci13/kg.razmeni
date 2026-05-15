@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Manrope, Onest } from "next/font/google";
-import AppStabilityGuard from "./AppStabilityGuard";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -27,7 +26,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="bg">
       <body className={`${manrope.variable} ${onest.variable}`}>
         {children}
-        <AppStabilityGuard />
       </body>
     </html>
   );
