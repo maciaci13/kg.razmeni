@@ -1,0 +1,111 @@
+  <div class="screen" id="s-request">
+    <div class="app">
+      <div class="app-head">
+        <div class="app-head-left">
+          <div class="eyebrow orange">Нова заявка</div>
+          <div class="hello">Къде искате да сте?</div>
+          <div class="sub">Избери сегашно и желано място. Съвпадението работи само между еднакъв тип места.</div>
+        </div>
+        <div class="avatar" style="cursor:pointer">🔔</div>
+      </div>
+
+      <div class="request-collapse open" id="requestCollapse">
+        <button type="button" class="request-collapse-head" onclick="toggleRequestForm(this)" aria-expanded="true">
+          <span class="rc-title">Активирай заявка</span>
+          <span class="rc-caret" aria-hidden="true">⌃</span>
+        </button>
+        <div class="request-collapse-body">
+          <div class="form-panel">
+            <div class="input">
+              <label>Район</label>
+              <div class="placeholder" style="color:var(--soft)">Избери район</div>
+            </div>
+            <div class="input">
+              <label>Набор / Група</label>
+              <div style="color:var(--soft)">Избери набор / група</div>
+            </div>
+            <div style="padding:4px 2px 10px">
+              <label class="eyebrow soft" style="display:block;margin-bottom:8px">Тип място</label>
+              <div class="chip-row">
+                <button class="chip-sel on">Общ ред</button>
+                <button class="chip-sel">Социални критерии</button>
+              </div>
+              <div class="chip-row">
+                <button class="chip-sel">Хронични заболявания</button>
+                <button class="chip-sel">СОП</button>
+              </div>
+              <div class="chk-row"><div class="chk-box" id="cb1"></div><span class="chk-label">Запази тези данни в профила ми</span></div>
+            </div>
+          </div>
+
+          <div class="swap-pair">
+            <div class="input swap-input">
+              <svg class="swap-bg bg-home" viewBox="0 0 24 24" fill="none" stroke="#533630" stroke-width="1.2" stroke-linecap="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <label>Сегашна градина</label>
+              <div>Избери сегашна градина</div>
+            </div>
+            <div class="swap-btn-wrap">
+              <button class="swap-btn" type="button" aria-label="Размени" onclick="(function(b){b.classList.toggle('spin');})(this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 16V4m0 0L3 8m4-4l4 4"/>
+                  <path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+                </svg>
+              </button>
+            </div>
+            <div class="input swap-input">
+              <svg class="swap-bg bg-star" viewBox="0 0 24 24" fill="none" stroke="#ff8a3d" stroke-width="1.2" stroke-linecap="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <label>Желана градина</label>
+              <div>Избери желана градина</div>
+            </div>
+          </div>
+
+          <div style="margin:20px 4px 16px">
+            <button class="btn primary" style="width:100%;white-space:nowrap">Активирай заявка</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:32px;display:none">Моите заявки · v2<span class="see">нов дизайн</span></div>
+      <div class="folder2-deck-wrap" style="display:none">
+        <div class="folder2-deck" id="folderDeck2">
+          <div class="folder2-card f2-teal" data-index="0">
+            <div class="folder2-back">
+              <div class="folder2-docs"><div class="folder2-doc f2d1"></div><div class="folder2-doc f2d2"></div><div class="folder2-doc f2d3"></div></div>
+              <div class="folder2-pocket"><div class="folder2-label"><div class="folder2-from">ДГ №193 Славейче →</div><div class="folder2-name">ДГ №192 Лозичка</div><div class="folder2-meta">Общ ред · Набор 2023</div></div><button class="folder2-gear" aria-label="Настройки" onclick="event.stopPropagation()">⚙</button></div>
+            </div><div class="folder2-badge">Чакаща</div>
+          </div>
+          <div class="folder2-card f2-orange" data-index="1" onclick="go('match')">
+            <div class="folder2-back"><div class="folder2-docs"><div class="folder2-doc f2d1"></div><div class="folder2-doc f2d2"></div><div class="folder2-doc f2d3"></div></div><div class="folder2-pocket"><div class="folder2-label"><div class="folder2-from">ДГ №25 Изворче →</div><div class="folder2-name">ДГ №25 Изворче – сграда 2</div><div class="folder2-meta">Общ ред · Набор 2019</div></div><button class="folder2-gear" aria-label="Настройки" onclick="event.stopPropagation()">⚙</button></div></div><div class="folder2-badge">Активна</div>
+          </div>
+        </div>
+        <div class="deck-dots"><div class="deck-dot" id="dot2_0"></div><div class="deck-dot active" id="dot2_1"></div></div>
+        <div class="deck-hint">← свайп за всички заявки →</div>
+      </div>
+
+      <div class="section-title" style="margin-top:32px">Моите заявки · v4<span class="see">версия 4</span></div>
+      <div class="folder4-wrap">
+        <div class="folder4-silhouette" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 164" preserveAspectRatio="none"><defs><linearGradient id="f4grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cfe6ef"/><stop offset="100%" stop-color="#cfe6ef"/></linearGradient></defs><path fill="url(#f4grad)" d="M 28 164 L 172 164 Q 200 164 200 140 L 200 68 Q 200 52 184 52 L 104 52 L 90 36 Q 85 28 75 28 L 28 28 Q 0 28 0 52 L 0 140 Q 0 164 28 164 Z"/></svg></div>
+      </div>
+      <div class="folder4-carousel">
+        <div class="folder4-cards">
+          <div class="folder4-card is-active" onclick="go('match')"><div class="folder4-top"><div class="folder4-badge">Чакаща</div><button class="folder4-gear" aria-label="Настройки" onclick="event.stopPropagation()">⚙</button></div><div class="folder4-from">ДГ №193 Славейче →</div><div class="folder4-title">ДГ №192 Лозичка</div><div class="folder4-meta">Общ ред · Набор 2023</div></div>
+          <div class="folder4-card" onclick="go('match')"><div class="folder4-top"><div class="folder4-badge is-pending" style="background:#ff8a3d">Активна</div><button class="folder4-gear" aria-label="Настройки" onclick="event.stopPropagation()">⚙</button></div><div class="folder4-from">ДГ №25 Изворче →</div><div class="folder4-title">ДГ №25 Изворче – сграда 2</div><div class="folder4-meta">Общ ред · Набор 2019</div></div>
+        </div>
+      </div>
+
+      <div class="notice notice-paper" style="margin-top:14px">Заявката ще се скрие автоматично при потенциален цикъл.</div>
+
+    </div>
+    <nav class="dock">
+      <div class="tab" onclick="go('home')"><i>⌂</i>Начало</div>
+      <div class="tab active" onclick="go('request')"><i>＋</i>Заявка</div>
+      <div class="tab" onclick="go('match')"><i>✦</i>Съвпадение</div>
+      <div class="tab" onclick="go('chat')"><i>◌</i>Чат</div>
+      <div class="tab" onclick="go('profile')"><i>☻</i>Профил</div>
+    </nav>
+  </div>

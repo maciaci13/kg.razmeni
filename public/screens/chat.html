@@ -1,0 +1,23 @@
+  <div class="screen" id="s-chat" style="flex-direction:column">
+    <div style="padding:14px 18px 10px;flex-shrink:0">
+      <div class="app-head" style="margin-bottom:0">
+        <div class="app-head-left">
+          <div class="eyebrow muted">Чатове</div>
+          <div class="hello">Още са заключени</div>
+          <div class="sub" style="max-width:260px">Чатовете се отключват само когато всички родители в потенциалния цикъл потвърдят интерес.</div>
+        </div>
+        <div class="avatar" style="cursor:pointer">🔔</div>
+      </div>
+    </div>
+    <div class="chat-list" id="chat-locked-preview" style="justify-content:center;gap:16px;padding-bottom:120px">
+      <div class="msg-group"><div class="msg sys">Това е неактивният state на чата за preview.</div></div>
+      <button class="coord-chat-btn" onclick="go('chat-active')" style="align-self:center;height:46px;padding:0 22px">Виж активен чат ›</button>
+    </div>
+    <nav class="dock">
+      <div class="tab" onclick="go('home')"><i>⌂</i>Начало</div>
+      <div class="tab" onclick="go('request')"><i>＋</i>Заявка</div>
+      <div class="tab" onclick="go('match')"><i>✦</i>Съвпадение</div>
+      <div class="tab active" onclick="go('chat')"><i>◌</i>Чат</div>
+      <div class="tab" onclick="go('profile')"><i>☻</i>Профил</div>
+    </nav>
+  </div>

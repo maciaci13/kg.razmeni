@@ -1,0 +1,111 @@
+  <div class="screen" id="s-chat-active" style="flex-direction:column">
+    <div style="padding:14px 18px 10px;flex-shrink:0">
+      <div class="app-head" style="margin-bottom:14px">
+        <div class="app-head-left">
+          <div class="eyebrow muted">Активен разговор</div>
+          <div class="hello">Чат</div>
+        </div>
+        <div class="avatar" onclick="go('chat')" style="cursor:pointer">‹</div>
+      </div>
+
+      <style>
+        #s-chat-active .chat-tabs{display:flex;gap:10px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+        #s-chat-active .chat-tabs::-webkit-scrollbar{display:none}
+        #s-chat-active .chat-tab{flex:0 0 auto;min-height:46px;border-radius:999px;border:1px solid rgba(83,54,48,.12);background:rgba(255,255,255,.68);color:#7f6f66;font:900 13px/1 Manrope,sans-serif;padding:0 16px 0 8px;display:inline-flex;align-items:center;gap:9px;box-shadow:0 8px 20px rgba(80,54,35,.06);cursor:pointer;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+        #s-chat-active .chat-tab.active{background:linear-gradient(135deg,#ff8a3d,#c98555);color:#fff;border-color:rgba(255,255,255,.58);box-shadow:0 12px 26px rgba(255,138,61,.24)}
+        #s-chat-active .chat-tab-avatars{display:flex;align-items:center;min-width:36px}
+        #s-chat-active .chat-tab-avatar{width:28px;height:28px;border-radius:999px;border:2px solid #fff;background:linear-gradient(135deg,#f5d4bd,#9f6a4c);display:grid;place-items:center;color:#fff;font:900 10px/1 Manrope,sans-serif;box-shadow:0 4px 10px rgba(80,54,35,.12)}
+        #s-chat-active .chat-tab-avatar+.chat-tab-avatar{margin-left:-10px}
+        #s-chat-active .chat-tab-avatar.a{background:linear-gradient(135deg,#ffb56f,#c06b36)}
+        #s-chat-active .chat-tab-avatar.b{background:linear-gradient(135deg,#8fbc8f,#53764b)}
+        #s-chat-active .chat-tab-avatar.c{background:linear-gradient(135deg,#bba0e8,#6e5499)}
+        #s-chat-active .chat-tab-avatar.me{background:linear-gradient(135deg,#f1c27d,#8d5b42)}
+        #s-chat-active .chat-tab.active .chat-tab-avatar{border-color:rgba(255,255,255,.9)}
+        #s-chat-active .chat-list{padding-bottom:138px}
+        #s-chat-active .chat-bottom-fade{position:absolute;left:10px;right:10px;bottom:0;height:128px;z-index:35;pointer-events:none;background:linear-gradient(to bottom,rgba(251,250,248,0),rgba(251,250,248,.16) 38%,rgba(251,250,248,.70) 100%);filter:blur(10px);border-radius:36px}
+        #s-chat-active .composer.with-attach{position:absolute;left:10px;right:10px;bottom:22px;z-index:40;display:block;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+        #s-chat-active .chat-panel-shell{position:relative;padding:12px;border-radius:34px;background:radial-gradient(circle at 18% 8%,rgba(255,185,96,.78),transparent 42%),radial-gradient(circle at 88% 16%,rgba(142,94,63,.40),transparent 42%),linear-gradient(135deg,rgba(255,138,61,.62),rgba(205,142,83,.52) 42%,rgba(92,66,52,.30));border:1px solid rgba(255,236,211,.72);box-shadow:0 20px 52px rgba(112,70,38,.24),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -24px 60px rgba(255,255,255,.16);backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25);overflow:hidden}
+        #s-chat-active .chat-panel-shell::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,.34),transparent 34%,rgba(255,255,255,.12) 68%,transparent);pointer-events:none;opacity:.95}
+        #s-chat-active .chat-input-band{position:relative;z-index:1;min-height:56px;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 16px;border-radius:23px;background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.96);box-shadow:0 18px 36px rgba(80,54,35,.18),inset 0 1px 0 rgba(255,255,255,.9)}
+        #s-chat-active .chat-input-band input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#332620;font:800 15px/1.2 Onest,Manrope,sans-serif;letter-spacing:-.02em}
+        #s-chat-active .chat-input-band input::placeholder{color:rgba(83,54,48,.48)}
+        #s-chat-active .chat-send-main{flex:0 0 40px;width:40px;height:40px;border:0;border-radius:999px;background:linear-gradient(135deg,#ff8a3d,#c98555);color:#fff;font:900 22px/1 Manrope,sans-serif;display:grid;place-items:center;box-shadow:0 10px 22px rgba(255,138,61,.28);cursor:pointer}
+        #s-chat-active .chat-attach-main{flex:0 0 36px;width:36px;height:36px;border:0;border-radius:15px;background:rgba(245,241,236,.9);color:#7a6c66;font:900 19px/1 Manrope,sans-serif;display:grid;place-items:center;cursor:pointer}
+      </style>
+
+      <div class="chat-tabs" aria-label="Избор на чат">
+        <button class="chat-tab active" data-chat="group"><span class="chat-tab-avatars"><span class="chat-tab-avatar me">Ти</span><span class="chat-tab-avatar a">А</span><span class="chat-tab-avatar b">Б</span><span class="chat-tab-avatar c">C</span></span>Групов чат · 4</button>
+        <button class="chat-tab" data-chat="parent-a"><span class="chat-tab-avatars"><span class="chat-tab-avatar a">А</span></span>Родител А · 2</button>
+        <button class="chat-tab" data-chat="parent-b"><span class="chat-tab-avatars"><span class="chat-tab-avatar b">Б</span></span>Родител Б · 2</button>
+        <button class="chat-tab" data-chat="parent-c"><span class="chat-tab-avatars"><span class="chat-tab-avatar c">C</span></span>Родител C · 2</button>
+      </div>
+    </div>
+
+    <div class="chat-list" id="chat-msgs"></div>
+    <div class="chat-bottom-fade"></div>
+
+    <div class="composer with-attach">
+      <div class="chat-panel-shell">
+        <div class="chat-input-band">
+          <button class="chat-attach-main" aria-label="Прикачи файл">＋</button>
+          <input placeholder="Напиши съобщение..." id="chat-in-active">
+          <button class="chat-send-main" id="send-btn-active" aria-label="Изпрати">↑</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function initActiveChatPreview(){
+        const screen = document.getElementById('s-chat-active');
+        if (!screen || screen.dataset.chatReady === '1') return;
+        screen.dataset.chatReady = '1';
+
+        const messages = {
+          group: [
+            {sender:'Родител А', side:'them', text:'Здравейте! Проверих условията в ДГ №25. Трябват молби от всички и преминаване пред комисия.', time:'09:32'},
+            {sender:'Родител Б', side:'them', text:'В нашата градина приемат до 15-ти на месеца.', time:'09:45'},
+            {side:'me', text:'Добре! Ще се свържа с директора утре и ще споделя информация тук.', time:'10:02'},
+            {sender:'Родител C', side:'them', text:'Аз мога да подготвя примерен текст за заявлението и да го кача тук.', time:'10:08'},
+            {sender:'Родител А', side:'them', text:'Перфектно. Координираме се много добре.', time:'10:15'}
+          ],
+          'parent-a': [
+            {sender:'Родител А', side:'them', text:'Здравей! Можеш ли да ми пратиш точния вход на филиала?', time:'09:28'},
+            {side:'me', text:'Да, ще го потвърдя днес и ще ти пиша.', time:'09:41'},
+            {sender:'Родител А', side:'them', text:'Супер, благодаря. Аз ще звънна на директора следобед.', time:'09:44'}
+          ],
+          'parent-b': [
+            {sender:'Родител Б', side:'them', text:'При нас срокът е до 15-ти. Да синхронизираме документите преди това.', time:'09:45'},
+            {side:'me', text:'Да, нека утре съберем всичко и да видим какво липсва.', time:'10:01'},
+            {sender:'Родител Б', side:'them', text:'Ок. Ще подготвя моята част.', time:'10:06'}
+          ],
+          'parent-c': [
+            {sender:'Родител C', side:'them', text:'Аз съм готов/а да съдействам с текста за общото заявление.', time:'10:08'},
+            {side:'me', text:'Чудесно, качи го тук като файл, когато е готов.', time:'10:10'},
+            {sender:'Родител C', side:'them', text:'Ще го направя до края на деня.', time:'10:12'}
+          ]
+        };
+
+        function renderChat(key){
+          const list = screen.querySelector('#chat-msgs');
+          if (!list) return;
+          list.innerHTML = messages[key].map(m => {
+            if (m.side === 'me') {
+              return `<div class="msg-group me"><div class="msg me">${m.text}</div><div class="msg-time" style="text-align:right">${m.time}</div></div>`;
+            }
+            return `<div class="msg-group"><div class="msg-sender">${m.sender}</div><div class="msg them">${m.text}</div><div class="msg-time">${m.time}</div></div>`;
+          }).join('');
+          list.scrollTop = list.scrollHeight;
+        }
+
+        screen.querySelectorAll('.chat-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            screen.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            renderChat(tab.dataset.chat);
+          });
+        });
+
+        renderChat('group');
+      })();
+    </script>
+  </div>

@@ -1,0 +1,53 @@
+  <div class="screen" id="s-profile">
+    <div class="app">
+      <div class="app-head">
+        <div class="app-head-left">
+          <div class="hello">Профил</div>
+          <div class="sub">Настройки, поверителност и поддръжка.</div>
+        </div>
+        <div class="avatar">🔔</div>
+      </div>
+
+      <div class="profile-cover">
+        <div class="profile-avatar">А</div>
+      </div>
+
+      <div class="section-title" style="margin-top:0">Родител А<span class="see">Редактирай</span></div>
+      <div class="place-sub" style="margin-bottom:14px">Тестов профил · София</div>
+
+      <div class="section-title">Настройки</div>
+      <div class="glass-card" style="padding:4px 16px">
+        <div class="setting-row" onclick="go('profile')">
+          <div><div class="sr-label">Данни за профила</div><div class="sr-sub">Район, набор, тип място и сегашна градина</div></div>
+          <span class="sr-right">›</span>
+        </div>
+        <div class="setting-row" onclick="go('safety')">
+          <div><div class="sr-label">Поверителност</div><div class="sr-sub">Показваме само нужното за координация</div></div>
+          <span class="sr-right">›</span>
+        </div>
+        <div class="setting-row" onclick="go('safety')">
+          <div><div class="sr-label">Правила и безопасност</div><div class="sr-sub">Без продажба, гаранции и неофициални обещания</div></div>
+          <span class="sr-right">›</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+        <div class="card-sage" style="cursor:pointer;border-radius:26px;padding:16px" onclick="go('cause')">
+          <div class="eyebrow green">Каузата</div>
+          <div class="place-title" style="line-height:1.2">Подкрепи<br>проекта</div>
+        </div>
+        <div class="card-orange" style="cursor:pointer;border-radius:26px;padding:16px">
+          <div class="eyebrow" style="color:var(--on-dark-lo)">Тестове</div>
+          <div class="place-title" style="line-height:1.2;color:#fff">Симулатор</div>
+        </div>
+      </div>
+
+    </div>
+    <nav class="dock">
+      <div class="tab" onclick="go('home')"><i>⌂</i>Начало</div>
+      <div class="tab" onclick="go('request')"><i>＋</i>Заявка</div>
+      <div class="tab" onclick="go('match')"><i>✦</i>Съвпадение</div>
+      <div class="tab" onclick="go('chat')"><i>◌</i>Чат</div>
+      <div class="tab active" onclick="go('profile')"><i>☻</i>Профил</div>
+    </nav>
+  </div>

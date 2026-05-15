@@ -1,0 +1,56 @@
+  <div class="screen" id="s-match">
+    <div class="app">
+      <div class="app-head">
+        <div class="app-head-left">
+          <div class="eyebrow orange">Покана за цикъл</div>
+          <div class="hello">Има потенциален<br><span>цикъл</span></div>
+          <div class="sub">Заявката ти е скрита. Потвърди интерес, за да се отключи координацията.</div>
+        </div>
+        <div class="avatar" style="cursor:pointer">🔔</div>
+      </div>
+
+      <!-- Match hero card -->
+      <div class="match-card">
+        <div style="position:absolute;top:20px;left:20px;height:38px;padding:0 14px;border-radius:999px;background:var(--glass-dark);border:1px solid var(--glass-dark-border);display:flex;align-items:center;gap:8px;font-family:Manrope,sans-serif;font-weight:800;font-size:11px;backdrop-filter:blur(14px)">
+          <span style="width:6px;height:6px;border-radius:50%;background:#fff;display:block"></span>pending_confirmation
+        </div>
+        <div style="font-family:Manrope,sans-serif;font-size:28px;line-height:1.0;letter-spacing:-.05em;font-weight:800;margin-bottom:8px">Потенциален<br>цикъл намерен</div>
+        <p class="body-text" style="color:var(--on-dark);line-height:1.45">Три родители с взаимно съвместими заявки образуват пълна верига за размяна.</p>
+        <div class="tagline" style="margin-top:14px">
+          <span class="tag" style="background:var(--glass-dark);border-color:var(--glass-dark-border);color:#fff">3 участника</span>
+          <span class="tag" style="background:var(--glass-dark);border-color:var(--glass-dark-border);color:#fff">Банкя</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:14px">
+        <button class="wide-btn" style="background:rgba(255,255,255,.72);color:var(--cocoa);box-shadow:var(--softShadow);border:1px solid rgba(255,255,255,.9)">Не мога</button>
+        <button class="wide-btn" onclick="go('coord')">Потвърждавам ›</button>
+      </div>
+
+      <div class="notice notice-warm">
+        <strong>Важно:</strong> Потвърждението е израз на интерес за координация — не е официален резултат и не гарантира преместване.
+      </div>
+
+      <div class="section-title">Верига и статуси</div>
+
+      <div class="participant me">
+        <div class="p-av">Ти</div>
+        <div><div class="p-name">Ти</div><div class="p-route">ДГ №25 Изворче → ДГ №25 Изворче – сграда 2</div><span class="p-status">Очаква потвърждение</span></div>
+      </div>
+      <div class="participant pa">
+        <div class="p-av">А</div>
+        <div><div class="p-name">Родител А</div><div class="p-route">ДГ №25 Изворче – сграда 2 → ДГ №25 Изворче – сграда 3</div><span class="p-status">Очаква потвърждение</span></div>
+      </div>
+      <div class="participant pb">
+        <div class="p-av">Б</div>
+        <div><div class="p-name">Родител Б</div><div class="p-route">ДГ №25 Изворче – сграда 3 → ДГ №25 Изворче</div><span class="p-status">Очаква потвърждение</span></div>
+      </div>
+    </div>
+    <nav class="dock">
+      <div class="tab" onclick="go('home')"><i>⌂</i>Начало</div>
+      <div class="tab" onclick="go('request')"><i>＋</i>Заявка</div>
+      <div class="tab active" onclick="go('match')"><i>✦</i>Съвпадение</div>
+      <div class="tab" onclick="go('chat')"><i>◌</i>Чат</div>
+      <div class="tab" onclick="go('profile')"><i>☻</i>Профил</div>
+    </nav>
+  </div>
