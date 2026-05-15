@@ -7,10 +7,9 @@ import { RequestScreen } from "../components/screens/RequestScreen";
 import { MatchScreen } from "../components/screens/MatchScreen";
 import { ChatScreen } from "../components/screens/ChatScreen";
 import { ProfileScreen } from "../components/screens/ProfileScreen";
+import type { AppTab } from "../components/types";
 
-type ReactPreviewTab = "home" | "requests" | "matches" | "chats" | "profile";
-
-const dockIcons: Record<ReactPreviewTab, string> = {
+const dockIcons: Record<AppTab, string> = {
   home: "⌂",
   requests: "+",
   matches: "✦",
@@ -19,7 +18,7 @@ const dockIcons: Record<ReactPreviewTab, string> = {
 };
 
 export default function ReactPreviewPage() {
-  const [tab, setTab] = useState<ReactPreviewTab>("home");
+  const [tab, setTab] = useState<AppTab>("home");
   const playground = usePlaygroundController();
 
   return (
@@ -39,7 +38,7 @@ export default function ReactPreviewPage() {
         <div className="status"><span>09:41</span><span>●●● 95%</span></div>
         <div className="screen on">
           <div className="app">
-            {tab === "home" ? <HomeScreen setTab={setTab as any} /> : null}
+            {tab === "home" ? <HomeScreen setTab={setTab} /> : null}
             {tab === "requests" ? (
               <RequestScreen
                 kindergartens={playground.kindergartens}
@@ -102,6 +101,6 @@ export default function ReactPreviewPage() {
   );
 }
 
-function DockButton({ id, label, tab, setTab }: { id: ReactPreviewTab; label: string; tab: ReactPreviewTab; setTab: (tab: ReactPreviewTab) => void }) {
+function DockButton({ id, label, tab, setTab }: { id: AppTab; label: string; tab: AppTab; setTab: (tab: AppTab) => void }) {
   return <button type="button" className={`tab ${tab === id ? "active" : ""}`} onClick={() => setTab(id)}><i>{dockIcons[id]}</i>{label}</button>;
 }
