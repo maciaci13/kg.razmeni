@@ -45,17 +45,27 @@ const toneClass: Record<Participant["cardTone"], string> = {
   purple: "bg-gradient-to-br from-[#F1EBFB] to-[#DED2F5] text-foreground",
 };
 
+function FastMatchCard() {
+  return (
+    <button className="request-card mt-7 flex w-full items-center gap-3 px-4 py-3.5 text-left" type="button">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[17px] bg-gradient-to-br from-[#FF8A3D] to-[#B9825A] text-xl shadow-[0_10px_22px_rgba(255,138,61,0.25)]">↗</div>
+      <div className="flex-1">
+        <div className="place-title">По-бързо съвпадение</div>
+        <div className="place-sub">Увеличи шанса — покани родители</div>
+      </div>
+      <span className="text-lg text-[var(--soft)]">›</span>
+    </button>
+  );
+}
+
 function EmptyMatchState() {
   return (
     <>
-      <p className="font-display text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Съвпадения</p>
-      <h1 className="mt-2 font-display text-4xl">Няма активен цикъл</h1>
-      <p className="mt-3 text-sm text-muted-foreground">Когато системата намери реално съвпадение между заявки, то ще се появи тук за потвърждение.</p>
-      <div className="mt-6 rounded-[2rem] border border-white/80 bg-white/75 p-5 shadow-[0_16px_38px_rgba(80,54,35,0.09)] backdrop-blur-xl">
-        <div className="mb-3 inline-flex h-[34px] items-center rounded-full bg-[#F5EFE8] px-4 font-display text-[12px] font-black text-[#8B5F47]">Очакваме match</div>
-        <h2 className="font-display text-[22px] font-black leading-tight tracking-[-0.05em] text-foreground">Пусни или редактирай заявка</h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">Съвпаденията се показват само когато има реална верига. Тестовите сценарии се стартират отделно от профилния симулатор.</p>
-      </div>
+      <p className="font-display text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Потенциален цикъл</p>
+      <h1 className="mt-2 font-display text-4xl">Няма намерено съвпадение</h1>
+      <p className="mt-3 text-sm text-muted-foreground">Тук ще видиш своята покана за размяна, когато алгоритъма намери подходящо съвпадение.</p>
+      <FastMatchCard />
+      <button className="mt-5 h-14 w-full rounded-full bg-gradient-ember font-display text-sm font-black text-white shadow-glow" type="button">Виж поканата ›</button>
     </>
   );
 }
