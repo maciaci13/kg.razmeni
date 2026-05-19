@@ -78,7 +78,7 @@ function OfficialRow({ index, title, text }: { index: string; title: string; tex
 }
 
 function FullScreenSheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return <div className="coord-modal on" style={{ background: "transparent", backdropFilter: "none", WebkitBackdropFilter: "none" }} onClick={onClose}><div className="coord-modal-card" onClick={(event) => event.stopPropagation()}><button className="coord-close" type="button" onClick={onClose}>×</button>{children}</div></div>;
+  return <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }} onClick={onClose}><div className="coord-modal-card" onClick={(event) => event.stopPropagation()}><button className="coord-close" type="button" onClick={onClose}>×</button>{children}</div></div>;
 }
 
 function RadarPopup({ onClose, setTab }: { onClose: () => void; setTab: (tab: AppTab) => void }) {
