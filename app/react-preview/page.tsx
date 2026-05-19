@@ -24,6 +24,15 @@ export default function ReactPreviewPage() {
   return (
     <>
       <link rel="stylesheet" href="/styles/myasto.css" />
+      <style>{`
+        .coord-modal,
+        .modal-wrap,
+        .mzm-radar-modal-backdrop {
+          background: transparent !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+      `}</style>
       <div className="outer-nav">
         <button className={`onb ${tab === "home" ? "on" : ""}`} type="button" onClick={() => setTab("home")}>React · Начало</button>
         <button className={`onb ${tab === "requests" ? "on" : ""}`} type="button" onClick={() => setTab("requests")}>React · Заявка</button>
