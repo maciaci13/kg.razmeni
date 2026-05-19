@@ -39,9 +39,6 @@ function injectStyles() {
       align-items: center;
       justify-content: center;
       padding: 1rem;
-      background: rgba(28,27,25,.34);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
     }
 
     .mzm-radar-modal {
