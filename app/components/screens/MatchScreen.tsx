@@ -101,6 +101,36 @@ function ParticipantCard({ participant, updateMyStatus }: { participant: Partici
   );
 }
 
+function ProcessMapModal({ participants, onClose }: { participants: Participant[]; onClose: () => void }) {
+  const visible = participants.slice(0, 4);
+  const positions = [
+    { node: "left-[25%] top-[20%]", label: "left-[5%] top-[6%]", color: "#FF8A3D" },
+    { node: "right-[16%] top-[34%]", label: "right-[7%] top-[56%]", color: "#7AA653" },
+    { node: "left-[38%] top-[58%]", label: "left-[19%] top-[82%]", color: "#8E60D8" },
+    { node: "left-[26%] top-[58%]", label: "left-[4%] top-[82%]", color: "#6DAAC2" },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#211712]/20 p-[18px] backdrop-blur-[10px]" onClick={onClose}>
+      <div className="relative w-full max-w-[390px] rounded-[32px] border border-white/90 bg-white/95 px-[18px] pb-[18px] pt-[52px] shadow-[0_24px_70px_rgba(33,23,18,0.20)]" onClick={(event) => event.stopPropagation()}>
+        <button onClick={onClose} className="absolute right-4 top-4 z-20 grid h-[38px] w-[38px] place-items-center rounded-2xl bg-white font-display text-[22px] font-black text-[#5A4039] shadow-[0_10px_22px_rgba(80,54,35,0.08)]">×</button>
+        <h2 className="font-display text-[30px] font-black leading-none tracking-[-0.06em] text-[#111827]">Схема на процеса</h2>
+        <div className="relative mt-5 h-[420px] overflow-hidden rounded-[28px] bg-[#FBFAF6]">
+          <span className="absolute left-[33%] top-[31%] h-2 w-2 rounded-full bg-[#FF8A3D]" /><span className="absolute left-[40%] top-[33%] h-2 w-2 rounded-full bg-[#FF8A3D]" /><span className="absolute left-[47%] top-[35%] h-2 w-2 rounded-full bg-[#FF8A3D]" /><span className="absolute left-[54%] top-[37%] h-2 w-2 rounded-full bg-[#FF8A3D]" /><span className="absolute left-[61%] top-[39%] h-2 w-2 rounded-full bg-[#FF8A3D]" />
+          <span className="absolute left-[71%] top-[48%] h-2 w-2 rounded-full bg-[#7AA653]" /><span className="absolute left-[67%] top-[55%] h-2 w-2 rounded-full bg-[#7AA653]" /><span className="absolute left-[61%] top-[61%] h-2 w-2 rounded-full bg-[#7AA653]" /><span className="absolute left-[54%] top-[66%] h-2 w-2 rounded-full bg-[#7AA653]" /><span className="absolute left-[47%] top-[70%] h-2 w-2 rounded-full bg-[#7AA653]" />
+          <span className="absolute left-[28%] top-[35%] h-2 w-2 rounded-full bg-[#8E60D8]" /><span className="absolute left-[25%] top-[43%] h-2 w-2 rounded-full bg-[#8E60D8]" /><span className="absolute left-[24%] top-[51%] h-2 w-2 rounded-full bg-[#8E60D8]" /><span className="absolute left-[27%] top-[59%] h-2 w-2 rounded-full bg-[#8E60D8]" /><span className="absolute left-[33%] top-[66%] h-2 w-2 rounded-full bg-[#8E60D8]" />
+          {visible.map((participant, index) => (
+            <div key={participant.id}>
+              <div className={`absolute ${positions[index].node} z-10 grid h-[72px] w-[72px] place-items-center rounded-full bg-white shadow-[0_18px_36px_rgba(80,54,35,0.12)]`}><span className="h-5 w-5 rounded-full" style={{ backgroundColor: positions[index].color }} /></div>
+              <div className={`absolute ${positions[index].label} z-20 max-w-[210px] rounded-full bg-white px-4 py-2.5 text-center font-display text-[13px] font-black leading-tight tracking-[-0.03em] text-[#17120F] shadow-[0_12px_28px_rgba(80,54,35,0.08)]`}>{participant.route.split("→")[0].trim()}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MatchScreen({ participants = [], selectedProfileId = "", participantRoute, participantName, allConfirmed = false, matchIsClosed = false, confirmMatch, declineMatch, updateMyStatus, loading = false }: MatchScreenProps) {
   const [showMap, setShowMap] = useState(false);
   if (!participants.length) return <EmptyMatchState />;
@@ -120,7 +150,7 @@ export function MatchScreen({ participants = [], selectedProfileId = "", partici
       <div className="mt-5 flex items-center justify-between"><h2 className="font-display text-[22px] font-black tracking-[-0.04em]">Процес</h2><button onClick={() => setShowMap(true)} className="border-0 bg-transparent p-0 font-display text-sm font-black text-[#8B5F47]">Виж още</button></div>
       <div className="mt-2.5">{visibleParticipants.map((participant) => <ParticipantCard key={participant.id} participant={participant} updateMyStatus={updateMyStatus} />)}</div>
       <button disabled={loading} onClick={declineMatch} className="mt-5 h-14 w-full rounded-full bg-[rgba(180,50,40,0.07)] font-display text-sm font-black text-[#8A2820]">Отказ от процеса</button>
-      {showMap ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#211712]/20 p-[18px] backdrop-blur-[10px]" onClick={() => setShowMap(false)}><div className="relative w-full max-w-[390px] rounded-[32px] border border-white/90 bg-white/95 p-[18px] shadow-[0_24px_70px_rgba(33,23,18,0.20)]" onClick={(event) => event.stopPropagation()}><button onClick={() => setShowMap(false)} className="absolute right-4 top-4 grid h-[38px] w-[38px] place-items-center rounded-2xl bg-white font-display text-[22px] font-black text-[#5A4039]">×</button><h2 className="font-display text-2xl font-black tracking-[-0.04em]">Схема на процеса</h2><div className="mt-5 rounded-[26px] bg-[#FBFAF6] p-8 text-sm text-muted-foreground">Карта на процеса ще се визуализира тук.</div></div></div> : null}
+      {showMap ? <ProcessMapModal participants={visibleParticipants} onClose={() => setShowMap(false)} /> : null}
     </>
   );
 }
